@@ -1,7 +1,7 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import HomeSignedOut from "../pages/HomeSignedOut.tsx";
-import HomeDashboard from "../pages/HomeDashboard.tsx";
+import HomeDashboard from "../pages/logged-in/HomeDashboard.tsx";
 
 const Router: React.FC = () => {
     return (
