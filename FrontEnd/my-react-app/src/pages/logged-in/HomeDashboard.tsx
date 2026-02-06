@@ -1,3 +1,3 @@
-function HomeDashboard(){return(<></>)}
+function HomeDashboard(){return(<>Home Dashboard</>)}
 
 export default HomeDashboard;
