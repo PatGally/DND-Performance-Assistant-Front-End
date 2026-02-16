@@ -16,16 +16,16 @@ const hitDieList: Record<string, number> = {
     Warlock: 8
 };
 
-function calculateHP(level: string, characterClass: string, constitution: string): string {
+function calculateHP(level: number, characterClass: string, constitution: number): number {
     const hitDie = hitDieList[characterClass];
-    const conMod = calcConMod(parseInt(constitution));
+    const conMod = calcConMod(constitution);
 
     const firstLevelHP = hitDie + conMod;
     const avgHitDie = Math.ceil((hitDie + 1) / 2);
-    const additionalHP = (parseInt(level) - 1) * (avgHitDie + conMod);
+    const additionalHP = (level - 1) * (avgHitDie + conMod);
     let HP = firstLevelHP + additionalHP //45 + 13
 
-    return HP.toString();
+    return HP; //changed to return a number not a string
 }
 
 export default calculateHP;

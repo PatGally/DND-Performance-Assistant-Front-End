@@ -3,18 +3,12 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import NavBarSignedOut from "../components/nav/NavBarSignedOut.tsx";
 
-
 function homeSignedOut(){
     return (
         <>
         <Container>
             <Row>
                 <Col> <NavBarSignedOut /> </Col>
-            </Row>
-            <Row>
-                <Col>
-                    content goes here...
-                </Col>
             </Row>
         </Container>
         </>
