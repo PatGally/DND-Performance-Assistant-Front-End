@@ -26,6 +26,7 @@ function NavigationSignedIn({ setActivePage }: NavigationSignedInProps) {
                     size={20}
                     className="me-2 text-light"
                     title="Home Icon"/> <strong>Home</strong> </button>
+                {/*// I think this should go to the home page not signed in page.*/}
 
                 <button type="button" className={"btn text-light d-flex align-items-center border-0 mt-1"}
                         onClick={() => setActivePage('LOAD_CHARACTERS')}>

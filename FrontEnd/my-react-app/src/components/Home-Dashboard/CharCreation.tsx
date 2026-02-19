@@ -1,11 +1,14 @@
 import React from "react";
+import { useEffect, useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { Form, Button, Row, Col } from "react-bootstrap";
 import calculateHP from "../../utils/calculateHP.ts";
-import getSpells from "../../utils/getSpells.ts"
+import { SpellsGet } from "../../api/SpellsGet.ts";
+
 type FormFields = {
     name: string;
     characterClass: string;
+    cid: string;
     level: number;
     ac: number;
     hp: number;
@@ -17,6 +20,7 @@ type FormFields = {
     charisma: number;
     weapons: string[];
 };
+// todo fix the weapons net is not supposed to be here check with backend
 const ALL_WEAPONS = [
     "Club",
     "Dagger",
@@ -56,31 +60,74 @@ const ALL_WEAPONS = [
     "Longbow",
     "Net",
 ];
+// Todo add ability for user to select spells from a given list
+// Todo disable send button until at least one spell is selected
+// Todo GET Request - you send class and level and get data to display list of spells that is choosable
+// Todo Display list of spells as
+// Todo sned the full object Fireball for example to frontend
+
 
 
 const CharCreation: React.FC = () => {
     const {
         register,
-        handleSubmit,
+        handleSubmit, watch,
         formState: { errors, isSubmitting },
     } = useForm<FormFields>({
         defaultValues: {
-            level: 1,
+            ac: 10,
             weapons: [],
         },
     });
+    const level = watch("level");
+    const characterClass = watch("characterClass");
+
+    const [spells, setSpells] = useState<any[]>([]);
+    const [loadingSpells, setLoadingSpells] = useState<boolean>(false);
+
+
+    useEffect(() => {
+        // Only fetch if both fields have values
+        if (!level || !characterClass) return;
+
+        const fetchSpells = async () => {
+            try {
+                setLoadingSpells(true);
+                console.log(`1 - Fetching spells for ${characterClass} level ${level}`);
+
+                const result = await SpellsGet(level, characterClass.toLowerCase());
+
+
+                console.log("2 - Fetched spells:", result); // check results
+                console.log(result[0].spellname);
+                setSpells(result);
+            } catch (err) {
+                console.error("3 - Failed to fetch spells", err);
+                setSpells([]); // clear on error
+            } finally {
+                setLoadingSpells(false);
+            }
+        };
+
+        fetchSpells();
+    }, [level, characterClass]);
+
+
 
 
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
+        const cid = crypto.randomUUID();
         if (!data.characterClass || !data.level || !data.constitution) {
             return;
         }
+
         const calculatedHP = calculateHP(data.level, data.characterClass, data.constitution);
-        const getAvailableSpells = getSpells(data.level, data.characterClass);
+        // const spells = SpellsGet(data.level, data.characterClass, ); //change this to GET Request
         const payload = {
             ...data,
             calculatedHP,
-            getAvailableSpells
+            spells, // spells that user changes is put here
+            cid
         };
 
         console.log("Character Payload:", payload);
@@ -175,7 +222,7 @@ const CharCreation: React.FC = () => {
                     "wisdom",
                     "charisma",
                 ].map((stat) => (
-                    <Col md={4} className="mb-3" key={stat}>
+                    <Col md={2} className="mb-3" key={stat}>
                         <Form.Group>
                             <Form.Label className="text-capitalize">{stat}</Form.Label>
                             <Form.Control
@@ -221,10 +268,14 @@ const CharCreation: React.FC = () => {
                 )}
             </Form.Group>
 
-
+            {level && characterClass &&
+                <Form.Group className="mb-4">
+                    {loadingSpells && <Form.Label>Loading spells...</Form.Label>}
+            </Form.Group>}
 
             <Button type="submit" variant="primary" disabled={isSubmitting}>
                 {isSubmitting ? "Creating..." : "Create Character"}
+
             </Button>
 
         </Form>

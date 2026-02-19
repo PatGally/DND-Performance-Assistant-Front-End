@@ -1,5 +1,9 @@
 import CardNav from './CardNav';
 import logo from './logo.jpg'; // make sure this path is correct
+// import { NavLink, Link } from "react-router-dom";
+
+
+// import {Link} from 'react-router-dom';
 
 const navBarSignedOut = () => {
     const items = [
@@ -8,8 +12,7 @@ const navBarSignedOut = () => {
             bgColor: "#0D0716",
             textColor: "#fff",
             links: [
-                { label: "Company", ariaLabel: "About Company", href: "/company" },
-                { label: "Careers", ariaLabel: "About Careers", href: "/careers" }
+                { label: "Dashboard", ariaLabel: "User Dashboard", href: "/user-dashboard" }
             ]
         },
         // ... other items

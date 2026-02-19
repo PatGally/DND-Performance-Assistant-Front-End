@@ -2,6 +2,7 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import NavigationSignedIn from '../../components/nav/NavigationSignedIn';
+import LoadCharacter from "../../components/Home-Dashboard/LoadCharacter.tsx";
 
 import { useState } from 'react';
 // import CharacterCreation from "../../components/Home-Dashboard/CharacterCreation.tsx";
@@ -27,7 +28,7 @@ function HomeDashboard(){
                 </Row>
             <Row>
                 <Col lg={2} className="text-center bg-dark text-light"></Col>
-                <Col lg={10} className="text-center bg-dark text-light"> C4 User Options</Col>
+                <Col lg={10} className="text-center bg-dark text-light"> <div></div> </Col>
             </Row>
             <Row className="flex-grow-1">
                 <Col lg={2} className="text-center m-0 p-0">
@@ -35,13 +36,8 @@ function HomeDashboard(){
                     <NavigationSignedIn setActivePage={setActivePage} />
                 </Col>
                 <Col lg={10} className="bg-dark text-light">
-                    C6 main page components go here
                     {activePage === 'SAVED_ENCOUNTERS' && <div>Saved Encounters - with + for encounter creation</div>}
-                    {activePage === 'LOAD_CHARACTERS' &&
-                        <div className="card">
-                            <div className="card-header"> Yooo</div>
-                            <div className="card-body"> Yooo</div>
-                    </div>}
+                    {activePage === 'LOAD_CHARACTERS' && <LoadCharacter/>}
                     {activePage === 'CREATE_CHARACTER' && <CharCreation />}
                     {activePage === 'HOW_TO_USE' && <div>How To Use </div>}
                 </Col>
