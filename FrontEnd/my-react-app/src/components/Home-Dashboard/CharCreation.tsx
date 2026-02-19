@@ -4,6 +4,7 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import { Form, Button, Row, Col } from "react-bootstrap";
 import calculateHP from "../../utils/calculateHP.ts";
 import { SpellsGet } from "../../api/SpellsGet.ts";
+import { WeaponsGet, type Weapon} from "../../api/WeaponsGet.ts";
 
 type FormFields = {
     name: string;
@@ -19,87 +20,62 @@ type FormFields = {
     wisdom: number;
     charisma: number;
     weapons: string[];
+    spells: string[];
 };
-// todo fix the weapons net is not supposed to be here check with backend
-const ALL_WEAPONS = [
-    "Club",
-    "Dagger",
-    "Greatclub",
-    "Handaxe",
-    "Javelin",
-    "Light Hammer",
-    "Mace",
-    "Quarterstaff",
-    "Sickle",
-    "Spear",
-    "Light Crossbow",
-    "Dart",
-    "Shortbow",
-    "Sling",
-    "Battleaxe",
-    "Flail",
-    "Glaive",
-    "Greataxe",
-    "Greatsword",
-    "Halberd",
-    "Lance",
-    "Longsword",
-    "Maul",
-    "Morningstar",
-    "Pike",
-    "Rapier",
-    "Scimitar",
-    "Shortsword",
-    "Trident",
-    "War Pick",
-    "Warhammer",
-    "Whip",
-    "Blowgun",
-    "Hand Crossbow",
-    "Heavy Crossbow",
-    "Longbow",
-    "Net",
-];
-// Todo add ability for user to select spells from a given list
-// Todo disable send button until at least one spell is selected
-// Todo GET Request - you send class and level and get data to display list of spells that is choosable
-// Todo Display list of spells as
-// Todo sned the full object Fireball for example to frontend
 
+// Todo disable send button until at least one spell is selected - idk yet
+// Todo Display list of spells according to their levels
+// Todo fix NaN popping up on screen
+// todo make sure damage is not an array of string
+
+// Todo once everything above is resolved send the data to the backend
 
 
 const CharCreation: React.FC = () => {
     const {
         register,
-        handleSubmit, watch,
+        handleSubmit, watch, resetField,
         formState: { errors, isSubmitting },
     } = useForm<FormFields>({
         defaultValues: {
+            level: undefined,
             ac: 10,
             weapons: [],
+            spells: [],
         },
     });
     const level = watch("level");
     const characterClass = watch("characterClass");
 
-    const [spells, setSpells] = useState<any[]>([]);
+    const [spells, setSpells] = useState<any[]>([]); //specify type
     const [loadingSpells, setLoadingSpells] = useState<boolean>(false);
+
+    const [allWeapons, setAllWeapons] = useState<Weapon[]>([]); // specify type
+    const [loadingWeapons, setLoadingWeapons] = useState(false);
+
+    useEffect(() => {
+        const fetchWeapons = async () => {
+            setLoadingWeapons(true);
+            const weapons = await WeaponsGet();
+            setAllWeapons(weapons);
+            setLoadingWeapons(false);
+        };
+        fetchWeapons();
+    }, []);
 
 
     useEffect(() => {
         // Only fetch if both fields have values
         if (!level || !characterClass) return;
 
+        resetField("spells"); //resets spells everytime level or class is changed
+
         const fetchSpells = async () => {
             try {
                 setLoadingSpells(true);
-                console.log(`1 - Fetching spells for ${characterClass} level ${level}`);
 
                 const result = await SpellsGet(level, characterClass.toLowerCase());
 
-
-                console.log("2 - Fetched spells:", result); // check results
-                console.log(result[0].spellname);
                 setSpells(result);
             } catch (err) {
                 console.error("3 - Failed to fetch spells", err);
@@ -112,21 +88,35 @@ const CharCreation: React.FC = () => {
         fetchSpells();
     }, [level, characterClass]);
 
-
-
-
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
         const cid = crypto.randomUUID();
         if (!data.characterClass || !data.level || !data.constitution) {
             return;
         }
+        const selectedWeapons = allWeapons.filter(w =>
+            data.weapons.includes(w.name)
+        );
+
+        console.log("Selected Weapons:", selectedWeapons);
+        console.log("Data Weapons:", data.weapons);
+        for (let i =0; i <selectedWeapons.length; i++) {
+            const weaponStats = selectedWeapons[i].properties.weaponStat;
+            if (weaponStats.length > 1){
+                selectedWeapons[i].properties.weaponStat = data.strength >= data.dexterity ? weaponStats[0] : weaponStats[1];
+            }
+        }
+        console.log(selectedWeapons);
+
+        console.log("Weapons Data ->",data.weapons);
+        console.log("Weapons Data all? ->",allWeapons);
 
         const calculatedHP = calculateHP(data.level, data.characterClass, data.constitution);
-        // const spells = SpellsGet(data.level, data.characterClass, ); //change this to GET Request
+
         const payload = {
             ...data,
-            calculatedHP,
-            spells, // spells that user changes is put here
+            hp: calculatedHP,
+            maxHp: calculatedHP,
+            spells: data.spells, // spells that user selected is put here
             cid
         };
 
@@ -185,6 +175,7 @@ const CharCreation: React.FC = () => {
                                 min: { value: 1, message: "Min level is 1" },
                                 max: { value: 20, message: "Max level is 20" },
                                 valueAsNumber: true,
+                                // setValueAs: (v) => (v === "" ? 0 : Number(v)),
                             })}
                         />
                         <Form.Control.Feedback type="invalid">
@@ -243,41 +234,67 @@ const CharCreation: React.FC = () => {
                 ))}
             </Row>
 
-
             <Form.Group className="mb-4">
                 <Form.Label>Weapons</Form.Label>
 
-                <div className="d-flex flex-wrap gap-3">
-                    {ALL_WEAPONS.map((weapon) => (
-                        <Form.Check
-                            key={weapon}
-                            type="checkbox"
-                            label={weapon}
-                            value={weapon}
-                            {...register("weapons", {
-                                validate: (v) => v.length > 0 || "Select at least one weapon",
-                            })}
-                        />
-                    ))}
-                </div>
+                {loadingWeapons && <div>Loading weapons...</div>}
+
+                {!loadingWeapons && (
+                    <div className="d-flex flex-wrap gap-3">
+                        {allWeapons.map((weapon) => (
+                            <Form.Check
+                                key={weapon.name}
+                                type="checkbox"
+                                label={weapon.name}
+                                value={weapon.name}
+                                {...register("weapons", {
+                                    validate: (v) => v.length > 0 || "Select at least one weapon",
+                                })}
+                            />
+                        ))}
+                    </div>
+                )}
 
                 {errors.weapons && (
-                    <div className="text-danger mt-1">
-                        {errors.weapons.message}
-                    </div>
+                    <div className="text-danger mt-1">{errors.weapons.message}</div>
                 )}
             </Form.Group>
 
-            {level && characterClass &&
+            {level && characterClass && (
                 <Form.Group className="mb-4">
-                    {loadingSpells && <Form.Label>Loading spells...</Form.Label>}
-            </Form.Group>}
+                    <Form.Label>Spells</Form.Label>
+
+                    {loadingSpells && <div>Loading spells...</div>}
+
+                    {!loadingSpells && spells.length > 0 && (
+                        <div className="d-flex flex-wrap gap-3">
+                            {spells.map((spell) => (
+                                <Form.Check
+                                    key={spell.id}
+                                    type="switch"
+                                    label={spell.spellname}
+                                    value={spell.spellname}
+                                    {...register("spells", {
+                                        validate: (v) =>
+                                            v.length > 0 || "Select at least one spell",
+                                    })}
+                                />
+                            ))}
+                        </div>
+                    )}
+
+                    {errors.spells && (
+                        <div className="text-danger mt-1">
+                            {errors.spells.message}
+                        </div>
+                    )}
+                </Form.Group>
+            )}
 
             <Button type="submit" variant="primary" disabled={isSubmitting}>
                 {isSubmitting ? "Creating..." : "Create Character"}
 
             </Button>
-
         </Form>
     );
 };
