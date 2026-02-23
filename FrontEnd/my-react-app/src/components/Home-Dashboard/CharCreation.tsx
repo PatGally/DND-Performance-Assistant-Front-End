@@ -26,9 +26,6 @@ type FormFields = {
     spells: string[];
 };
 
-// Todo Display list of spells according to their levels - will not do unless i have time
-// Todo fix NaN popping up on screen
-
 
 
 const CharCreation: React.FC = () => {
@@ -91,28 +88,7 @@ const CharCreation: React.FC = () => {
         if (!data.characterClass || !data.level || !data.constitution) {
             return;
         }
-        // const selectedWeapons = allWeapons
-        //     .filter(w => data.weapons.includes(w.name))
-        //     .map(w => {
-        //         const statArray = w.properties.weaponStat;
-        //         const damageArray = w.properties.damage;
-        //
-        //         const chosenStat = Array.isArray(statArray)
-        //             ? (data.strength >= data.dexterity ? statArray[0] : statArray[1] || statArray[0]) : statArray;
-        //
-        //         const chosenDamage = Array.isArray(damageArray)
-        //             ? damageArray.join(" / ")
-        //             : damageArray;
-        //
-        //         return {
-        //             name: w.name,
-        //             properties: {
-        //                 damage: chosenDamage,
-        //                 damageType: w.properties.damageType,
-        //                 weaponStat: chosenStat
-        //             }
-        //         };
-        //     });
+
         const selectedWeapons = allWeapons
             .filter(w => data.weapons.includes(w.name))
             .flatMap(w => {
