@@ -1,0 +1,1 @@
+// small things like rand.math to do dice rolls can be here for example
