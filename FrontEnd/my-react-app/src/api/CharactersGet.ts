@@ -1,16 +1,5 @@
-// import axios from "axios";
-//
-// const BASE_URL = "http://127.0.0.1:8000";
-//
-// export const getCharacters = async () => {
-//     const response = await axios.get(`${BASE_URL}/dashboard/player`);
-//     return response.data;
-// };
-//
-
 import axios from "axios";
 
-// Define the types
 export interface CharacterStats {
     cid: string;
     name: string;
@@ -29,7 +18,6 @@ export interface Character {
 
 const BASE_URL = "http://127.0.0.1:8000";
 
-// Safe API call to get characters
 export const getCharacters = async (): Promise<Character[]> => {
     try {
         const response = await axios.get(`${BASE_URL}/dashboard/player`);

@@ -1,6 +1,6 @@
 import Container from 'react-bootstrap/Container';
 import Row from "react-bootstrap/Row";
-import { House, CloudArrowDown, PersonGear, QuestionSquare } from 'react-bootstrap-icons';
+import { CloudArrowDown, PersonGear, QuestionSquare, Archive } from 'react-bootstrap-icons';
 // import Row from 'react-bootstrap/Row';
 // import Col from 'react-bootstrap/Col';
 //stylize each Home, Saved Encounter to be within a box and reusable
@@ -22,10 +22,10 @@ function NavigationSignedIn({ setActivePage }: NavigationSignedInProps) {
             <Row className="d-grid">
                 <button type="button" className={"btn text-light d-flex align-items-center border-0 mt-1"}
                         onClick={() => setActivePage('SAVED_ENCOUNTERS')}>
-                    <House
+                    <Archive
                     size={20}
                     className="me-2 text-light"
-                    title="Home Icon"/> <strong>Home</strong> </button>
+                    title="Saved Encounters Icon"/> <strong>Saved Encounters</strong> </button>
                 {/*// I think this should go to the home page not signed in page.*/}
 
                 <button type="button" className={"btn text-light d-flex align-items-center border-0 mt-1"}

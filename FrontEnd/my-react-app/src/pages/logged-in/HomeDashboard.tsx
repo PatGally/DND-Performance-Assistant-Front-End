@@ -3,15 +3,15 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import NavigationSignedIn from '../../components/nav/NavigationSignedIn';
 import LoadCharacter from "../../components/Home-Dashboard/LoadCharacter.tsx";
+import EncounterView from "../../components/Home-Dashboard/EncounterView";
 
 import { useState } from 'react';
-// import CharacterCreation from "../../components/Home-Dashboard/CharacterCreation.tsx";
 import CharCreation from "../../components/Home-Dashboard/CharCreation.tsx";
 import {PersonCircle} from "react-bootstrap-icons";
 //Note you have not accounted much for change when screen size changes yet
 //xs, sm, md, lg, xl and xxl
 function HomeDashboard(){
-    const [activePage, setActivePage] = useState('Home');
+    const [activePage, setActivePage] = useState('SAVED_ENCOUNTERS');
     return(
         <Container fluid className="min-vh-100 d-flex flex-column" >
                 <Row >
@@ -28,7 +28,9 @@ function HomeDashboard(){
                 </Row>
             <Row>
                 <Col lg={2} className="text-center bg-dark text-light"></Col>
-                <Col lg={10} className="text-center bg-dark text-light"> <div></div> </Col>
+                <Col lg={10} className="text-center bg-dark text-light">
+                    {activePage === 'SAVED_ENCOUNTERS'}
+                </Col>
             </Row>
             <Row className="flex-grow-1">
                 <Col lg={2} className="text-center m-0 p-0">
@@ -36,7 +38,7 @@ function HomeDashboard(){
                     <NavigationSignedIn setActivePage={setActivePage} />
                 </Col>
                 <Col lg={10} className="bg-dark text-light">
-                    {activePage === 'SAVED_ENCOUNTERS' && <div>Saved Encounters - with + for encounter creation</div>}
+                    {activePage === 'SAVED_ENCOUNTERS' && <EncounterView/>}
                     {activePage === 'LOAD_CHARACTERS' && <LoadCharacter/>}
                     {activePage === 'CREATE_CHARACTER' && <CharCreation />}
                     {activePage === 'HOW_TO_USE' && <div>How To Use </div>}

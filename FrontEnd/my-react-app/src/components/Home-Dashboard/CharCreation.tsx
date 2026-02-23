@@ -6,6 +6,8 @@ import calculateHP from "../../utils/calculateHP.ts";
 import { SpellsGet } from "../../api/SpellsGet.ts";
 import { WeaponsGet, type Weapon} from "../../api/WeaponsGet.ts";
 import {createCharacter} from "../../api/CharactersPost.ts";
+import calcAttributes from "../../utils/calcAttributes.ts";
+import calcSpellSlots from "../../utils/calcSpellSlots.ts";
 
 type FormFields = {
     name: string;
@@ -36,7 +38,7 @@ const CharCreation: React.FC = () => {
         formState: { errors, isSubmitting },
     } = useForm<FormFields>({
         defaultValues: {
-            level: undefined,
+            level: 1,
             ac: 10,
             weapons: [],
             spells: [],
@@ -61,12 +63,10 @@ const CharCreation: React.FC = () => {
         fetchWeapons();
     }, []);
 
-
     useEffect(() => {
-        // Only fetch if both fields have values
         if (!level || !characterClass) return;
 
-        resetField("spells"); //resets spells everytime level or class is changed
+        resetField("spells");
 
         const fetchSpells = async () => {
             try {
@@ -91,33 +91,58 @@ const CharCreation: React.FC = () => {
         if (!data.characterClass || !data.level || !data.constitution) {
             return;
         }
+        // const selectedWeapons = allWeapons
+        //     .filter(w => data.weapons.includes(w.name))
+        //     .map(w => {
+        //         const statArray = w.properties.weaponStat;
+        //         const damageArray = w.properties.damage;
+        //
+        //         const chosenStat = Array.isArray(statArray)
+        //             ? (data.strength >= data.dexterity ? statArray[0] : statArray[1] || statArray[0]) : statArray;
+        //
+        //         const chosenDamage = Array.isArray(damageArray)
+        //             ? damageArray.join(" / ")
+        //             : damageArray;
+        //
+        //         return {
+        //             name: w.name,
+        //             properties: {
+        //                 damage: chosenDamage,
+        //                 damageType: w.properties.damageType,
+        //                 weaponStat: chosenStat
+        //             }
+        //         };
+        //     });
         const selectedWeapons = allWeapons
             .filter(w => data.weapons.includes(w.name))
-            .map(w => {
+            .flatMap(w => {
                 const statArray = w.properties.weaponStat;
-                const damageArray = w.properties.damage;
+                const damageArray = Array.isArray(w.properties.damage)
+                    ? w.properties.damage
+                    : [w.properties.damage];
 
-                const chosenStat = Array.isArray(statArray)
-                    ? (data.strength >= data.dexterity ? statArray[0] : statArray[1] || statArray[0]) : statArray;
+                // Pick corresponding weaponStat for each damage option
+                const statOptions = Array.isArray(statArray)
+                    ? statArray
+                    : [statArray];
 
-
-                const chosenDamage = Array.isArray(damageArray)
-                    ? damageArray.join(" / ")
-                    : damageArray;
-
-                return {
-                    name: w.name,
+                // Make sure we have one stat per damage
+                return damageArray.map((damage, i) => ({
+                    name: w.name + (damageArray.length > 1 ? ` (${i + 1})` : ""), // optional suffix to differentiate
                     properties: {
-                        damage: chosenDamage,
+                        damage,
                         damageType: w.properties.damageType,
-                        weaponStat: chosenStat
-                    }
-                };
+                        weaponStat: statOptions[i] || statOptions[0],
+                    },
+                }));
             });
 
         const selectedSpells = spells.filter(spell =>
             data.spells.includes(spell.spellname)
         );
+        const attributes = calcAttributes(data.level, data.characterClass);
+        const spellSlots = calcSpellSlots(data.level, data.characterClass);
+        console.log("Even bigger test here ",spellSlots);
 
         const calculatedHP = calculateHP(data.level, data.characterClass, data.constitution);
 
@@ -146,17 +171,7 @@ const CharCreation: React.FC = () => {
                     CHA: "2"
                 },
 
-                spellSlots: [
-                    ["4","4"],
-                    ["3","3"],
-                    ["3","3"],
-                    ["3","3"],
-                    ["1","1"],
-                    ["0","0"],
-                    ["0","0"],
-                    ["0","0"],
-                    ["0","0"]
-                ],
+                spellSlots: spellSlots,
 
                 damImmunes: [],
                 damResists: [],
@@ -175,9 +190,10 @@ const CharCreation: React.FC = () => {
             spells: selectedSpells,
             weapons: selectedWeapons,
 
-            sorceryPoints: "0",
-            chosenMetaMagics: []
+            ...attributes
         };
+
+        //add correct attribute depending on class - create your own file to
         console.log(selectedWeapons);
         // console.log("Character Payload:", payload);
         console.log(JSON.stringify(payload, null, 2));
@@ -190,8 +206,6 @@ const CharCreation: React.FC = () => {
         } catch (error) {
         console.error("Submission failed, keeping data in form", error);
     }
-
-
     };
 
     return (
@@ -331,7 +345,7 @@ const CharCreation: React.FC = () => {
                 )}
             </Form.Group>
 
-            {level && characterClass && (
+            {level && characterClass &&(
                 <Form.Group className="mb-4">
                     <Form.Label>Available Spells</Form.Label>
 
