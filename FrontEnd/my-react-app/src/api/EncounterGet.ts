@@ -1,4 +1,5 @@
 import axios from "axios";
+import BASE_URL from "./BASE_URL.ts";
 
 export interface Monster {
     stats: { name: string };
@@ -13,11 +14,8 @@ export interface Encounter {
     date: string;
     eid: string;
     completed: boolean;
-    // monsters: Monster[];
-    // players: Player[];
 }
 
-const BASE_URL = "http://127.0.0.1:8000";
 
 export const getEncounters = async (): Promise<Encounter[]> => {
     try {

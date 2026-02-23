@@ -1,6 +1,5 @@
 import axios from 'axios';
-
-const BASE_URL = "http://127.0.0.1:8000";
+import BASE_URL from "./BASE_URL.ts";
 
 export interface Spell {
     spellname: string;

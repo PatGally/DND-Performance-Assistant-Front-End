@@ -1,7 +1,5 @@
 import axios from "axios";
-
-const BASE_URL = "http://127.0.0.1:8000"; //Todo create a file that holds BASE_URL so we don't have change everything we
-// todo we move to production instead
+import BASE_URL from "./BASE_URL.ts";
 
 export interface Weapon {
     name: string;

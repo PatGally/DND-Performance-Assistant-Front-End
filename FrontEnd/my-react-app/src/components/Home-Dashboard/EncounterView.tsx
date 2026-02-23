@@ -1,5 +1,5 @@
 import { getEncounters } from "../../api/EncounterGet";
-import creaturePacketGet from "../../api/CreaturePacketGet"; // no curly braces since default export
+import creaturePacketGet from "../../api/CreaturePacketGet";
 import React, { useEffect, useState } from "react";
 import { Card } from "react-bootstrap";
 
