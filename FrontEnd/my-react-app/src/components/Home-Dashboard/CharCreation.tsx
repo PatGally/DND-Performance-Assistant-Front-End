@@ -5,6 +5,7 @@ import { Form, Button, Row, Col } from "react-bootstrap";
 import calculateHP from "../../utils/calculateHP.ts";
 import { SpellsGet } from "../../api/SpellsGet.ts";
 import { WeaponsGet, type Weapon} from "../../api/WeaponsGet.ts";
+import {createCharacter} from "../../api/CharactersPost.ts";
 
 type FormFields = {
     name: string;
@@ -23,18 +24,15 @@ type FormFields = {
     spells: string[];
 };
 
-// Todo disable send button until at least one spell is selected - idk yet
-// Todo Display list of spells according to their levels
+// Todo Display list of spells according to their levels - will not do unless i have time
 // Todo fix NaN popping up on screen
-// todo make sure damage is not an array of string
 
-// Todo once everything above is resolved send the data to the backend
 
 
 const CharCreation: React.FC = () => {
     const {
         register,
-        handleSubmit, watch, resetField,
+        handleSubmit, watch, resetField, reset,
         formState: { errors, isSubmitting },
     } = useForm<FormFields>({
         defaultValues: {
@@ -93,34 +91,107 @@ const CharCreation: React.FC = () => {
         if (!data.characterClass || !data.level || !data.constitution) {
             return;
         }
-        const selectedWeapons = allWeapons.filter(w =>
-            data.weapons.includes(w.name)
+        const selectedWeapons = allWeapons
+            .filter(w => data.weapons.includes(w.name))
+            .map(w => {
+                const statArray = w.properties.weaponStat;
+                const damageArray = w.properties.damage;
+
+                const chosenStat = Array.isArray(statArray)
+                    ? (data.strength >= data.dexterity ? statArray[0] : statArray[1] || statArray[0]) : statArray;
+
+
+                const chosenDamage = Array.isArray(damageArray)
+                    ? damageArray.join(" / ")
+                    : damageArray;
+
+                return {
+                    name: w.name,
+                    properties: {
+                        damage: chosenDamage,
+                        damageType: w.properties.damageType,
+                        weaponStat: chosenStat
+                    }
+                };
+            });
+
+        const selectedSpells = spells.filter(spell =>
+            data.spells.includes(spell.spellname)
         );
-
-        console.log("Selected Weapons:", selectedWeapons);
-        console.log("Data Weapons:", data.weapons);
-        for (let i =0; i <selectedWeapons.length; i++) {
-            const weaponStats = selectedWeapons[i].properties.weaponStat;
-            if (weaponStats.length > 1){
-                selectedWeapons[i].properties.weaponStat = data.strength >= data.dexterity ? weaponStats[0] : weaponStats[1];
-            }
-        }
-        console.log(selectedWeapons);
-
-        console.log("Weapons Data ->",data.weapons);
-        console.log("Weapons Data all? ->",allWeapons);
 
         const calculatedHP = calculateHP(data.level, data.characterClass, data.constitution);
 
-        const payload = {
-            ...data,
-            hp: calculatedHP,
-            maxHp: calculatedHP,
-            spells: data.spells, // spells that user selected is put here
-            cid
-        };
 
-        console.log("Character Payload:", payload);
+        const payload = {
+            stats: {
+                name: data.name,
+                level: data.level.toString(),
+                ac: data.ac.toString(),
+                hp: calculatedHP.toString(),
+                maxhp: calculatedHP.toString(),
+                cid: cid,
+                position: [0, 0],
+
+                characterClass: data.characterClass.toLowerCase(),
+                conImmunities: [],
+                activeStatusEffects: [],
+                activeConditions: [],
+
+                saveProfs: {
+                    STR: "0",
+                    DEX: "4",
+                    CON: "2",
+                    INT: "-1",
+                    WIS: "5",
+                    CHA: "2"
+                },
+
+                spellSlots: [
+                    ["4","4"],
+                    ["3","3"],
+                    ["3","3"],
+                    ["3","3"],
+                    ["1","1"],
+                    ["0","0"],
+                    ["0","0"],
+                    ["0","0"],
+                    ["0","0"]
+                ],
+
+                damImmunes: [],
+                damResists: [],
+                damVulns: [],
+
+                statArray: {
+                    STR: data.strength.toString(),
+                    DEX: data.dexterity.toString(),
+                    CON: data.constitution.toString(),
+                    INT: data.intelligence.toString(),
+                    WIS: data.wisdom.toString(),
+                    CHA: data.charisma.toString()
+                },
+            },
+
+            spells: selectedSpells,
+            weapons: selectedWeapons,
+
+            sorceryPoints: "0",
+            chosenMetaMagics: []
+        };
+        console.log(selectedWeapons);
+        // console.log("Character Payload:", payload);
+        console.log(JSON.stringify(payload, null, 2));
+
+        try{
+            await createCharacter( payload );
+            reset();
+            console.log("Form cleared and ready for the next character!");
+
+        } catch (error) {
+        console.error("Submission failed, keeping data in form", error);
+    }
+
+
     };
 
     return (
@@ -262,7 +333,7 @@ const CharCreation: React.FC = () => {
 
             {level && characterClass && (
                 <Form.Group className="mb-4">
-                    <Form.Label>Spells</Form.Label>
+                    <Form.Label>Available Spells</Form.Label>
 
                     {loadingSpells && <div>Loading spells...</div>}
 
