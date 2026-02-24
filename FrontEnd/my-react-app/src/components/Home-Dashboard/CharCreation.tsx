@@ -49,7 +49,7 @@ const CharCreation: React.FC = () => {
     const [allWeapons, setAllWeapons] = useState<Weapon[]>([]); // specify type
     const [loadingWeapons, setLoadingWeapons] = useState(false);
 
-    const [mycid, setCid] = useState<any>();
+    const [loadingCid, loadingSetCid] = useState<boolean>(false);
 
     useEffect(() => {
         const fetchWeapons = async () => {
@@ -84,16 +84,23 @@ const CharCreation: React.FC = () => {
     }, [level, characterClass]);
 
 
-
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
         if (!data.characterClass || !data.level || !data.constitution) {
             return;
         }
 
-        const characterId = mycid || (await fetchUUID());
+        let characterId;
 
-        setCid(characterId);
-
+        try {
+            loadingSetCid(true);
+            characterId = await fetchUUID();
+            console.log("Charels test rn ->  ",characterId);
+        } catch (err) {
+            console.error("Failed to fetch CID", err);
+            return;
+        } finally {
+            loadingSetCid(false);
+        }
 
         const selectedWeapons = allWeapons
             .filter(w => data.weapons.includes(w.name))
@@ -137,7 +144,7 @@ const CharCreation: React.FC = () => {
                 ac: data.ac.toString(),
                 hp: calculatedHP.toString(),
                 maxhp: calculatedHP.toString(),
-                cid: mycid,
+                cid: characterId,
                 position: [0, 0],
 
                 characterClass: data.characterClass.toLowerCase(),
@@ -359,7 +366,7 @@ const CharCreation: React.FC = () => {
                 </Form.Group>
             )}
 
-            <Button type="submit" variant="primary" disabled={isSubmitting}>
+            <Button type="submit" variant="primary" disabled={isSubmitting || loadingCid}>
                 {isSubmitting ? "Creating..." : "Create Character"}
 
             </Button>
