@@ -4,7 +4,8 @@ export type CharacterStats = {
     ac: string;
     hp: string;
     maxhp: string;
-    cid: `${string}-${string}-${string}-${string}-${string}`;
+    // cid: `${string}-${string}-${string}-${string}-${string}`;
+    cid: string;
     position: number[];
     characterClass: string;
     conImmunities: any[];
@@ -43,5 +44,4 @@ export type CharacterPayload = {
             weaponStat: any;
         };
     }[];
-    attributes: any
 };

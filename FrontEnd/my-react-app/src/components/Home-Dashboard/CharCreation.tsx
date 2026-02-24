@@ -8,6 +8,7 @@ import { WeaponsGet, type Weapon} from "../../api/WeaponsGet.ts";
 import {createCharacter} from "../../api/CharactersPost.ts";
 import calcAttributes from "../../utils/calcAttributes.ts";
 import calcSpellSlots from "../../utils/calcSpellSlots.ts";
+import {fetchUUID} from "../../api/UUIDGet.ts"
 
 type FormFields = {
     name: string;
@@ -48,6 +49,8 @@ const CharCreation: React.FC = () => {
     const [allWeapons, setAllWeapons] = useState<Weapon[]>([]); // specify type
     const [loadingWeapons, setLoadingWeapons] = useState(false);
 
+    const [mycid, setCid] = useState<any>();
+
     useEffect(() => {
         const fetchWeapons = async () => {
             setLoadingWeapons(true);
@@ -77,15 +80,20 @@ const CharCreation: React.FC = () => {
                 setLoadingSpells(false);
             }
         };
-
         fetchSpells();
     }, [level, characterClass]);
 
+
+
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
-        const cid = crypto.randomUUID();
         if (!data.characterClass || !data.level || !data.constitution) {
             return;
         }
+
+        const characterId = mycid || (await fetchUUID());
+
+        setCid(characterId);
+
 
         const selectedWeapons = allWeapons
             .filter(w => data.weapons.includes(w.name))
@@ -118,6 +126,7 @@ const CharCreation: React.FC = () => {
         const spellSlots = calcSpellSlots(data.level, data.characterClass);
         console.log("Even bigger test here ",spellSlots);
 
+
         const calculatedHP = calculateHP(data.level, data.characterClass, data.constitution);
 
 
@@ -128,7 +137,7 @@ const CharCreation: React.FC = () => {
                 ac: data.ac.toString(),
                 hp: calculatedHP.toString(),
                 maxhp: calculatedHP.toString(),
-                cid: cid,
+                cid: mycid,
                 position: [0, 0],
 
                 characterClass: data.characterClass.toLowerCase(),
