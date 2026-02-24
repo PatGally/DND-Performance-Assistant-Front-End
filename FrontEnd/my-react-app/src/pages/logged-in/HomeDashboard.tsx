@@ -8,8 +8,7 @@ import EncounterView from "../../components/Home-Dashboard/EncounterView";
 import { useState } from 'react';
 import CharCreation from "../../components/Home-Dashboard/CharCreation.tsx";
 import {PersonCircle} from "react-bootstrap-icons";
-//Note you have not accounted much for change when screen size changes yet
-//xs, sm, md, lg, xl and xxl
+
 function HomeDashboard(){
     const [activePage, setActivePage] = useState('SAVED_ENCOUNTERS');
     return(
@@ -46,7 +45,7 @@ function HomeDashboard(){
             </Row>
 
             <Row>
-                <Col className="text-center bg-danger-subtle text-info-emphasis">C7 Footer </Col>
+                <Col className="text-center bg-dark text-light">C7 Footer </Col>
             </Row>
         </Container>
     )
