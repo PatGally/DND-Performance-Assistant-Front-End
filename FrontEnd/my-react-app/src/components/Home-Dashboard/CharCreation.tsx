@@ -26,8 +26,6 @@ type FormFields = {
     spells: string[];
 };
 
-
-
 const CharCreation: React.FC = () => {
     const {
         register,

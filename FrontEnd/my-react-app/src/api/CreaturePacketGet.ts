@@ -1,7 +1,5 @@
-// api/CreaturePacketGet.ts
 import axios from "axios";
-
-const BASE_URL = "http://localhost:8000"; // change this to your backend URL
+import BASE_URL from "./BASE_URL.ts";
 
 interface Player {
     name: string;

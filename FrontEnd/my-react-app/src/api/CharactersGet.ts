@@ -1,4 +1,5 @@
 import axios from "axios";
+import BASE_URL from "./BASE_URL.ts";
 
 export interface CharacterStats {
     cid: string;
@@ -15,8 +16,6 @@ export interface Character {
     weapons?: { name: string }[];
     spells?: { spellname: string }[];
 }
-
-const BASE_URL = "http://127.0.0.1:8000";
 
 export const getCharacters = async (): Promise<Character[]> => {
     try {

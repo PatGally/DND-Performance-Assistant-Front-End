@@ -1,6 +1,5 @@
 import type { CharacterPayload } from "../types/character";
-
-const BASE_URL = "http://127.0.0.1:8000";
+import BASE_URL from "./BASE_URL.ts";
 
 export const createCharacter = async (character: CharacterPayload) => {
     const res =  await fetch(`${BASE_URL}/dashboard/players`, {
@@ -11,9 +10,8 @@ export const createCharacter = async (character: CharacterPayload) => {
     });
     console.log("Status  ", res.status);
     if (!res.ok){
-        // throw new Error("Character creation failed");
-        const error = await res.json(); // 👈 ADD THIS
-        console.log("BACKEND ERROR:", error); // 👈 THIS WILL TELL US EVERYTHING
+        const error = await res.json();
+        console.log("BACKEND ERROR:", error);
         throw new Error("Character creation failed");
     }
 
