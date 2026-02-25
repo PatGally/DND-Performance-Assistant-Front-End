@@ -1,14 +1,12 @@
 import Container from 'react-bootstrap/Container';
 import Row from "react-bootstrap/Row";
 import { CloudArrowDown, PersonGear, QuestionSquare, Archive } from 'react-bootstrap-icons';
-// import Row from 'react-bootstrap/Row';
-// import Col from 'react-bootstrap/Col';
-//stylize each Home, Saved Encounter to be within a box and reusable
 
 type ActivePanel =
     | 'SAVED_ENCOUNTERS'
     | 'LOAD_CHARACTERS'
     | 'CREATE_CHARACTER'
+    | 'CREATE_ENCOUNTER'
     | 'HOW_TO_USE';
 
 type NavigationSignedInProps = {
@@ -26,6 +24,14 @@ function NavigationSignedIn({ setActivePage }: NavigationSignedInProps) {
                     size={20}
                     className="me-2 text-light"
                     title="Saved Encounters Icon"/> <strong>Saved Encounters</strong> </button>
+
+                <button type="button" className={"btn text-light d-flex align-items-center border-0 mt-1"}
+                        onClick={() => setActivePage('CREATE_ENCOUNTER')}>
+                    <Archive
+                        size={20}
+                        className="me-2 text-light"
+                        title="Saved Encounters Icon"/> <strong>Create Encounter</strong> </button>
+
                 {/*// I think this should go to the home page not signed in page.*/}
 
                 <button type="button" className={"btn text-light d-flex align-items-center border-0 mt-1"}

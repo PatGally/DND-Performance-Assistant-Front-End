@@ -26,6 +26,8 @@ __pycache__/
 # Project-specific folders
 shelf/
 .env
+.env.development
+.env.production
 
 # Node / JavaScript / Logs
 logs

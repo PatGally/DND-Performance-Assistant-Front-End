@@ -3,7 +3,7 @@ import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 
-function EncounterSetup(){
+function EncounterSimulation(){
     return(
         <Container fluid className="min-vh-100 d-flex flex-column">
             <Row>
@@ -37,4 +37,4 @@ function EncounterSetup(){
     )
 }
 
-export default EncounterSetup;
+export default EncounterSimulation;

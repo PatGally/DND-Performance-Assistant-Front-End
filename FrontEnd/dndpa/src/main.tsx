@@ -6,7 +6,7 @@ import HomeSignedOut from "./pages/HomeSignedOut.tsx";
 import HomeDashboard from "./pages/logged-in/HomeDashboard.tsx";
 import NotFoundPage from "./pages/NotFoundPage.tsx";
 import Encounter from "./pages/logged-in/Encounter.tsx";
-import EncounterSetup from "./pages/logged-in/EncounterSetup.tsx";
+import EncounterSimulation from "./pages/logged-in/EncounterSimulation.tsx";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const router = createBrowserRouter(
@@ -14,7 +14,7 @@ const router = createBrowserRouter(
         {path: '/', element: <HomeSignedOut />, errorElement: <NotFoundPage />},
         {path: 'user-dashboard', element: <HomeDashboard />, errorElement: <NotFoundPage />},
         {path: 'encounter-simulation', element: <Encounter />, errorElement: <NotFoundPage/>},
-        {path: 'encounter-setup', element: <EncounterSetup />, errorElement: <NotFoundPage/>}
+        {path: 'encounter-setup', element: <EncounterSimulation />, errorElement: <NotFoundPage/>}
     ]
 );
 

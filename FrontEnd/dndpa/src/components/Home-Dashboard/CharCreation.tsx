@@ -10,6 +10,25 @@ import calcAttributes from "../../utils/calcAttributes.ts";
 import calcSpellSlots from "../../utils/calcSpellSlots.ts";
 import {fetchUUID} from "../../api/UUIDGet.ts"
 
+
+
+
+if (!window.crypto?.randomUUID) {
+    Object.defineProperty(window.crypto, "randomUUID", {
+        value: function () {
+            return ([1e7] as any + -1e3 + -4e3 + -8e3 + -1e11).replace(
+                /[018]/g,
+                (c: any) =>
+                    (
+                        Number(c) ^
+                        (window.crypto.getRandomValues(new Uint8Array(1))[0] &
+                            (15 >> (Number(c) / 4)))
+                    ).toString(16)
+            );
+        },
+    });
+}
+
 type FormFields = {
     name: string;
     characterClass: string;

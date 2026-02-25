@@ -20,7 +20,7 @@ const navBarSignedOut = () => {
 
     return (
         <CardNav
-            logo={logo}             // ✅ required
+            logo={logo}
             logoAlt="Company Logo"
             items={items}
             baseColor="#fff"
