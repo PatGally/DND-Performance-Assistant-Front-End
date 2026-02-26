@@ -83,3 +83,8 @@
 /*    outline: none !important;*/
 /*    box-shadow: none !important;*/
 /*}*/
+
+.icon-responsive {
+    width: clamp(18px, 2.5vw, 24px);
+    height: clamp(18px, 2.5vw, 24px);
+}

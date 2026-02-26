@@ -78,12 +78,14 @@ function HomeDashboard(){
         <Container fluid className="d-flex flex-column min-vh-100 p-0" >
             <Row>
                 <Col xs={1} sm={2} md={2} lg={2} xl={2} xxl={2}  className="bg-primary min-vh-100 d-flex flex-column" >
-                    <div className="text-center">DM-Assistant</div>
-                    <div className="p-3 text-center">
-                        <PersonCircle
-                        size={35}
-                        title="User"/>
-                    </div>
+                    <Row className="d-flex flex-column align-items-center align-items-md-start gap-2">
+                        <div className="text-center m-1">DND</div>
+                        <div className="text-center m-1">
+                            <PersonCircle
+                                title="User" className="icon-responsive text-dark"/>
+                        </div>
+                    </Row>
+
                     <Row>
                         <NavigationSignedIn setActivePage={setActivePage} />
                     </Row>
