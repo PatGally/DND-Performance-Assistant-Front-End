@@ -4,7 +4,6 @@ export type CharacterStats = {
     ac: string;
     hp: string;
     maxhp: string;
-    // cid: `${string}-${string}-${string}-${string}-${string}`;
     cid: string;
     position: number[];
     characterClass: string;
@@ -35,13 +34,6 @@ export type CharacterStats = {
 
 export type CharacterPayload = {
     stats: CharacterStats;
-    spells: any[];
-    weapons: {
-        name: string;
-        properties: {
-            damage: string;
-            damageType: string;
-            weaponStat: any;
-        };
-    }[];
+    spells: string[];
+    weapons: string[];
 };

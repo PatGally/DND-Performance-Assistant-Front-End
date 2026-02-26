@@ -11,8 +11,6 @@ import calcSpellSlots from "../../utils/calcSpellSlots.ts";
 import {fetchUUID} from "../../api/UUIDGet.ts"
 
 
-
-
 if (!window.crypto?.randomUUID) {
     Object.defineProperty(window.crypto, "randomUUID", {
         value: function () {
@@ -113,7 +111,7 @@ const CharCreation: React.FC = () => {
         try {
             loadingSetCid(true);
             characterId = await fetchUUID();
-            console.log("Charels test rn ->  ",characterId);
+            // console.log("Character ID ",characterId);
         } catch (err) {
             console.error("Failed to fetch CID", err);
             return;
@@ -121,38 +119,26 @@ const CharCreation: React.FC = () => {
             loadingSetCid(false);
         }
 
+
         const selectedWeapons = allWeapons
             .filter(w => data.weapons.includes(w.name))
             .flatMap(w => {
-                const statArray = w.properties.weaponStat;
                 const damageArray = Array.isArray(w.properties.damage)
                     ? w.properties.damage
                     : [w.properties.damage];
 
-                // Pick corresponding weaponStat for each damage option
-                const statOptions = Array.isArray(statArray)
-                    ? statArray
-                    : [statArray];
+                if (damageArray.length > 1) {
+                    return [
+                        `${w.name} ONEHAND`,
+                        `${w.name} TWOHAND`
+                    ];
+                }
 
-                // Make sure we have one stat per damage
-                return damageArray.map((damage, i) => ({
-                    name: w.name + (damageArray.length > 1 ? ` (${i + 1})` : ""), // optional suffix to differentiate
-                    properties: {
-                        damage,
-                        damageType: w.properties.damageType,
-                        weaponStat: statOptions[i] || statOptions[0],
-                    },
-                }));
+                return [w.name];
             });
 
-        const selectedSpells = spells.filter(spell =>
-            data.spells.includes(spell.spellname)
-        );
         const attributes = calcAttributes(data.level, data.characterClass);
         const spellSlots = calcSpellSlots(data.level, data.characterClass);
-        console.log("Even bigger test here ",spellSlots);
-
-
         const calculatedHP = calculateHP(data.level, data.characterClass, data.constitution);
 
 
@@ -196,14 +182,13 @@ const CharCreation: React.FC = () => {
                 },
             },
 
-            spells: selectedSpells,
+            spells: data.spells,
             weapons: selectedWeapons,
 
             ...attributes
         };
-
-        //add correct attribute depending on class - create your own file to
-        console.log(selectedWeapons);
+        // console.log("Selected Weapons - ", selectedWeapons);
+        // console.log("Selected Spells - ", ...selectedSpells);
         // console.log("Character Payload:", payload);
         console.log(JSON.stringify(payload, null, 2));
 

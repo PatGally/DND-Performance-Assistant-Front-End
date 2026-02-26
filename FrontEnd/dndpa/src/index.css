@@ -52,31 +52,30 @@
 /*  }*/
 /*}*/
 
-:root {
-    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-    line-height: 1.5;
-    font-weight: 400;
+/*:root {*/
+/*    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;*/
+/*    line-height: 1.5;*/
+/*    font-weight: 400;*/
 
-    /* This forces the background and text color globally */
-    color: #f8f9fa;
-    background-color: #212529; /* Standard Bootstrap Dark Grey */
+/*    !* This forces the background and text color globally *!*/
+/*    color: #f8f9fa;*/
+/*    background-color: #212529; !* Standard Bootstrap Dark Grey *!*/
 
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
+/*    font-synthesis: none;*/
+/*    text-rendering: optimizeLegibility;*/
+/*    -webkit-font-smoothing: antialiased;*/
+/*    -moz-osx-font-smoothing: grayscale;*/
+/*}*/
 
 /* Add this to ensure the background fills the whole browser window */
 /* index.css */
-html, body {
-    background-color: #212529 !important; /* This fills the 'rubber-band' area */
-    margin: 0;
-    padding: 0;
-    min-height: 100vh;
-    /* Optional: prevents the 'bounce' effect entirely if you hate it */
-    /*overscroll-behavior: none;*/
-}
+/*html, body {*/
+/*    background-color: #212529 !important; !* This fills the 'rubber-band' area *!*/
+/*    margin: 0;*/
+/*    padding: 0;*/
+/*    min-height: 100vh;*/
+/*    */
+/*}*/
 
 /*.btn:focus,*/
 /*.btn:active,*/
