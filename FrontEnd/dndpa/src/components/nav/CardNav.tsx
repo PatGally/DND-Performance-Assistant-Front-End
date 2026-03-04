@@ -46,6 +46,9 @@ const CardNav: React.FC<CardNavProps> = ({
     const cardsRef = useRef<HTMLDivElement[]>([]);
     const tlRef = useRef<gsap.core.Timeline | null>(null);
 
+    const [signInPopUp, setSignInPopUp] = useState(false);
+    const [logInPopUp, setLogInPopUp] = useState(false);
+
     const calculateHeight = () => {
         const navEl = navRef.current;
         if (!navEl) return 260;
@@ -138,6 +141,8 @@ const CardNav: React.FC<CardNavProps> = ({
         return () => window.removeEventListener('resize', handleResize);
     }, [isExpanded]);
 
+
+
     const toggleMenu = () => {
         const tl = tlRef.current;
         if (!tl) return;
@@ -175,14 +180,26 @@ const CardNav: React.FC<CardNavProps> = ({
                     <div className="logo-container">
                         <img src={logo} alt={logoAlt} className="logo" />
                     </div>
-
+                    <span className="hamburger-text">
+                        <button
+                            type="button"
+                            className="card-nav-cta-button m-1"
+                            onClick={() => setSignInPopUp(true)}
+                            style={{ backgroundColor: buttonBgColor, color: buttonTextColor }}
+                        >
+                        SIGN IN
+                    </button>
                     <button
                         type="button"
-                        className="card-nav-cta-button"
+                        className="card-nav-cta-button m-1"
                         style={{ backgroundColor: buttonBgColor, color: buttonTextColor }}
                     >
-                        Get Started
+                        LOG IN
                     </button>
+
+                    </span>
+
+
                 </div>
 
                 <div className="card-nav-content" aria-hidden={!isExpanded}>
