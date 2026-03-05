@@ -16,22 +16,26 @@ function HomeDashboard() {
     return (
         <Container fluid className="p-0" style={{ height: '100vh', overflow: 'hidden' }}>
 
-
+            {/* ── Row 1: Top Navbar ── */}
             <Row
-                className="bg-primary d-flex justify-content-between align-items-center px-3"
+                className="bg-dark text-white px-3"
                 style={{ position: 'sticky', top: 0, zIndex: 1 }}
             >
-                <h1 className="m-1">DASHBOARD</h1>
-                <PersonCircle title="User" className="icon-responsive text-dark m-2 text-end" />
+
+                <Col>
+                    <h3>dndpa</h3>
+                    <PersonCircle title="User" className="icon-responsive m-2 text-end" />
+                </Col>
+
             </Row>
 
+            {/* ── Row 2: Sidebar + Content ── */}
+            <Row className="g-0" style={{ height: 'calc(100vh - 56px)', overflow: 'hidden' }}>
 
-            <Row className="g-0" style={{ height: 'calc(100vh - 56px)', overflow: 'hidden' }}
-            >
-
+                {/* ── Col 1: Sidebar ── */}
                 <Col
                     xs={1} sm={2} md={2} lg={2} xl={2} xxl={2}
-                    className="bg-primary d-flex flex-column"
+                    className="bg-dark d-flex flex-column"
                     style={{ height: '100%', overflowY: 'auto' }}
                 >
                     <Row>
@@ -43,9 +47,27 @@ function HomeDashboard() {
                 <Col
                     xs={11} sm={10} md={10} lg={10} xl={10} xxl={10}
                     className="d-flex flex-column"
-                    style={{ height: '100%', overflowY: 'auto' }}
+                    style={{ height: '100%', overflowY: 'auto', position: 'relative' }}
                 >
-                    <Row className="flex-grow-1 p-3">
+                    {/* ── Rounded inner corner ── */}
+                    <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '20px',
+                        height: '20px',
+                        backgroundColor: 'var(--bs-dark)',
+                        zIndex: 0,
+                    }}>
+                        <div style={{
+                            width: '100%',
+                            height: '100%',
+                            backgroundColor: 'white',
+                            borderTopLeftRadius: '12px',
+                        }} />
+                    </div>
+
+                    <Row className="flex-grow-1 p-3 mx-0" style={{ zIndex: 1, position: 'relative' }}>
                         {activePage === 'SAVED_ENCOUNTERS' && <EncounterView />}
                         {activePage === 'CREATE_ENCOUNTER' && <CreateEncounter />}
                         {activePage === 'LOAD_CHARACTERS' && <LoadCharacter />}

@@ -5,7 +5,7 @@ export type CharacterStats = {
     hp: string;
     maxhp: string;
     cid: string;
-    position: number[];
+    position: any[];
     characterClass: string;
     conImmunities: any[];
     activeStatusEffects: any[];

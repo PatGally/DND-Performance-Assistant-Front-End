@@ -12,7 +12,7 @@ import {fetchUUID} from "../../api/UUIDGet.ts"
 import { uuidPolyfill } from '../../api/uuidPolyfill.ts';
 import Container from "react-bootstrap/Container";
 
-
+// Todo payload - Position must
 //Creating Pollyfill for browsers that don't support window.crypto.randomUUID
 uuidPolyfill();
 
@@ -139,7 +139,7 @@ const CharCreation: React.FC = () => {
                 hp: calculatedHP.toString(),
                 maxhp: calculatedHP.toString(),
                 cid: characterId,
-                position: [0, 0],
+                position: [[0, 0]],
 
                 characterClass: data.characterClass.toLowerCase(),
                 conImmunities: [],
