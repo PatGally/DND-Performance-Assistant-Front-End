@@ -1,6 +1,8 @@
 import {ArrowRight, ArrowRightShort} from "react-bootstrap-icons";
 import {Button, Form, Row, Col, Container} from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 import logo from '../components/nav/logo.png'
+import { signup } from "../api/SignUpPost.ts";
 
 import {Link} from "react-router-dom";
 import { useForm, type SubmitHandler } from "react-hook-form";
@@ -35,6 +37,7 @@ type FormFields = z.infer<typeof schema>;
 
 
 const SignUpPage: React.FC = () => {
+    const navigate = useNavigate();
     const {
         register,
         handleSubmit,
@@ -48,26 +51,28 @@ const SignUpPage: React.FC = () => {
         mode: "onChange",
     });
 
-
     const onSubmit: SubmitHandler<FormFields> = async (userData) => {
         if (!userData.email || !userData.password || !userData.username) {
             return;
         }
+        const payload = {
+            username: userData.username,
+            password: userData.password,
+            email: userData.email
+        }
         try {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await signup(payload);
             console.log(userData);
+            reset();
+            navigate("/user-dashboard")
         } catch (error) {
             setError("root", {
                 message: "This email is already taken",
             });
         }
 
-        const payload = {
-            username: userData.username,
-            password: userData.password,
-            email: userData.email
-        }
-        reset();
+        // we should navigate to a loading screen that takes 4 loading seconds - with progress circle
+        // which after 4 seconds we use the same navigate trip
         console.log(payload);
     }
 
@@ -155,7 +160,6 @@ const SignUpPage: React.FC = () => {
                                     {!isSubmitting && <ArrowRightShort  />}
                                 </Button>
                             </Form>
-
                         </Row>
                     </Col>
                 </Row>

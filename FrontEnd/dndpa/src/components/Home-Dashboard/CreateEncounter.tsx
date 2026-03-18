@@ -1,30 +1,102 @@
 import EncounterCreationNav from "../../pages/logged-in/EncounterCreationNav";
 import type { ActivePanel } from "../../pages/logged-in/EncounterCreationNav";
+
 import Container from "react-bootstrap/Container";
-import { useState } from "react";
-import type { ReactElement } from "react";
+import {useEffect, useState} from "react";
+import SetEncounterName from "./SetEncounterName.tsx";
+import AddCharacters from "./AddCharacters.tsx";
+import AddMonsters from "./AddMonsters.tsx";
+import AddMapLink from "./AddMapLink.tsx";
+import AddGridSize from "./AddGridSize.tsx";
 
-// For UI purposes and fill the name selection area
-// we can allow user to write notes for their encounter with a 50 character limit and optional
-// also the created date is shown in that page
+import {getMonsters, type Monster} from "../../api/MonstersGet.ts";
+import {type Character, getCharacters} from "../../api/CharactersGet.ts";
 
-const panels: Record<ActivePanel, ReactElement> = {
-    SET_ENCOUNTERNAME: <div>Name Section</div>,
-    ADD_CHARACTERS:    <div>Add Characters</div>,
-    ADD_MONSTERS:      <div>Add Monsters</div>,
-    ADD_MAPLINK:       <div>Map Link</div>,
-    ADD_GRIDSIZE:      <div>Grid Size</div>,
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+
+
+
+export interface EncounterFormData {
+    name: string;
+    characters: Character[];
+    monsters: Monster[];
+    maplink: string;
+    gridSize: { rows: number; cols: number };
+}
+
+const defaultFormData: EncounterFormData = {
+    name: "",
+    characters: [],
+    monsters: [],
+    maplink: "",
+    gridSize: { rows: 0, cols: 0 },
 };
 
 function CreateEncounter() {
-    const [activePanel, setActivePanel] = useState<ActivePanel>('SET_ENCOUNTERNAME');
+    const [activePanel, setActivePanel] = useState<ActivePanel>("SET_ENCOUNTERNAME");
+    const [formData, setFormData] = useState<EncounterFormData>(defaultFormData);
+    const [monsters, setMonsters] = useState<Monster[]>([]);
+    const [characters, setCharacters] = useState<Character[]>([]);
 
-    return (
-        <Container>
-            <EncounterCreationNav activePanel={activePanel} setActivePanel={setActivePanel} />
-            {panels[activePanel]}
+    useEffect(() => {
+        const fetchMonsters = async () => {
+            const data = await getMonsters();
+            setMonsters(data);
+        };
+        fetchMonsters();
+    }, []);
+
+    useEffect(() => {
+        const fetchCharacters = async () => {
+            const data = await getCharacters();
+            setCharacters(data);
+        };
+        fetchCharacters();
+    }, []);
+
+    const updateFormData = (updates: Partial<EncounterFormData>) => {
+        setFormData((prev) => ({ ...prev, ...updates }));
+    };
+
+    const renderPanel = () => {
+        switch (activePanel) {
+            case "SET_ENCOUNTERNAME":
+                return <SetEncounterName formData={formData} updateFormData={updateFormData} />;
+            case "ADD_CHARACTERS":
+                return <AddCharacters formData={formData} characters={characters} updateFormData={updateFormData} />;
+            case "ADD_MONSTERS":
+                return <AddMonsters formData={formData} monsters={monsters} updateFormData={updateFormData} />;
+            case "ADD_MAPLINK":
+                return <AddMapLink formData={formData} updateFormData={updateFormData} />;
+            case "ADD_GRIDSIZE":
+                return <AddGridSize formData={formData} updateFormData={updateFormData} />;
+        }
+    };
+
+    return ( //im pretty here is the area in where we need to stop page bounce up when we scroll up hard
+        <Container fluid className="px-0"> {/* Fix the scroll to not allow scrolling from left to right */}
+            <Row>
+                {/*<Col >*/}
+                {/*    <Row> Hello </Row>*/}
+                {/*</Col>*/}
+                <Col>
+                    <EncounterCreationNav
+                        activePanel={activePanel}
+                        setActivePanel={setActivePanel}
+                        formData={formData}
+                        // monsters={monsters}
+                        // characters={characters}  //change this to players ????
+                    />
+                    {renderPanel()}
+                </Col>
+
+            </Row>
+
+
         </Container>
     );
 }
+
 
 export default CreateEncounter;

@@ -192,7 +192,7 @@ const CharCreation: React.FC = () => {
     };
 
     return (
-        <Container className="rounded-4 bg-light m-2 shadow bg-dark-subtle">
+        <Container className="rounded-2 bg-light shadow bg-dark-subtle">
             <Form onSubmit={handleSubmit(onSubmit)} className="p-4">
 
                 <Form.Group className="mb-3">

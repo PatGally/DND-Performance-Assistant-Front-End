@@ -1,13 +1,15 @@
 import {Button, Form, Col, Container} from "react-bootstrap";
 import React from "react";
 import logo from '../components/nav/logo.png'
+import { login } from "../api/Login.ts"
+import {googleLogin} from '../api/GoogleLogin.ts'
 
 import {z} from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { uuidPolyfill } from '../api/uuidPolyfill.ts';
 import {type SubmitHandler, useForm} from "react-hook-form";
 import {GoogleLogin} from "@react-oauth/google";
-import {Link} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 
 // Todo add error box to inform user about incorrect credentials
 // todo Add use state to render error if data is not valid
@@ -21,9 +23,10 @@ import {Link} from "react-router-dom";
 uuidPolyfill();
 
 const schema= z.object({
-    email: z.string()
-        .email()
-        .min(1, "Email is required"),
+    // Email is not required for now
+    // email: z.string()
+    //     .email()
+    //     .min(1, "Email is required"),
     password: z.string(),
     username: z.string()
 })
@@ -32,6 +35,7 @@ type FormFields = z.infer<typeof schema>;
 
 
 const LogInPage: React.FC = () =>{
+    const navigate = useNavigate();
     const {
         register,
         handleSubmit,
@@ -39,32 +43,30 @@ const LogInPage: React.FC = () =>{
         reset,
         formState: { errors, isSubmitting },
     } = useForm<FormFields>({
-        defaultValues: { email: ""},
 
         resolver: zodResolver(schema),
         mode: "onChange",
     });
 
     const onSubmit: SubmitHandler<FormFields> = async (userData) => {
-        if (!userData.email || !userData.password || !userData.username) {
+        // Email is removed for now
+        if (!userData.password || !userData.username) {
             return;
         }
         try {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await login(userData);
+            reset();
             console.log(userData);
+            navigate("/user-dashboard");
         } catch (error) {
-            setError("root", {
-                message: "This email is already taken",
-            });
+            // setError("root", {message: "This email is already taken",});
+            setError("root", {message: "Incorrect username or password",});
         }
 
         const payload = {
             username: userData.username,
             password: userData.password,
-            email: userData.email
         }
-        reset(); //For
-
         console.log(payload);
     }
 
@@ -78,7 +80,7 @@ const LogInPage: React.FC = () =>{
                     <Form.Group className="mt-3 text-start">
                         <Form.Label>Username</Form.Label>
                         <Form.Control
-                            // isInvalid={!!errors.email}
+                            isInvalid={!!errors.username}
                             {...register("username")}
                             type="text"
                         />
@@ -90,22 +92,27 @@ const LogInPage: React.FC = () =>{
                     <Form.Group className="mt-3 text-start">
                         <Form.Label>Password</Form.Label>
                         <Form.Control
-                            // isInvalid={!!errors.password}
+                            isInvalid={!!errors.password}
                             {...register("password")}
-                            type="text"
+                            type="password"
                         />
                         <Form.Control.Feedback type="invalid">
                             {errors.password?.message}
                         </Form.Control.Feedback>
                     </Form.Group>
+                    <Button type="submit" className="w-100 mt-4" disabled={isSubmitting}
+                            style={{ backgroundColor: "#02590F", borderColor: "#02590F" }}>
+                        {isSubmitting ? "Signing in..." : "Sign in" }
+                    </Button>
                 </Form>
+
+                {errors.root && (
+                    <p className="text-danger mt-2">{errors.root.message}</p>
+                )}
 
                 {/*Give an id to this or class for this - not happy with bootstrap green color atm*/}
                 {/*to remove inline styles*/}
-                <Button type="submit" className="w-100 mt-4" disabled={isSubmitting}
-                        style={{ backgroundColor: "#02590F", borderColor: "#02590F" }}>
-                    {isSubmitting ? "Signing in..." : "Sign in" }
-                </Button>
+
 
                 <div className="d-flex align-items-center my-4">
                     <hr className="flex-grow-1" />
@@ -115,8 +122,16 @@ const LogInPage: React.FC = () =>{
 
                 <div className=" w-100 mt-3">
                     <GoogleLogin
-                        onSuccess={credentialResponse => console.log(credentialResponse)}
-                        onError={() => console.log('Login Failed')}
+                        onSuccess={async (credentialResponse) => {
+                            console.log("credential big poop:", credentialResponse.credential);
+                            try {
+                                await googleLogin(credentialResponse.credential!);
+                                navigate("/user-dashboard");
+                            } catch (error) {
+                                console.error("Google login failed:", error);
+                            }
+                        }}
+                        onError={() => console.error("Google Login Failed")}
                     />
                 </div>
                 <div className="mt-5">

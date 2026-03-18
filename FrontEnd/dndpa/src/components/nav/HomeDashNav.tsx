@@ -16,51 +16,50 @@ type NavigationSignedInProps = {
 function HomeDashNav({ setActivePage }: NavigationSignedInProps) {
     return(
         <Container fluid>
-            {/*<Row>Saved Encounters</Row>*/}
-            <Row className="d-flex flex-column align-items-center align-items-md-start gap-2">
+            <Row className="d-flex flex-column align-items-center gap-2 mt-3">
                 <button
                     type="button"
-                    className="btn text-light d-flex align-items-center justify-content-center justify-content-md-start w-100 border-0 m-1"
+                    className="btn text-light d-flex flex-column align-items-center justify-content-center border-0"
                     onClick={() => setActivePage('SAVED_ENCOUNTERS')}
                 >
-                    <Archive className="icon-responsive me-0 me-md-2 text-light" title="Saved Encounters Icon" />
-                    <span className="d-none d-md-inline fw-bold">Saved Encounters</span>
+                    <Archive size={22} className="text-light" title="Saved Encounters Icon" />
+                    <span className="fw-bold" style={{fontSize: ".7rem"}}>Archives</span>
                 </button>
 
                 <button
                     type="button"
-                    className="btn text-light d-flex align-items-center justify-content-center justify-content-md-start w-100 border-0 m-1"
+                    className="btn text-light d-flex flex-column align-items-center justify-content-center border-0 "
                     onClick={() => setActivePage('CREATE_ENCOUNTER')}
                 >
-                    <Journals className="icon-responsive me-0 me-md-2 text-light" title="Create Encounter Icon" />
-                    <span className="d-none d-md-inline fw-bold">Create Encounter</span>
+                    <Journals size={22} className="text-light" title="Create Encounter Icon" />
+                    <span className="fw-bold" style={{fontSize: ".7rem"}}>Create</span>
                 </button>
 
                 <button
                     type="button"
-                    className="btn text-light d-flex align-items-center justify-content-center justify-content-md-start w-100 border-0 m-1"
+                    className="btn text-light d-flex flex-column align-items-center justify-content-center border-0 "
                     onClick={() => setActivePage('LOAD_CHARACTERS')}
                 >
-                    <CloudArrowDown className="icon-responsive me-0 me-md-2 text-light" title="Load Characters Icon" />
-                    <span className="d-none d-md-inline fw-bold">Load Characters</span>
+                    <CloudArrowDown size={22} className="text-light" title="Load Characters Icon" />
+                    <span className="fw-bold" style={{fontSize: ".7rem"}}>Characters</span>
                 </button>
 
                 <button
                     type="button"
-                    className="btn text-light d-flex align-items-center justify-content-center justify-content-md-start w-100 border-0 m-1"
+                    className="btn text-light d-flex flex-column align-items-center justify-content-center border-0 "
                     onClick={() => setActivePage('CREATE_CHARACTER')}
                 >
-                    <PersonGear className="icon-responsive me-0 me-md-2 text-light" title="Create Character Icon" />
-                    <span className="d-none d-md-inline fw-bold">Create Character</span>
+                    <PersonGear size={22} className="text-light" title="Create Character Icon" />
+                    <span className="fw-bold" style={{fontSize: ".7rem"}}>Builder</span>
                 </button>
 
                 <button
                     type="button"
-                    className="btn text-light d-flex align-items-center justify-content-center justify-content-md-start w-100 border-0 m-1"
+                    className="btn text-light d-flex flex-column align-items-center justify-content-center border-0"
                     onClick={() => setActivePage('HOW_TO_USE')}
                 >
-                    <QuestionSquare className="icon-responsive me-0 me-md-2 text-light" title="How To Use Icon" />
-                    <span className="d-none d-md-inline fw-bold">How to Use</span>
+                    <QuestionSquare size={22} className="text-light" title="How To Use Icon" />
+                    <span className="fw-bold" style={{fontSize: ".7rem"}}>Guide</span>
                 </button>
             </Row>
         </Container>

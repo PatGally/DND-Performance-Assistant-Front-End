@@ -4,22 +4,33 @@ import BASE_URL from "./BASE_URL.ts";
 export interface CharacterStats {
     cid: string;
     name: string;
-    level: number;
+    level: string;
     characterClass: string;
-    hp: number;
-    maxHP: number;
-    ac: number;
+    hp: string;
+    maxhp: string;
+    ac: string;
+    position: number[];
+    statArray: Record<string, string>;
+    saveProfs: Record<string, string>;
+    spellSlots: string[][];
+    conImmunes: string[];
+    damImmunes: string[];
+    damResists: string[];
+    damVulns: string[];
+    activeStatusEffects: string[];
+    activeConditions: string[];
 }
 
 export interface Character {
     stats: CharacterStats;
-    weapons?: { name: string }[];
-    spells?: { spellname: string }[];
+    weapons?: string[];
+    spells?: string[];
 }
 
 export const getCharacters = async (): Promise<Character[]> => {
     try {
-        const response = await axios.get(`${BASE_URL}/dashboard/player`);
+        const response = await axios.get(`${BASE_URL}/dashboard/players`);
+        console.log(response.data);
 
         // Ensure the response is an array
         if (!Array.isArray(response.data)) {

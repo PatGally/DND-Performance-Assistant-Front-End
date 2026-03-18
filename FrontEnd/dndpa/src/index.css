@@ -96,3 +96,15 @@
     width: 100%;
     z-index: 1000;
 }
+
+html, body, #root {
+    overflow: hidden;
+    height: 100%;
+    overscroll-behavior: none;
+    position: fixed;
+    width: 100%;
+}
+
+/*#root {*/
+/*    font-family: Papyrus, fantasy;*/
+/*}*/

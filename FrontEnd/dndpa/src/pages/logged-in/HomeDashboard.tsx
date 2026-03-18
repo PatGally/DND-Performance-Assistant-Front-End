@@ -9,6 +9,7 @@ import CreateEncounter from "../../components/Home-Dashboard/CreateEncounter";
 import { useState } from 'react';
 import CharCreation from "../../components/Home-Dashboard/CharCreation.tsx";
 import { PersonCircle } from "react-bootstrap-icons";
+import {Button} from "react-bootstrap";
 
 function HomeDashboard() {
     const [activePage, setActivePage] = useState('SAVED_ENCOUNTERS');
@@ -17,57 +18,50 @@ function HomeDashboard() {
         <Container fluid className="p-0" style={{ height: '100vh', overflow: 'hidden' }}>
 
             {/* ── Row 1: Top Navbar ── */}
-            <Row
-                className="bg-dark text-white px-3"
-                style={{ position: 'sticky', top: 0, zIndex: 1 }}
-            >
-
+            <Row className="bg-dark text-white px-3 mx-0" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                 <Col>
                     <h3>dndpa</h3>
-                    <PersonCircle title="User" className="icon-responsive m-2 text-end" />
                 </Col>
+                <Col className="text-end">
+                    <Button className="btn-dark">
+                        <PersonCircle title="User" size={24} />
+                    </Button>
 
+                </Col>
             </Row>
 
             {/* ── Row 2: Sidebar + Content ── */}
-            <Row className="g-0" style={{ height: 'calc(100vh - 56px)', overflow: 'hidden' }}>
+            <Row className="g-0 mx-0" style={{ height: 'calc(100vh - 56px)', overflow: 'hidden' }}>
 
                 {/* ── Col 1: Sidebar ── */}
                 <Col
-                    xs={1} sm={2} md={2} lg={2} xl={2} xxl={2}
-                    className="bg-dark d-flex flex-column"
-                    style={{ height: '100%', overflowY: 'auto' }}
+                    className="bg-dark " //d-flex flex-column
+                    style={{ width: '70px', flex: '0 0 70px', height: '100%', overflowY: 'auto' }}
                 >
-                    <Row>
+                    <Row className="flex-grow-1 mx-0">
                         <HomeDashNav setActivePage={setActivePage} />
                     </Row>
                 </Col>
 
-                {/* ── Col 2: Scrollable Main Content ── */}
                 <Col
-                    xs={11} sm={10} md={10} lg={10} xl={10} xxl={10}
                     className="d-flex flex-column"
                     style={{ height: '100%', overflowY: 'auto', position: 'relative' }}
                 >
-                    {/* ── Rounded inner corner ── */}
-                    <div style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '20px',
-                        height: '20px',
-                        backgroundColor: 'var(--bs-dark)',
-                        zIndex: 0,
-                    }}>
-                        <div style={{
-                            width: '100%',
-                            height: '100%',
-                            backgroundColor: 'white',
-                            borderTopLeftRadius: '12px',
-                        }} />
-                    </div>
+                    {/* Corners are weird for no so i took them out completly*/}
 
-                    <Row className="flex-grow-1 p-3 mx-0" style={{ zIndex: 1, position: 'relative' }}>
+                    {/*<div style={{ position: 'sticky', top: 0, zIndex: 2, display: 'flex', justifyContent: 'space-between', pointerEvents: 'none' }}>*/}
+                    {/*    /!* Left corner *!/*/}
+                    {/*    <div style={{ width: '20px', height: '20px', backgroundColor: 'var(--bs-dark)' }}>*/}
+                    {/*        <div style={{ width: '100%', height: '100%', backgroundColor: 'white', borderTopLeftRadius: '12px' }} />*/}
+                    {/*    </div>*/}
+                    {/*    /!* Right corner *!/*/}
+                    {/*    <div style={{ width: '20px', height: '20px', backgroundColor: 'var(--bs-dark)' }}>*/}
+                    {/*        <div style={{ width: '100%', height: '100%', backgroundColor: 'white', borderTopRightRadius: '12px' }} />*/}
+                    {/*    </div>*/}
+                    {/*</div>*/}
+
+
+                    <Row className="flex-grow-1 mx-0" style={{ zIndex: 1, position: 'relative' }}>
                         {activePage === 'SAVED_ENCOUNTERS' && <EncounterView />}
                         {activePage === 'CREATE_ENCOUNTER' && <CreateEncounter />}
                         {activePage === 'LOAD_CHARACTERS' && <LoadCharacter />}
@@ -75,7 +69,6 @@ function HomeDashboard() {
                         {activePage === 'HOW_TO_USE' && <div>How To Use</div>}
                     </Row>
                 </Col>
-
             </Row>
 
         </Container>
