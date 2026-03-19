@@ -1,5 +1,3 @@
-
-
 function calcAttributes(level: number, characterClass: string) {
     const CharAttributeList: Record<string, Record<string, any>> = {
         Barbarian: { rageCharges: 0, isRaging: false },

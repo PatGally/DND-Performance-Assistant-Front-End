@@ -41,7 +41,7 @@ function HomeDashNav({ setActivePage }: NavigationSignedInProps) {
                     onClick={() => setActivePage('LOAD_CHARACTERS')}
                 >
                     <CloudArrowDown size={22} className="text-light" title="Load Characters Icon" />
-                    <span className="fw-bold" style={{fontSize: ".7rem"}}>Characters</span>
+                    <span className="fw-bold" style={{fontSize: ".7rem"}}>Players</span>
                 </button>
 
                 <button

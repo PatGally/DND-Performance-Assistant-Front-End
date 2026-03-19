@@ -12,22 +12,20 @@ function SetEncounterName({ formData, updateFormData }: Props) {
 
     return (
         <div className="p-3">
-            <Form>
-                <Form.Group>
-                    <Form.Label className="text-white">Encounter Name</Form.Label>
-                    <Form.Control
-                        type="text"
-                        placeholder="Encounter Name..."
-                        value={formData.name}
-                        isInvalid={isInvalid}
-                        isValid={isTouched && !isInvalid}
-                        onChange={(e) => updateFormData({ name: e.target.value })}
-                    />
-                    <Form.Control.Feedback type="invalid">
-                        Encounter name must be at least 3 characters.
-                    </Form.Control.Feedback>
-                </Form.Group>
-            </Form>
+            <Form.Group>
+                <Form.Label className="text-white">Encounter Name</Form.Label>
+                <Form.Control
+                    type="text"
+                    placeholder="Encounter Name..."
+                    value={formData.name}
+                    isInvalid={isInvalid}
+                    isValid={isTouched && !isInvalid}
+                    onChange={(e) => updateFormData({ name: e.target.value })}
+                />
+                <Form.Control.Feedback type="invalid">
+                    Encounter name must be at least 3 characters.
+                </Form.Control.Feedback>
+            </Form.Group>
         </div>
     );
 }

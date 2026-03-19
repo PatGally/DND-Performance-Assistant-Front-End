@@ -1,5 +1,5 @@
-import EncounterCreationNav from "../../pages/logged-in/EncounterCreationNav";
-import type { ActivePanel } from "../../pages/logged-in/EncounterCreationNav";
+import EncounterCreationNavAndSubmit from "../../pages/logged-in/EncounterCreationNavAndSubmit.tsx";
+import type { ActivePanel } from "../../pages/logged-in/EncounterCreationNavAndSubmit.tsx";
 
 import Container from "react-bootstrap/Container";
 import {useEffect, useState} from "react";
@@ -8,6 +8,7 @@ import AddCharacters from "./AddCharacters.tsx";
 import AddMonsters from "./AddMonsters.tsx";
 import AddMapLink from "./AddMapLink.tsx";
 import AddGridSize from "./AddGridSize.tsx";
+import AddInitiative, {type InitiativeEntry} from "./AddInitiative.tsx";
 
 import {getMonsters, type Monster} from "../../api/MonstersGet.ts";
 import {type Character, getCharacters} from "../../api/CharactersGet.ts";
@@ -21,6 +22,7 @@ export interface EncounterFormData {
     name: string;
     characters: Character[];
     monsters: Monster[];
+    initiative: InitiativeEntry[];
     maplink: string;
     gridSize: { rows: number; cols: number };
 }
@@ -29,6 +31,7 @@ const defaultFormData: EncounterFormData = {
     name: "",
     characters: [],
     monsters: [],
+    initiative: [],
     maplink: "",
     gridSize: { rows: 0, cols: 0 },
 };
@@ -67,6 +70,8 @@ function CreateEncounter() {
                 return <AddCharacters formData={formData} characters={characters} updateFormData={updateFormData} />;
             case "ADD_MONSTERS":
                 return <AddMonsters formData={formData} monsters={monsters} updateFormData={updateFormData} />;
+            case "ADD_INITIATIVE":
+                return <AddInitiative formData={formData} updateFormData={updateFormData} />;
             case "ADD_MAPLINK":
                 return <AddMapLink formData={formData} updateFormData={updateFormData} />;
             case "ADD_GRIDSIZE":
@@ -81,7 +86,7 @@ function CreateEncounter() {
                 {/*    <Row> Hello </Row>*/}
                 {/*</Col>*/}
                 <Col>
-                    <EncounterCreationNav
+                    <EncounterCreationNavAndSubmit
                         activePanel={activePanel}
                         setActivePanel={setActivePanel}
                         formData={formData}
