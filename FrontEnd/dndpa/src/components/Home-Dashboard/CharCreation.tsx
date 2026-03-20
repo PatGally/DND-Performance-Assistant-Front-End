@@ -125,6 +125,8 @@ const CharCreation: React.FC = () => {
 
                 return [w.name];
             });
+        console.log("Checking weapons", selectedWeapons);
+        console.log("Checking ALL weapons", allWeapons);
 
         const attributes = calcAttributes(data.level, data.characterClass);
         const spellSlots = calcSpellSlots(data.level, data.characterClass);
