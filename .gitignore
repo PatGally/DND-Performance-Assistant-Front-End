@@ -26,6 +26,8 @@ __pycache__/
 # Project-specific folders
 shelf/
 .env
+.env.development
+.env.production
 
 # Node / JavaScript / Logs
 logs
@@ -40,3 +42,5 @@ node_modules/
 dist/
 dist-ssr/
 *.local
+
+unusedCode.txt

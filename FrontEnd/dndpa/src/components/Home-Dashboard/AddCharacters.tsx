@@ -1,0 +1,117 @@
+import { useState, useEffect } from "react";
+import type { EncounterFormData } from "./CreateEncounter";
+import AnimatedList from "../../css/AnimatedList.tsx";
+import { Form, Row, Col } from "react-bootstrap";
+import type {Character} from "../../api/CharactersGet.ts";
+
+
+type Props = {
+    formData: EncounterFormData;
+    updateFormData: (updates: Partial<EncounterFormData>) => void;
+    characters: Character[];
+};
+
+function AddCharacters({ formData, updateFormData, characters }: Props) {
+    const [search, setSearch] = useState("");
+    const [filterClass, setFilterClass] = useState("");
+    const [filterLevel, setFilterLevel] = useState("");
+
+
+
+    useEffect(() => {
+        console.log("characters updated:", formData.characters);
+    }, [formData.characters]);
+
+    const filteredCharacters = characters.filter((c) => {
+        const matchesName = c.stats.name.toLowerCase().includes(search.toLowerCase());
+        const matchesClass = filterClass === "" || c.stats.characterClass === filterClass;
+        const matchesLevel = filterLevel === "" || String(c.stats.level) === filterLevel;
+        return matchesName && matchesClass && matchesLevel;
+    });
+
+    const characterLabels = filteredCharacters.map((c) => (
+        <div className="d-flex">
+            <span style={{ flex: 3 }}>{c.stats.name}</span>
+            <span style={{ flex: 3 }}>{c.stats.characterClass}</span>
+            <span style={{ flex: 1 }}>{c.stats.level}</span>
+            <span style={{ flex: 1 }}>{c.stats.maxhp}</span>
+        </div>
+    ));
+
+    const selectedIndices = filteredCharacters
+        .map((c, i) => formData.characters.some((fc) => fc.stats.cid === c.stats.cid) ? i : -1)
+        .filter((i) => i !== -1);
+
+    const handleSelect = (index: number) => {
+        const selected = filteredCharacters[index];
+        const already = formData.characters.some((c) => c.stats.cid === selected.stats.cid);
+        updateFormData({
+            characters: already
+                ? formData.characters.filter((c) => c.stats.cid !== selected.stats.cid)
+                : [...formData.characters, selected],
+        });
+    };
+
+    const uniqueClasses = [...new Set(characters.map((c) => c.stats.characterClass))].sort();
+    const uniqueLevel = [...new Set(characters.map((c) => String(c.stats.level)))].sort((a, b) => Number(a) - Number(b));
+
+    return (
+        <div className="p-3">
+            <Form>
+                <Row className="mb-3">
+                    <Col>
+                        <Form.Label >Search</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Search by name..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </Col>
+                    <Col>
+                        <Form.Label >Class</Form.Label>
+                        <Form.Select
+                            value={filterClass}
+                            onChange={(e) => setFilterClass(e.target.value)}
+                        >
+                            <option value="">All Classes</option>
+                            {uniqueClasses.map((c) => (
+                                <option key={c} value={c}>{c}</option>
+                            ))}
+                        </Form.Select>
+                    </Col>
+                    <Col>
+                        <Form.Label >Level</Form.Label>
+                        <Form.Select
+                            value={filterLevel}
+                            onChange={(e) => setFilterLevel(e.target.value)}
+                        >
+                            <option value="">All</option>
+                            {uniqueLevel.map((level) => (
+                                <option key={level} value={level}>{level}</option>
+                            ))}
+                        </Form.Select>
+                    </Col>
+                </Row>
+            </Form>
+
+            <div className="d-flex px-4 text-dark mb-1">
+                <span style={{ flex: 3 }}>Name</span>
+                <span style={{ flex: 2.9 }}>Class</span>
+                <span style={{ flex: 1.1 }}>Level</span>
+                <span style={{ flex: 1 }}>HP</span>
+            </div>
+
+            <AnimatedList
+                items={characterLabels}
+                onItemSelect={handleSelect}
+                selectedIndices={selectedIndices}
+                showGradients
+                enableArrowNavigation
+                displayScrollbar
+            />
+        </div>
+    );
+}
+
+export default AddCharacters;

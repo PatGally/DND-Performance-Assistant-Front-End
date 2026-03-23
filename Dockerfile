@@ -2,10 +2,10 @@ FROM node:20-alpine as build
 
 WORKDIR /app
 
-COPY FrontEnd/my-react-app/package*.json ./
+COPY FrontEnd/dndpa/package*.json ./
 RUN npm install
 
-COPY FrontEnd/my-react-app ./
+COPY FrontEnd/dndpa ./
 RUN npm run build
 
 FROM nginx:alpine
