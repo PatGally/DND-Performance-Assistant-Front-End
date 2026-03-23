@@ -1,5 +1,4 @@
-import axios from "axios";
-import BASE_URL from "./BASE_URL.ts";
+import axiosTokenInstance from "./AxiosTokenInstance.ts";
 
 interface Player {
     name: string;
@@ -20,14 +19,9 @@ interface EncounterPacket {
     monsters: Monster[];
 }
 
-/**
- * Fetches the encounter packet for a given encounter ID (eid)
- * @param eid Encounter ID
- * @returns {Promise<EncounterPacket>}
- */
 async function creaturePacketGet(eid: string): Promise<EncounterPacket> {
     try {
-        const response = await axios.get<EncounterPacket>(`${BASE_URL}/dashboard/${eid}/packet`);
+        const response = await axiosTokenInstance.get<EncounterPacket>(`/dashboard/${eid}/packet`);
         return response.data;
     } catch (error) {
         console.error("Error fetching encounter packet:", error);

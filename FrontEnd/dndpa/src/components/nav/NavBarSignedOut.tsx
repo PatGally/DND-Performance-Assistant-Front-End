@@ -1,5 +1,5 @@
 import CardNav from './CardNav';
-import logo from './logo.png'; // make sure this path is correct
+import logo from './logo1.png'; // make sure this path is correct
 // import { Link } from "react-router-dom";
 // import { NavLink, Link } from "react-router-dom";
 

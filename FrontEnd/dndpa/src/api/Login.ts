@@ -14,6 +14,7 @@ export const login = async (credentials: LoginPayload) => {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: formData.toString(),
+        credentials: "include",
     });
 
     console.log("Status  ", res.status);
@@ -23,5 +24,7 @@ export const login = async (credentials: LoginPayload) => {
         throw new Error("Login failed");
     }
 
-    return res.json();
+    const data = await res.json();
+    localStorage.setItem("token", data.access_token);
+    return data;
 };

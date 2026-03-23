@@ -13,18 +13,11 @@ type Props = {
 };
 
 function AddCharacters({ formData, updateFormData, characters }: Props) {
-    // const [characters, setCharacters] = useState<Character[]>([]);
     const [search, setSearch] = useState("");
     const [filterClass, setFilterClass] = useState("");
     const [filterLevel, setFilterLevel] = useState("");
 
-    // useEffect(() => {
-    //     const fetchCharacters = async () => {
-    //         const data = await getCharacters();
-    //         setCharacters(data);
-    //     };
-    //     fetchCharacters();
-    // }, []);
+
 
     useEffect(() => {
         console.log("characters updated:", formData.characters);
@@ -46,23 +39,13 @@ function AddCharacters({ formData, updateFormData, characters }: Props) {
         </div>
     ));
 
-    // const selectedIndices = filteredCharacters
-    //     .map((c, i) => formData.characters.includes(c.stats.cid) ? i : -1)
-    //     .filter((i) => i !== -1);
     const selectedIndices = filteredCharacters
         .map((c, i) => formData.characters.some((fc) => fc.stats.cid === c.stats.cid) ? i : -1)
         .filter((i) => i !== -1);
 
     const handleSelect = (index: number) => {
-        // const cid = filteredCharacters[index].stats.cid;
         const selected = filteredCharacters[index];
-        // const already = formData.characters.includes(cid);
         const already = formData.characters.some((c) => c.stats.cid === selected.stats.cid);
-        // updateFormData({
-        //     characters: already
-        //         ? formData.characters.filter((id) => id !== cid)
-        //         : [...formData.characters, cid],
-        // });
         updateFormData({
             characters: already
                 ? formData.characters.filter((c) => c.stats.cid !== selected.stats.cid)
@@ -78,7 +61,7 @@ function AddCharacters({ formData, updateFormData, characters }: Props) {
             <Form>
                 <Row className="mb-3">
                     <Col>
-                        <Form.Label className="text-white">Search</Form.Label>
+                        <Form.Label >Search</Form.Label>
                         <Form.Control
                             type="text"
                             placeholder="Search by name..."
@@ -87,7 +70,7 @@ function AddCharacters({ formData, updateFormData, characters }: Props) {
                         />
                     </Col>
                     <Col>
-                        <Form.Label className="text-white">Class</Form.Label>
+                        <Form.Label >Class</Form.Label>
                         <Form.Select
                             value={filterClass}
                             onChange={(e) => setFilterClass(e.target.value)}
@@ -99,7 +82,7 @@ function AddCharacters({ formData, updateFormData, characters }: Props) {
                         </Form.Select>
                     </Col>
                     <Col>
-                        <Form.Label className="text-white">Level</Form.Label>
+                        <Form.Label >Level</Form.Label>
                         <Form.Select
                             value={filterLevel}
                             onChange={(e) => setFilterLevel(e.target.value)}

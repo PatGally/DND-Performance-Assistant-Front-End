@@ -1,5 +1,4 @@
-import axios from "axios";
-import BASE_URL from "./BASE_URL.ts";
+import axiosTokenInstance from "./AxiosTokenInstance.ts";
 
 export interface CharacterStats {
     cid: string;
@@ -29,10 +28,9 @@ export interface Character {
 
 export const getCharacters = async (): Promise<Character[]> => {
     try {
-        const response = await axios.get(`${BASE_URL}/dashboard/players`);
+        const response = await axiosTokenInstance.get(`/dashboard/players`);
         console.log(response.data);
 
-        // Ensure the response is an array
         if (!Array.isArray(response.data)) {
             console.error("Unexpected response format:", response.data);
             return [];

@@ -1,17 +1,16 @@
-import BASE_URL from "./BASE_URL.ts";
+
+
+import axiosTokenInstance from "./AxiosTokenInstance.ts";
+import axios from "axios";
 
 export const EncounterPost = async (encounter: Object) => {
-    const res =  await fetch(`${BASE_URL}/encounter`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify( encounter ),
-    });
-    console.log("Status  ", res.status);
-    if (!res.ok){
-        const error = await res.json();
-        console.log("BACKEND ERROR:", error);
+    try {
+        const response = await axiosTokenInstance.post(`/encounter`, encounter);
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            console.error("BACKEND ERROR:", error.response?.data);
+        }
         throw new Error("Encounter creation failed");
     }
-
-    return res.json();
-}
+};

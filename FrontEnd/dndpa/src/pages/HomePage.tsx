@@ -2,7 +2,7 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import {Link, NavLink} from "react-router-dom";
-import logo from '../components/nav/logo.png'
+import logo from '../components/nav/logo1.png'
 
 
 function homePage(){

@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import {createBrowserRouter, RouterProvider} from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import ProtectedRoute from "./ProtectedRoute.tsx";
 import './index.css'
 
 import HomeDashboard from "./pages/logged-in/HomeDashboard.tsx";
@@ -14,11 +15,31 @@ import SignUp from "./pages/SignUp.tsx";
 import SignIn from "./pages/SignIn.tsx";
 
 const router = createBrowserRouter(
+    // [
+    //     {path: '/', element: <HomePage />, errorElement: <NotFoundPage />},
+    //     {path: 'user-dashboard', element: <HomeDashboard />, errorElement: <NotFoundPage />},
+    //     {path: 'encounter-simulation', element: <EncounterSimulation />, errorElement: <NotFoundPage/>},
+    //     {path: 'encounter-setup', element: <Encounter />, errorElement: <NotFoundPage/>},
+    //     {path: 'sign-in', element: <SignIn />, errorElement: <NotFoundPage/>},
+    //     {path: 'sign-up', element: <SignUp />, errorElement: <NotFoundPage/>}
+    // ]
     [
         {path: '/', element: <HomePage />, errorElement: <NotFoundPage />},
-        {path: 'user-dashboard', element: <HomeDashboard />, errorElement: <NotFoundPage />},
-        {path: 'encounter-simulation', element: <EncounterSimulation />, errorElement: <NotFoundPage/>},
-        {path: 'encounter-setup', element: <Encounter />, errorElement: <NotFoundPage/>},
+        {
+            path: 'user-dashboard',
+            element: <ProtectedRoute><HomeDashboard /></ProtectedRoute>,
+            errorElement: <NotFoundPage />
+        },
+        {
+            path: 'encounter-simulation',
+            element: <ProtectedRoute><EncounterSimulation /></ProtectedRoute>,
+            errorElement: <NotFoundPage/>
+        },
+        {
+            path: 'encounter-setup',
+            element: <ProtectedRoute><Encounter /></ProtectedRoute>,
+            errorElement: <NotFoundPage/>
+        },
         {path: 'sign-in', element: <SignIn />, errorElement: <NotFoundPage/>},
         {path: 'sign-up', element: <SignUp />, errorElement: <NotFoundPage/>}
     ]

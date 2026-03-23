@@ -1,5 +1,5 @@
-import axios from 'axios';
-import BASE_URL from "./BASE_URL.ts";
+import axiosTokenInstance from "./AxiosTokenInstance.ts";
+import axios from "axios";
 
 export interface Spell {
     spellname: string;
@@ -11,7 +11,7 @@ export interface Spell {
 
 export const SpellsGet = async (level: number, classid: string): Promise<Spell[]> => {
     try {
-        const response = await axios.get(`${BASE_URL}/dashboard/player/availablespells`, {
+        const response = await axiosTokenInstance.get(`/dashboard/player/availablespells`, {
             params: {
                 classid,
                 level

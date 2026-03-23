@@ -1,6 +1,6 @@
 import {Button, Form, Col, Container} from "react-bootstrap";
 import React from "react";
-import logo from '../components/nav/logo.png'
+import logo from '../components/nav/logo1.png'
 import { login } from "../api/Login.ts"
 import {googleLogin} from '../api/GoogleLogin.ts'
 
@@ -123,7 +123,7 @@ const LogInPage: React.FC = () =>{
                 <div className=" w-100 mt-3">
                     <GoogleLogin
                         onSuccess={async (credentialResponse) => {
-                            console.log("credential big poop:", credentialResponse.credential);
+                            console.log("credential:", credentialResponse.credential);
                             try {
                                 await googleLogin(credentialResponse.credential!);
                                 navigate("/user-dashboard");

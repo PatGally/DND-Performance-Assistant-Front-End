@@ -1,5 +1,4 @@
-import axios from "axios";
-import BASE_URL from "./BASE_URL.ts";
+import axiosTokenInstance from "./AxiosTokenInstance.ts";
 
 export interface Monster {
     stats: { name: string };
@@ -19,7 +18,7 @@ export interface Encounter {
 
 export const getEncounters = async (): Promise<Encounter[]> => {
     try {
-        const response = await axios.get(`${BASE_URL}/dashboard/encounters`);
+        const response = await axiosTokenInstance.get(`/dashboard/encounters`);
         // Ensure the backend returned an array
         if (!Array.isArray(response.data)) {
             console.error("Unexpected response format:", response.data);

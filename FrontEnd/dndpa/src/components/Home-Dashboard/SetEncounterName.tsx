@@ -13,7 +13,6 @@ function SetEncounterName({ formData, updateFormData }: Props) {
     return (
         <div className="p-3">
             <Form.Group>
-                <Form.Label className="text-white">Encounter Name</Form.Label>
                 <Form.Control
                     type="text"
                     placeholder="Encounter Name..."

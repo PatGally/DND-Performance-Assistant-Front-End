@@ -79,26 +79,20 @@ function CreateEncounter() {
         }
     };
 
-    return ( //im pretty here is the area in where we need to stop page bounce up when we scroll up hard
-        <Container fluid className="px-0"> {/* Fix the scroll to not allow scrolling from left to right */}
+    return (
+        <Container fluid className="px-0">
             <Row>
-                {/*<Col >*/}
-                {/*    <Row> Hello </Row>*/}
-                {/*</Col>*/}
                 <Col>
                     <EncounterCreationNavAndSubmit
                         activePanel={activePanel}
                         setActivePanel={setActivePanel}
                         formData={formData}
-                        // monsters={monsters}
-                        // characters={characters}  //change this to players ????
+
                     />
                     {renderPanel()}
                 </Col>
 
             </Row>
-
-
         </Container>
     );
 }

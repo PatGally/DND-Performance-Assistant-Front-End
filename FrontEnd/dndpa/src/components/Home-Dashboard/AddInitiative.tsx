@@ -4,11 +4,12 @@ import Badge from "react-bootstrap/Badge";
 import type { EncounterFormData } from "./CreateEncounter";
 
 export interface InitiativeEntry {
-    key: string;                    // frontend only — cid for characters, name for monsters
+    key: string;
     name: string;
-    iValue: number;                 // backend field name
-    turnType: "Player" | "Monster"; // backend field name
-    movementResource: number;       // required by backend, no default
+    iValue: number;
+    turnType: "Player" | "Monster";
+    movementResource: number;
+    dex: number;
 }
 
 type Participant = {
@@ -16,12 +17,64 @@ type Participant = {
     name: string;
     type: "character" | "monster";
     movement: number;
+    dex: number;
 };
 
 type Props = {
     formData: EncounterFormData;
     updateFormData: (updates: Partial<EncounterFormData>) => void;
 };
+
+type TiebreakReason = "roll" | "dex" | "random";
+
+interface SortedEntry extends InitiativeEntry {
+    tiebreakReason: TiebreakReason;
+}
+
+function getDex(statArray: Record<string, string | number>): number {
+    return parseInt(String(statArray?.DEX ?? 0), 10);
+}
+
+function sortInitiative(entries: InitiativeEntry[]): SortedEntry[] {
+    const groups: Record<number, InitiativeEntry[]> = {};
+    for (const e of entries) {
+        if (!groups[e.iValue]) groups[e.iValue] = [];
+        groups[e.iValue].push(e);
+    }
+
+    const result: SortedEntry[] = [];
+    const sortedRolls = Object.keys(groups).map(Number).sort((a, b) => b - a);
+
+    for (const roll of sortedRolls) {
+        const group = groups[roll];
+        if (group.length === 1) {
+            result.push({ ...group[0], tiebreakReason: "roll" });
+            continue;
+        }
+
+        const dexGroups: Record<number, InitiativeEntry[]> = {};
+        for (const e of group) {
+            if (!dexGroups[e.dex]) dexGroups[e.dex] = [];
+            dexGroups[e.dex].push(e);
+        }
+
+        const sortedDex = Object.keys(dexGroups).map(Number).sort((a, b) => b - a);
+
+        for (const dex of sortedDex) {
+            const dexGroup = dexGroups[dex];
+            if (dexGroup.length === 1) {
+                result.push({ ...dexGroup[0], tiebreakReason: "dex" });
+            } else {
+                const shuffled = [...dexGroup].sort(() => Math.random() - 0.5);
+                for (const e of shuffled) {
+                    result.push({ ...e, tiebreakReason: "random" });
+                }
+            }
+        }
+    }
+
+    return result;
+}
 
 function AddInitiative({ formData, updateFormData }: Props) {
     const [inputValues, setInputValues] = useState<Record<string, string>>({});
@@ -32,23 +85,20 @@ function AddInitiative({ formData, updateFormData }: Props) {
             name: c.stats.name,
             type: "character" as const,
             movement: 30,
+            dex: getDex(c.stats.statArray),
         })),
         ...formData.monsters.map((m) => ({
             key: m.name,
             name: m.name,
             type: "monster" as const,
             movement: m.movement,
+            dex: getDex(m.statArray),
         })),
     ];
 
-    const getEntry = (key: string): InitiativeEntry | undefined =>
-        formData.initiative.find((e) => e.key === key);
-
-    // When characters/monsters are removed, strip their initiative entries and input state
     useEffect(() => {
         const validKeys = new Set(allParticipants.map((p) => p.key));
         const hasStale = formData.initiative.some((e) => !validKeys.has(e.key));
-
         if (hasStale) {
             setInputValues((prev) => {
                 const cleaned: Record<string, string> = {};
@@ -62,6 +112,8 @@ function AddInitiative({ formData, updateFormData }: Props) {
             });
         }
     }, [allParticipants.length]);
+
+    const getEntry = (key: string) => formData.initiative.find((e) => e.key === key);
 
     const handleChange = (key: string, raw: string) => {
         setInputValues((prev) => ({ ...prev, [key]: raw }));
@@ -84,6 +136,7 @@ function AddInitiative({ formData, updateFormData }: Props) {
                     iValue: parsed,
                     turnType: p.type === "character" ? "Player" : "Monster",
                     movementResource: p.movement,
+                    dex: p.dex,
                 },
             ];
 
@@ -97,15 +150,18 @@ function AddInitiative({ formData, updateFormData }: Props) {
         });
     };
 
-    const sortedInitiative = [...formData.initiative].sort(
-        (a, b) => b.iValue - a.iValue
-    );
+    const sortedInitiative = sortInitiative(formData.initiative);
+
+    // const tiebreakLabel = (reason: TiebreakReason) => {
+    //     if (reason === "dex") return <Badge bg="warning" className="ms-2">DEX</Badge>;
+    //     if (reason === "random") return <Badge bg="secondary" className="ms-2">LUCK</Badge>;
+    //     return null;
+    // };
 
     return (
         <Container fluid className="p-4">
-            <h5 className="text-white mb-1">Set Initiative</h5>
-            <p className="text-secondary mb-4" style={{ fontSize: "0.85rem" }}>
-                Enter each participant's roll. The order preview updates automatically.
+            <p className="text-secondary mb-4 ">
+                Enter each participant's roll.
             </p>
 
             <div className="d-flex gap-4 flex-wrap align-items-start">
@@ -120,7 +176,7 @@ function AddInitiative({ formData, updateFormData }: Props) {
                     </div>
 
                     {allParticipants.length === 0 ? (
-                        <p className="text-secondary border rounded p-3" style={{ borderColor: "#444", fontSize: "0.85rem" }}>
+                        <p className="text-secondary border rounded p-3 small">
                             No characters or monsters added yet.
                         </p>
                     ) : (
@@ -133,18 +189,18 @@ function AddInitiative({ formData, updateFormData }: Props) {
                                 return (
                                     <div
                                         key={p.key}
-                                        className="d-flex align-items-center gap-3 px-3 py-2 rounded"
-                                        style={{
-                                            background: isSet ? "#1a2e1a" : "#1c1c1c",
-                                            border: `1px solid ${isSet ? "#2d5a2d" : "#333"}`,
-                                        }}
+                                        className={`d-flex align-items-center gap-3 px-3 py-2 rounded border ${isSet ? "bg-dark" : "border-secondary bg-dark"}`}
                                     >
                                         <Badge bg={p.type === "character" ? "primary" : "danger"} style={{ minWidth: "60px", textAlign: "center" }}>
                                             {p.type === "character" ? "Player" : "Monster"}
                                         </Badge>
 
-                                        <span className="text-white flex-grow-1" style={{ fontSize: "0.9rem" }}>
+                                        <span className="text-white flex-grow-1 small">
                                             {p.name}
+                                        </span>
+
+                                        <span className="text-secondary small">
+                                            DEX {p.dex}
                                         </span>
 
                                         <input
@@ -158,7 +214,7 @@ function AddInitiative({ formData, updateFormData }: Props) {
                                         />
 
                                         <button
-                                            className="btn btn-sm btn-dark border-0 text-secondary"
+                                            className="btn btn-sm btn-outline-secondary border-0"
                                             onClick={() => isSet && handleClear(p.key)}
                                             disabled={!isSet}
                                             title="Clear"
@@ -173,34 +229,29 @@ function AddInitiative({ formData, updateFormData }: Props) {
                 </div>
 
                 {/* Right: order preview */}
-                <div style={{ flex: "0 0 200px" }}>
+                <div style={{ flex: "0 0 220px" }}>
                     <small className="text-secondary text-uppercase d-block mb-2">Turn Order</small>
-                    <div className="rounded p-3 bg-dark border border-secondary" style={{ minHeight: "100px" }}>
+                    <div className="rounded p-3 bg-dark border border-secondary">
                         {sortedInitiative.length === 0 ? (
                             <small className="text-secondary">No initiative set yet.</small>
                         ) : (
-                            <ol className="mb-0 ps-3" style={{ fontSize: "0.875rem" }}>
+                            <ol className="mb-0 ps-3 small">
                                 {sortedInitiative.map((entry, i) => (
                                     <li key={entry.key} className="mb-1">
-                                        <span className="text-white" style={{ fontWeight: i === 0 ? 600 : 400 }}>
+                                        <span className={`${i === 0 ? "fw-semibold" : "fw-normal"} ${entry.turnType === "Player" ? "text-info" : "text-danger"}`}>
                                             {entry.name}
                                         </span>
-                                        <span
-                                            className="ms-2"
-                                            style={{
-                                                fontSize: "0.8rem",
-                                                color: entry.turnType === "Player" ? "lightblue" : "red",
-                                            }}
-                                        >
+                                        <span className="text-secondary ms-2 small">
                                             ({entry.iValue})
                                         </span>
+                                        {/*{tiebreakLabel(entry.tiebreakReason)}*/}
                                     </li>
                                 ))}
                             </ol>
                         )}
                     </div>
-                </div>
 
+                </div>
             </div>
         </Container>
     );

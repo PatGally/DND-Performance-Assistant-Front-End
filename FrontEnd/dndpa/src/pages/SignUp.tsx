@@ -1,8 +1,9 @@
 import {ArrowRight, ArrowRightShort} from "react-bootstrap-icons";
 import {Button, Form, Row, Col, Container} from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import logo from '../components/nav/logo.png'
+import logo from '../components/nav/logo1.png'
 import { signup } from "../api/SignUpPost.ts";
+import {googleLogin} from '../api/GoogleLogin.ts'
 
 import {Link} from "react-router-dom";
 import { useForm, type SubmitHandler } from "react-hook-form";
@@ -108,8 +109,16 @@ const SignUpPage: React.FC = () => {
                             <h2 className="w-75">Sign up for dndpa</h2>
                             <div className="justify-content-center w-75 m-3">
                                 <GoogleLogin
-                                    onSuccess={credentialResponse => console.log(credentialResponse)}
-                                    onError={() => console.log('Login Failed')}
+                                    onSuccess={async (credentialResponse) => {
+                                        console.log("credential:", credentialResponse.credential);
+                                        try {
+                                            await googleLogin(credentialResponse.credential!);
+                                            navigate("/user-dashboard");
+                                        } catch (error) {
+                                            console.error("Google sign up failed:", error);
+                                        }
+                                    }}
+                                    onError={() => console.error("Google sign up failed")}
                                 />
                             </div>
                             <div className="d-flex align-items-center  w-75 my-3">

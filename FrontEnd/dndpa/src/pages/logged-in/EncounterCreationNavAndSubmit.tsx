@@ -45,11 +45,7 @@ function isPanelValid(panel: ActivePanel, formData: EncounterFormData): boolean 
             const totalParticipants = formData.characters.length + formData.monsters.length;
 
             if (entries.length !== totalParticipants) return false;
-
             if (entries.some((e) => e.iValue <= 0)) return false;
-
-            const values = entries.map((e) => e.iValue);
-            if (new Set(values).size !== values.length) return false;
 
             return true;
         }
@@ -105,7 +101,6 @@ function EncounterCreationNavAndSubmit({ activePanel, setActivePanel, formData }
             players: characters.map(normalizePlayer),
             monsters: monsters.map(normalizeMonster),
 
-            // Strip frontend-only "key" field from each initiative entry before sending
             initiative: rest.initiative.map(({ key, ...entry }) => entry),
             completed: false
         };

@@ -11,6 +11,7 @@ export const googleLogin = async (idToken: string) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id_token: idToken } as GoogleAuthPayload),
+        credentials: "include",
     });
 
     console.log("Status  ", res.status);
@@ -20,5 +21,7 @@ export const googleLogin = async (idToken: string) => {
         throw new Error("Google login failed");
     }
 
-    return res.json();
+    const data = await res.json();
+    localStorage.setItem("token", data.access_token);
+    return data;
 };
