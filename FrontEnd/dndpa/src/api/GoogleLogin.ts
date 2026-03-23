@@ -5,7 +5,6 @@ interface GoogleAuthPayload {
 }
 
 export const googleLogin = async (idToken: string) => {
-    console.log("Is this working???????");
     const res = await fetch(`${BASE_URL}/auth/google`, {
 
         method: "POST",
