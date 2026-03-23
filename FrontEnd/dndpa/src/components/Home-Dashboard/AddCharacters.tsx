@@ -4,7 +4,6 @@ import AnimatedList from "../../css/AnimatedList.tsx";
 import { Form, Row, Col } from "react-bootstrap";
 import type {Character} from "../../api/CharactersGet.ts";
 
-// TODO Fix character we are sending the full character OBJ
 
 type Props = {
     formData: EncounterFormData;

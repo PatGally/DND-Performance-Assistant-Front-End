@@ -4,8 +4,6 @@ import { type Monster } from "../../api/MonstersGet.ts"; //DO i need this for li
 import AnimatedList from "../../css/AnimatedList.tsx";
 import { Form, Row, Col } from "react-bootstrap";
 
-// TODO pass Monsters and Characters to nav bar
-// TODO
 
 type Props = {
     formData: EncounterFormData;
@@ -49,19 +47,6 @@ function AddMonsters({ formData, updateFormData, monsters }: Props) {
         </div>
     ));
 
-    // const selectedIndices = filteredMonsters
-    //     .map((m, i) => formData.monsters.includes(m.name) ? i : -1)
-    //     .filter((i) => i !== -1);
-    //
-    // const handleSelect = (index: number) => {
-    //     const name = filteredMonsters[index].name;
-    //     const already = formData.monsters.includes(name);
-    //     updateFormData({
-    //         monsters: already
-    //             ? formData.monsters.filter((n) => n !== name)
-    //             : [...formData.monsters, name],
-    //     });
-    // };
     const selectedIndices = filteredMonsters
         .map((m, i) => formData.monsters.some((fm) => fm.name === m.name) ? i : -1)
         .filter((i) => i !== -1);

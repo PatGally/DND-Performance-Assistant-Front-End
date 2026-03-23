@@ -152,11 +152,6 @@ function AddInitiative({ formData, updateFormData }: Props) {
 
     const sortedInitiative = sortInitiative(formData.initiative);
 
-    // const tiebreakLabel = (reason: TiebreakReason) => {
-    //     if (reason === "dex") return <Badge bg="warning" className="ms-2">DEX</Badge>;
-    //     if (reason === "random") return <Badge bg="secondary" className="ms-2">LUCK</Badge>;
-    //     return null;
-    // };
 
     return (
         <Container fluid className="p-4">
@@ -244,7 +239,6 @@ function AddInitiative({ formData, updateFormData }: Props) {
                                         <span className="text-secondary ms-2 small">
                                             ({entry.iValue})
                                         </span>
-                                        {/*{tiebreakLabel(entry.tiebreakReason)}*/}
                                     </li>
                                 ))}
                             </ol>

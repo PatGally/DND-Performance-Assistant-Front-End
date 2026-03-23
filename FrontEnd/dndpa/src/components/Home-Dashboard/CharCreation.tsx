@@ -12,8 +12,7 @@ import {fetchUUID} from "../../api/UUIDGet.ts"
 import { uuidPolyfill } from '../../api/uuidPolyfill.ts';
 import Container from "react-bootstrap/Container";
 
-// Todo payload - Position must
-//Creating Pollyfill for browsers that don't support window.crypto.randomUUID
+
 uuidPolyfill();
 
 type FormFields = {
@@ -178,9 +177,7 @@ const CharCreation: React.FC = () => {
 
             ...attributes
         };
-        // console.log("Selected Weapons - ", selectedWeapons);
-        // console.log("Selected Spells - ", ...selectedSpells);
-        // console.log("Character Payload:", payload);
+
         console.log(JSON.stringify(payload, null, 2));
 
         try{
