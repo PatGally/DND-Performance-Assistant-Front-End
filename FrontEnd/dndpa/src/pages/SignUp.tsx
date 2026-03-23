@@ -71,10 +71,7 @@ const SignUpPage: React.FC = () => {
                 message: "This email is already taken",
             });
         }
-
-        // we should navigate to a loading screen that takes 4 loading seconds - with progress circle
-        // which after 4 seconds we use the same navigate trip
-        console.log(payload);
+        // console.log(payload);
     }
 
     return (
@@ -110,7 +107,6 @@ const SignUpPage: React.FC = () => {
                             <div className="justify-content-center w-75 m-3">
                                 <GoogleLogin
                                     onSuccess={async (credentialResponse) => {
-                                        console.log("credential:", credentialResponse.credential);
                                         try {
                                             await googleLogin(credentialResponse.credential!);
                                             navigate("/user-dashboard");
