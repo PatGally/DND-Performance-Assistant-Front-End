@@ -11,22 +11,9 @@ import {type SubmitHandler, useForm} from "react-hook-form";
 import {GoogleLogin} from "@react-oauth/google";
 import {Link, useNavigate} from "react-router-dom";
 
-// Todo add error box to inform user about incorrect credentials
-// todo Add use state to render error if data is not valid
-
-// Username only
-
-
-// Todo Add api to send user credentials
-// Todo Add redirect to user dashboard
-
 uuidPolyfill();
 
 const schema= z.object({
-    // Email is not required for now
-    // email: z.string()
-    //     .email()
-    //     .min(1, "Email is required"),
     password: z.string(),
     username: z.string()
 })
@@ -49,25 +36,16 @@ const LogInPage: React.FC = () =>{
     });
 
     const onSubmit: SubmitHandler<FormFields> = async (userData) => {
-        // Email is removed for now
         if (!userData.password || !userData.username) {
             return;
         }
         try {
             await login(userData);
             reset();
-            console.log(userData);
             navigate("/user-dashboard");
         } catch (error) {
-            // setError("root", {message: "This email is already taken",});
             setError("root", {message: "Incorrect username or password",});
         }
-
-        const payload = {
-            username: userData.username,
-            password: userData.password,
-        }
-        console.log(payload);
     }
 
     return (
@@ -110,9 +88,6 @@ const LogInPage: React.FC = () =>{
                     <p className="text-danger mt-2">{errors.root.message}</p>
                 )}
 
-                {/*Give an id to this or class for this - not happy with bootstrap green color atm*/}
-                {/*to remove inline styles*/}
-
 
                 <div className="d-flex align-items-center my-4">
                     <hr className="flex-grow-1" />
@@ -123,7 +98,6 @@ const LogInPage: React.FC = () =>{
                 <div className=" w-100 mt-3">
                     <GoogleLogin
                         onSuccess={async (credentialResponse) => {
-                            console.log("credential:", credentialResponse.credential);
                             try {
                                 await googleLogin(credentialResponse.credential!);
                                 navigate("/user-dashboard");
