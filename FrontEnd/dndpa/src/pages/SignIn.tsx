@@ -88,9 +88,6 @@ const LogInPage: React.FC = () =>{
                     <p className="text-danger mt-2">{errors.root.message}</p>
                 )}
 
-                {/*Give an id to this or class for this - not happy with bootstrap green color atm*/}
-                {/*to remove inline styles*/}
-
 
                 <div className="d-flex align-items-center my-4">
                     <hr className="flex-grow-1" />

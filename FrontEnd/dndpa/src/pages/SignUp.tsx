@@ -71,7 +71,6 @@ const SignUpPage: React.FC = () => {
                 message: "This email is already taken",
             });
         }
-        // console.log(payload);
     }
 
     return (
