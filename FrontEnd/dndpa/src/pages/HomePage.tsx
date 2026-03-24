@@ -23,7 +23,7 @@ function homePage(){
                 </div>
             </nav>
             <Container>
-                <Row><Col> My content goes here </Col></Row>
+                <Row><Col> Development Server </Col></Row>
             </Container>
         </>
     );
