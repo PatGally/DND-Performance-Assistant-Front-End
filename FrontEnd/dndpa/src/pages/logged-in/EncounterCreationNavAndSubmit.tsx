@@ -4,7 +4,6 @@ import { Form } from "react-bootstrap";
 import {fetchUUID} from "../../api/UUIDGet.ts"
 import { uuidPolyfill } from '../../api/uuidPolyfill.ts';
 import {EncounterPost} from '../../api/EncounterPost.ts'
-import {useNavigate} from "react-router-dom";
 import {normalizePlayer} from "../../utils/normalizePlayer.ts";
 import { normalizeMonster } from '../../utils/normalizeMonster';
 uuidPolyfill();
@@ -21,6 +20,7 @@ type EncounterCreationNavProps = {
     activePanel: ActivePanel;
     setActivePanel: (panel: ActivePanel) => void;
     formData: EncounterFormData;
+    onSuccess: () => void; // ← added
 };
 
 const panelOrder: ActivePanel[] = [
@@ -43,10 +43,8 @@ function isPanelValid(panel: ActivePanel, formData: EncounterFormData): boolean 
         case 'ADD_INITIATIVE': {
             const entries = formData.initiative;
             const totalParticipants = formData.characters.length + formData.monsters.length;
-
             if (entries.length !== totalParticipants) return false;
             if (entries.some((e) => e.iValue <= 0)) return false;
-
             return true;
         }
         case 'ADD_MAPLINK':
@@ -58,11 +56,10 @@ function isPanelValid(panel: ActivePanel, formData: EncounterFormData): boolean 
     }
 }
 
-function EncounterCreationNavAndSubmit({ activePanel, setActivePanel, formData }: EncounterCreationNavProps) {
+function EncounterCreationNavAndSubmit({ activePanel, setActivePanel, formData, onSuccess }: EncounterCreationNavProps) {
     const currentIndex = panelOrder.indexOf(activePanel);
     const isCurrentValid = isPanelValid(activePanel, formData);
     const isLastPanel = currentIndex === panelOrder.length - 1;
-    const navigate = useNavigate();
 
     const isUnlocked = (panel: ActivePanel): boolean => {
         const panelIndex = panelOrder.indexOf(panel);
@@ -100,17 +97,13 @@ function EncounterCreationNavAndSubmit({ activePanel, setActivePanel, formData }
             date: new Date().toISOString(),
             players: characters.map(normalizePlayer),
             monsters: monsters.map(normalizeMonster),
-
             initiative: rest.initiative.map(({ key, ...entry }) => entry),
             completed: false
         };
 
-        console.log(JSON.stringify(payload, null, 2));
-
         try {
             await EncounterPost(payload);
-            navigate("/user-dashboard"); //change this later to navigate to encounter simulation
-
+            onSuccess(); // ← fires instead of navigate, HomeDashboard re-fetches
         } catch (error) {
             console.error(error);
         }
@@ -125,7 +118,6 @@ function EncounterCreationNavAndSubmit({ activePanel, setActivePanel, formData }
                 >
                     Name
                 </button>
-
                 <button
                     className={`btn border-0 ${activePanel === 'ADD_CHARACTERS' ? 'btn-secondary' : 'btn-dark'}`}
                     onClick={() => isUnlocked('ADD_CHARACTERS') && setActivePanel('ADD_CHARACTERS')}
@@ -133,7 +125,6 @@ function EncounterCreationNavAndSubmit({ activePanel, setActivePanel, formData }
                 >
                     Add Players
                 </button>
-
                 <button
                     className={`btn border-0 ${activePanel === 'ADD_MONSTERS' ? 'btn-secondary' : 'btn-dark'}`}
                     onClick={() => isUnlocked('ADD_MONSTERS') && setActivePanel('ADD_MONSTERS')}
@@ -141,7 +132,6 @@ function EncounterCreationNavAndSubmit({ activePanel, setActivePanel, formData }
                 >
                     Add Monsters
                 </button>
-
                 <button
                     className={`btn border-0 ${activePanel === 'ADD_INITIATIVE' ? 'btn-secondary' : 'btn-dark'}`}
                     onClick={() => isUnlocked('ADD_INITIATIVE') && setActivePanel('ADD_INITIATIVE')}
@@ -149,7 +139,6 @@ function EncounterCreationNavAndSubmit({ activePanel, setActivePanel, formData }
                 >
                     Initiative
                 </button>
-
                 <button
                     className={`btn border-0 ${activePanel === 'ADD_MAPLINK' ? 'btn-secondary' : 'btn-dark'}`}
                     onClick={() => isUnlocked('ADD_MAPLINK') && setActivePanel('ADD_MAPLINK')}
@@ -157,7 +146,6 @@ function EncounterCreationNavAndSubmit({ activePanel, setActivePanel, formData }
                 >
                     Map Link
                 </button>
-
                 <button
                     className={`btn border-0 ${activePanel === 'ADD_GRIDSIZE' ? 'btn-secondary' : 'btn-dark'}`}
                     onClick={() => isUnlocked('ADD_GRIDSIZE') && setActivePanel('ADD_GRIDSIZE')}
@@ -178,7 +166,7 @@ function EncounterCreationNavAndSubmit({ activePanel, setActivePanel, formData }
                         {isLastPanel ? (
                             <button
                                 className="btn btn-success border-0"
-                                type="submit" //must be a type submit
+                                type="submit"
                                 disabled={!isCurrentValid}
                             >
                                 Submit

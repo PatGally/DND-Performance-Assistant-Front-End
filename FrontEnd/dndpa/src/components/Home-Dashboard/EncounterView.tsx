@@ -1,80 +1,20 @@
-import { getEncounters } from "../../api/EncounterGet";
-import creaturePacketGet from "../../api/CreaturePacketGet";
-import React, { useEffect, useState } from "react";
+// import { getEncounters } from "../../api/EncounterGet";
+// import creaturePacketGet from "../../api/CreaturePacketGet";
+// import React, { useEffect, useState } from "react";
 import { Card } from "react-bootstrap";
+// import type {EncounterFormData} from "./CreateEncounter.tsx";
+// import type {Monster} from "../../api/MonstersGet.ts";
+// import type {EncounterFormData} from "./CreateEncounter.tsx";
+// import type {Monster} from "../../api/MonstersGet.ts";
+import type {EncounterWithPacket} from "../../types/encounter.ts";
 
-interface Player {
-    name: string;
-    level: number;
-    characterClass: string;
-    location?: string;
-}
 
-interface Monster {
-    name: string;
-    cr: number;
-    size: string;
-    location?: string;
-}
+type Props = {
+    encounters: EncounterWithPacket[];
+    loadingEncounter: boolean;
+};
 
-interface EncounterPacket {
-    players: Player[];
-    monsters: Monster[];
-}
-
-interface Encounter {
-    eid: string;
-    name: string;
-    date: string;
-    completed: boolean;
-    maplink: string;
-}
-
-interface EncounterWithPacket extends Encounter {
-    packet?: EncounterPacket; // optional at first
-}
-
-const EncounterView: React.FC = () => {
-    const [encounters, setEncounters] = useState<EncounterWithPacket[]>([]);
-    const [loadingEncounter, setLoadingEncounter] = useState<boolean>(false);
-
-    useEffect(() => {
-        const fetchEncounters = async () => {
-            setLoadingEncounter(true);
-            try {
-                const data: Encounter[] = await getEncounters();
-
-                // Add a `packet` property for each encounter
-                const encountersWithPackets: EncounterWithPacket[] = data.map((enc) => ({
-                    ...enc,
-                    packet: undefined, // initially undefined
-                }));
-
-                setEncounters(encountersWithPackets);
-
-                // Fetch the packet for each encounter
-                for (const encounterItem of encountersWithPackets) {
-                    try {
-                        const packet = await creaturePacketGet(encounterItem.eid);
-                        setEncounters((prev) =>
-                            prev.map((e) =>
-                                e.eid === encounterItem.eid ? { ...e, packet } : e
-
-                            )
-                        );
-                        console.log("encounter mao link?", encounterItem.maplink);
-                    } catch (err) {
-                        console.error(`Error fetching packet for ${encounterItem.eid}`, err);
-                    }
-                }
-            } catch (err) {
-                console.error("Error fetching encounters", err);
-            } finally {
-                setLoadingEncounter(false);
-            }
-        };
-        fetchEncounters();
-    }, []);
+const EncounterView = ({encounters, loadingEncounter}:Props) => {
 
     if (loadingEncounter) return <div>Loading...</div>;
     if (encounters.length === 0) return <div>No encounters found</div>;
