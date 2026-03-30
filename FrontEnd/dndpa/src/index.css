@@ -97,14 +97,123 @@
     z-index: 1000;
 }
 
-html, body, #root {
-    overflow: hidden;
-    height: 100%;
-    overscroll-behavior: none;
-    position: fixed;
-    width: 100%;
+/*html, body, #root {*/
+/*    overflow: hidden;*/
+/*    height: 100%;*/
+/*    overscroll-behavior: none;*/
+/*    position: fixed;*/
+/*    width: 100%;*/
+/*}*/
+
+/* ── Design tokens ──────────────────────────────────────── */
+:root {
+    --clr-bg-base:        hsl(228, 18%, 9%);
+    --clr-bg-surface:     hsl(228, 20%, 13%);
+    --clr-bg-disabled:    hsl(228, 18%, 8%);
+
+    --clr-border-subtle:  hsl(228, 15%, 19%);
+    --clr-border-dim:     hsl(228, 16%, 14%);
+
+    --clr-text-muted:     hsl(220, 9%, 80%);
+    --clr-text-dim:       hsl(220, 13%, 100%);
+    /*38*/
+    --clr-gold:           hsl(350, 65%, 47%);
+    --clr-gold-light:     hsl(350, 72%, 62%);
+    --clr-gold-bg:        hsl(350, 65%, 47%, 0.15);
+    --clr-gold-hover-bg:  hsl(350, 65%, 47%, 0.1);
+    --clr-gold-border:    hsl(350, 65%, 47%, 0.4);
+
+    --clr-green:          hsl(142, 71%, 45%);
+    --clr-green-bg:       hsl(142, 71%, 45%, 0.1);
+    --clr-green-hover-bg: hsl(142, 71%, 45%, 0.2);
+    --clr-green-border:   hsl(142, 71%, 45%, 0.4);
 }
+
+/* ── Button base (replaces btn-dark) ───────────────────── */
+.btn-dark,
+.btn-dark.border-0 {
+    font-family: 'mantinia', serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 7px 14px;
+    background: var(--clr-bg-surface) !important;
+    border: 1px solid var(--clr-border-subtle) !important;
+    color: var(--clr-text-muted) !important;
+    border-radius: 6px;
+    transition: all 0.18s ease;
+}
+
+.btn-dark:hover:not(:disabled),
+.btn-dark.border-0:hover:not(:disabled) {
+    background: var(--clr-gold-hover-bg) !important;
+    border-color: var(--clr-gold-border) !important;
+    color: var(--clr-gold) !important;
+}
+
+/* ── Active step (replaces btn-secondary) ──────────────── */
+.btn-secondary,
+.btn-secondary.border-0 {
+    font-family: 'mantinia', serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 7px 14px;
+    background: var(--clr-gold-bg) !important;
+    border: 1px solid var(--clr-gold) !important;
+    color: var(--clr-gold-light) !important;
+    border-radius: 6px;
+    position: relative;
+}
+
+.btn-secondary::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 2px;
+    background: var(--clr-gold);
+    border-radius: 2px 2px 0 0;
+}
+
+/* ── Disabled state ─────────────────────────────────────── */
+.btn:disabled {
+    opacity: 0.3 !important;
+    background: var(--clr-bg-disabled) !important;
+    border-color: var(--clr-border-dim) !important;
+    color: var(--clr-text-dim) !important;
+    cursor: not-allowed;
+}
+
+/* ── Submit button (replaces btn-success) ───────────────── */
+.btn-success,
+.btn-success.border-0 {
+    font-family: 'mantinia', serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 7px 14px;
+    background: var(--clr-green-bg) !important;
+    border: 1px solid var(--clr-green-border) !important;
+    color: var(--clr-green) !important;
+    border-radius: 6px;
+}
+
+.btn-success:hover:not(:disabled) {
+    background: var(--clr-green-hover-bg) !important;
+    border-color: var(--clr-green) !important;
+}
+/*------------*/
 
 /*#root {*/
 /*    font-family: Papyrus, fantasy;*/
+/*}*/
+
+/*#root {*/
+/*    font-family: 'Mantinia', serif;*/
 /*}*/

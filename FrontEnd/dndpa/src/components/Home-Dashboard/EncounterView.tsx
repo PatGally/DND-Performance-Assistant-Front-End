@@ -27,6 +27,7 @@ interface Encounter {
     name: string;
     date: string;
     completed: boolean;
+    maplink: string;
 }
 
 interface EncounterWithPacket extends Encounter {
@@ -58,8 +59,10 @@ const EncounterView: React.FC = () => {
                         setEncounters((prev) =>
                             prev.map((e) =>
                                 e.eid === encounterItem.eid ? { ...e, packet } : e
+
                             )
                         );
+                        console.log("encounter mao link?", encounterItem.maplink);
                     } catch (err) {
                         console.error(`Error fetching packet for ${encounterItem.eid}`, err);
                     }

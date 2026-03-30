@@ -13,6 +13,7 @@ export interface Encounter {
     date: string;
     eid: string;
     completed: boolean;
+    maplink: string;
 }
 
 
