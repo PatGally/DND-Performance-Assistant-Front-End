@@ -31,5 +31,3 @@ export const getEncounters = async (): Promise<Encounter[]> => {
         return [];
     }
 };
-
-

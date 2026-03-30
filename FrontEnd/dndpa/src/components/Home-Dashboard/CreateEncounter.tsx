@@ -2,21 +2,19 @@ import EncounterCreationNavAndSubmit from "../../pages/logged-in/EncounterCreati
 import type { ActivePanel } from "../../pages/logged-in/EncounterCreationNavAndSubmit.tsx";
 
 import Container from "react-bootstrap/Container";
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import SetEncounterName from "./SetEncounterName.tsx";
 import AddCharacters from "./AddCharacters.tsx";
 import AddMonsters from "./AddMonsters.tsx";
 import AddMapLink from "./AddMapLink.tsx";
 import AddGridSize from "./AddGridSize.tsx";
-import AddInitiative, {type InitiativeEntry} from "./AddInitiative.tsx";
+import AddInitiative, { type InitiativeEntry } from "./AddInitiative.tsx";
 
-import {type Monster} from "../../api/MonstersGet.ts";
-import {type Character, getCharacters} from "../../api/CharactersGet.ts";
+import { type Monster } from "../../api/MonstersGet.ts";
+import { type Character, getCharacters } from "../../api/CharactersGet.ts";
 
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-
-
 
 export interface EncounterFormData {
     name: string;
@@ -38,13 +36,13 @@ const defaultFormData: EncounterFormData = {
 
 type Props = {
     monsters: Monster[];
+    onEncounterCreated: () => void; // ← just void
 };
 
-function CreateEncounter({monsters} : Props) {
+function CreateEncounter({ monsters, onEncounterCreated }: Props) {
     const [activePanel, setActivePanel] = useState<ActivePanel>("SET_ENCOUNTERNAME");
     const [formData, setFormData] = useState<EncounterFormData>(defaultFormData);
     const [characters, setCharacters] = useState<Character[]>([]);
-
 
     useEffect(() => {
         const fetchCharacters = async () => {
@@ -83,15 +81,13 @@ function CreateEncounter({monsters} : Props) {
                         activePanel={activePanel}
                         setActivePanel={setActivePanel}
                         formData={formData}
-
+                        onSuccess={onEncounterCreated} // ← wired through
                     />
                     {renderPanel()}
                 </Col>
-
             </Row>
         </Container>
     );
 }
-
 
 export default CreateEncounter;

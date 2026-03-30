@@ -7,15 +7,18 @@ import EncounterView from "../../components/Home-Dashboard/EncounterView";
 import CreateEncounter from "../../components/Home-Dashboard/CreateEncounter";
 import UserMenu from "./UserMenu.tsx";
 
-import {useEffect, useState} from 'react';
+import { useEffect, useState } from 'react';
 import CharCreation from "../../components/Home-Dashboard/CharCreation.tsx";
-import {getMonsters, type Monster} from "../../api/MonstersGet.ts";
-
+import { getMonsters, type Monster } from "../../api/MonstersGet.ts";
+import { getEncounters } from "../../api/EncountersGet";
+import creaturePacketGet from "../../api/CreaturePacketGet";
+import type { EncounterWithPacket, Encounter } from "../../types/encounter.ts";
 
 function HomeDashboard() {
     const [activePage, setActivePage] = useState('SAVED_ENCOUNTERS');
-
     const [monsters, setMonsters] = useState<Monster[]>([]);
+    const [encounters, setEncounters] = useState<EncounterWithPacket[]>([]);
+    const [loadingEncounter, setLoadingEncounter] = useState<boolean>(false);
 
     useEffect(() => {
         const fetchMonsters = async () => {
@@ -24,6 +27,45 @@ function HomeDashboard() {
         };
         fetchMonsters();
     }, []);
+
+    const fetchEncounters = async () => {
+        setLoadingEncounter(true);
+        try {
+            const data: Encounter[] = await getEncounters();
+
+            const encountersWithPackets: EncounterWithPacket[] = data.map((enc) => ({
+                ...enc,
+                packet: undefined,
+            }));
+
+            setEncounters(encountersWithPackets);
+
+            for (const encounterItem of encountersWithPackets) {
+                try {
+                    const packet = await creaturePacketGet(encounterItem.eid);
+                    setEncounters((prev) =>
+                        prev.map((e) =>
+                            e.eid === encounterItem.eid ? { ...e, packet } : e
+                        )
+                    );
+                } catch (err) {
+                    console.error(`Error fetching packet for ${encounterItem.eid}`, err);
+                }
+            }
+        } catch (err) {
+            console.error("Error fetching encounters", err);
+        } finally {
+            setLoadingEncounter(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchEncounters();
+    }, []);
+
+    const handleEncounterCreated = () => {
+        fetchEncounters();
+    };
 
     return (
         <Container fluid className="p-0" style={{ height: '100vh', overflow: 'hidden' }}>
@@ -38,9 +80,8 @@ function HomeDashboard() {
             </Row>
 
             <Row className="g-0 mx-0" style={{ height: 'calc(100vh - 56px)', overflow: 'hidden' }}>
-
                 <Col
-                    className="bg-dark "
+                    className="bg-dark"
                     style={{ width: '70px', flex: '0 0 70px', height: '100%', overflowY: 'auto' }}
                 >
                     <Row className="flex-grow-1 mx-0">
@@ -52,11 +93,9 @@ function HomeDashboard() {
                     className="d-flex flex-column"
                     style={{ height: '100%', overflowY: 'auto', position: 'relative' }}
                 >
-
-
                     <Row className="flex-grow-1 mx-0" style={{ zIndex: 1, position: 'relative' }}>
-                        {activePage === 'SAVED_ENCOUNTERS' && <EncounterView />}
-                        {activePage === 'CREATE_ENCOUNTER' && <CreateEncounter monsters={monsters} />}
+                        {activePage === 'SAVED_ENCOUNTERS' && <EncounterView encounters={encounters} loadingEncounter={loadingEncounter} />}
+                        {activePage === 'CREATE_ENCOUNTER' && <CreateEncounter monsters={monsters} onEncounterCreated={handleEncounterCreated} />}
                         {activePage === 'LOAD_CHARACTERS' && <LoadCharacter />}
                         {activePage === 'CREATE_CHARACTER' && <CharCreation />}
                         {activePage === 'HOW_TO_USE' && <div>How To Use</div>}
