@@ -16,18 +16,20 @@ export interface Encounter {
     maplink: string;
 }
 
-export const getEncounter = async (eid: string): Promise<Encounter | null> => {
+
+export const getEncounters = async (): Promise<Encounter[]> => {
     try {
-        const response = await axiosTokenInstance.get(`/encounter/${eid}/state`);
-
-        if (!response.data || typeof response.data !== "object") {
+        const response = await axiosTokenInstance.get(`/dashboard/encounters`);
+        // Ensure the backend returned an array
+        if (!Array.isArray(response.data)) {
             console.error("Unexpected response format:", response.data);
-            return null;
+            return [];
         }
-
         return response.data;
     } catch (error) {
-        console.error(`Failed to fetch encounter ${eid}:`, error);
-        return null;
+        console.error("Failed to fetch encounters:", error);
+        return [];
     }
 };
+
+

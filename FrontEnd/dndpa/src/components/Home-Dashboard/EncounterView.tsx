@@ -1,4 +1,4 @@
-import { getEncounters } from "../../api/EncounterGet";
+import { getEncounters } from "../../api/EncountersGet.ts";
 import creaturePacketGet from "../../api/CreaturePacketGet";
 import React, { useEffect, useState } from "react";
 import { Card } from "react-bootstrap";
