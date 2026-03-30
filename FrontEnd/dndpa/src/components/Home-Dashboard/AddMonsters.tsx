@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import type { EncounterFormData } from "./CreateEncounter";
-import { type Monster } from "../../api/MonstersGet.ts"; //DO i need this for line 13
+import { type Monster } from "../../api/MonstersGet.ts";
 import AnimatedList from "../../css/AnimatedList.tsx";
 import { Form, Row, Col } from "react-bootstrap";
 
@@ -12,19 +12,11 @@ type Props = {
 };
 
 function AddMonsters({ formData, updateFormData, monsters }: Props) {
-    // const [monsters, setMonsters] = useState<Monster[]>([]);
     const [search, setSearch] = useState("");
     const [filterCR, setFilterCR] = useState("");
     const [filterSize, setFilterSize] = useState("");
     const [filterType, setFilterType] = useState("");
 
-    // useEffect(() => {
-    //     const fetchMonsters = async () => {
-    //         const data = await getMonsters();
-    //         setMonsters(data);
-    //     };
-    //     fetchMonsters();
-    // }, []);
 
     useEffect(() => {
         console.log("monsters updated:", formData.monsters);

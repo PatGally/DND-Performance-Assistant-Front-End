@@ -10,7 +10,7 @@ import AddMapLink from "./AddMapLink.tsx";
 import AddGridSize from "./AddGridSize.tsx";
 import AddInitiative, {type InitiativeEntry} from "./AddInitiative.tsx";
 
-import {getMonsters, type Monster} from "../../api/MonstersGet.ts";
+import {type Monster} from "../../api/MonstersGet.ts";
 import {type Character, getCharacters} from "../../api/CharactersGet.ts";
 
 import Row from "react-bootstrap/Row";
@@ -36,19 +36,15 @@ const defaultFormData: EncounterFormData = {
     gridSize: { rows: 0, cols: 0 },
 };
 
-function CreateEncounter() {
+type Props = {
+    monsters: Monster[];
+};
+
+function CreateEncounter({monsters} : Props) {
     const [activePanel, setActivePanel] = useState<ActivePanel>("SET_ENCOUNTERNAME");
     const [formData, setFormData] = useState<EncounterFormData>(defaultFormData);
-    const [monsters, setMonsters] = useState<Monster[]>([]);
     const [characters, setCharacters] = useState<Character[]>([]);
 
-    useEffect(() => {
-        const fetchMonsters = async () => {
-            const data = await getMonsters();
-            setMonsters(data);
-        };
-        fetchMonsters();
-    }, []);
 
     useEffect(() => {
         const fetchCharacters = async () => {

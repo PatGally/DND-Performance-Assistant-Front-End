@@ -7,12 +7,23 @@ import EncounterView from "../../components/Home-Dashboard/EncounterView";
 import CreateEncounter from "../../components/Home-Dashboard/CreateEncounter";
 import UserMenu from "./UserMenu.tsx";
 
-import { useState } from 'react';
+import {useEffect, useState} from 'react';
 import CharCreation from "../../components/Home-Dashboard/CharCreation.tsx";
+import {getMonsters, type Monster} from "../../api/MonstersGet.ts";
 
 
 function HomeDashboard() {
     const [activePage, setActivePage] = useState('SAVED_ENCOUNTERS');
+
+    const [monsters, setMonsters] = useState<Monster[]>([]);
+
+    useEffect(() => {
+        const fetchMonsters = async () => {
+            const data = await getMonsters();
+            setMonsters(data);
+        };
+        fetchMonsters();
+    }, []);
 
     return (
         <Container fluid className="p-0" style={{ height: '100vh', overflow: 'hidden' }}>
@@ -43,10 +54,9 @@ function HomeDashboard() {
                 >
 
 
-
                     <Row className="flex-grow-1 mx-0" style={{ zIndex: 1, position: 'relative' }}>
                         {activePage === 'SAVED_ENCOUNTERS' && <EncounterView />}
-                        {activePage === 'CREATE_ENCOUNTER' && <CreateEncounter />}
+                        {activePage === 'CREATE_ENCOUNTER' && <CreateEncounter monsters={monsters} />}
                         {activePage === 'LOAD_CHARACTERS' && <LoadCharacter />}
                         {activePage === 'CREATE_CHARACTER' && <CharCreation />}
                         {activePage === 'HOW_TO_USE' && <div>How To Use</div>}
