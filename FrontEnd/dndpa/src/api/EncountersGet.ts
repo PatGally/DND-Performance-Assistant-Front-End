@@ -1,5 +1,4 @@
 import axiosTokenInstance from "./AxiosTokenInstance.ts";
-// export type { Encounter } from "../types/encounter.ts";
 
 export interface Monster {
     stats: { name: string };
@@ -32,6 +31,3 @@ export const getEncounters = async (): Promise<Encounter[]> => {
         return [];
     }
 };
-
-
-
