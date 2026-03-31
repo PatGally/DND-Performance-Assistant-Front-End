@@ -81,7 +81,7 @@ function ShurimaEmblem() {
 
 export default function ShurimaPanel() {
     const [hoveredChamp, setHoveredChamp] = useState<number | null>(null);
-
+    console.log(hoveredChamp); //TODO: Delete.
     return (
         <div className="shurima-panel">
             <div className="shurima-panel__bg-glow" />

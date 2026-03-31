@@ -1,6 +1,5 @@
 //adding the party size and enemies are here, create character, then create map will be here
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
@@ -12,11 +11,46 @@ import InitiativeList from "../../components/ActiveEncounter/InitiativeList.tsx"
 import ActionList from "../../components/ActiveEncounter/ActionList.tsx";
 import Recommendation from "../../components/ActiveEncounter/Recommendation.tsx";
 
-import { getEncounter } from "../../api/EncounterGet.ts";
+import {getEncounter} from "../../api/EncounterGet.ts";
+const ENCOUNTER_EID = "enc_001";
+const CREATURE_CID = "930eacb8-a93b-413a-b834-53e6ae3793e0";
+const SESSION_KEY = `encounter-${ENCOUNTER_EID}`;
+
 
 function EncounterSimulation() {
     const [initiativeOpen, setInitiativeOpen] = useState(false);
     const [actionOpen, setActionOpen] = useState(false);
+    const [encounterData, setEncounterData] = useState<any | null>(null);
+    const [loadingEncounter, setLoadingEncounter] = useState(true);
+    const [encounterError, setEncounterError] = useState<string | null>(null);
+
+    useEffect(() => {
+    const loadEncounter = async () => {
+        try {
+            setLoadingEncounter(true);
+            setEncounterError(null);
+
+            const storedEncounter = sessionStorage.getItem(SESSION_KEY);
+
+            if (storedEncounter !== null && storedEncounter !== "null") {
+                const parsedEncounter = JSON.parse(storedEncounter);
+                setEncounterData(parsedEncounter);
+                return;
+            }
+
+            const data = await getEncounter(ENCOUNTER_EID);
+            setEncounterData(data);
+            sessionStorage.setItem(SESSION_KEY, JSON.stringify(data));
+        } catch (error) {
+            console.error("Failed to load encounter:", error);
+            setEncounterError("Failed to load encounter data.");
+        } finally {
+            setLoadingEncounter(false);
+        }
+    };
+
+    loadEncounter();
+    }, []);
 
     return (
         <Container fluid className="p-0" style={{ height: "100vh", overflow: "hidden" }}>
@@ -32,6 +66,9 @@ function EncounterSimulation() {
             <Row className="g-0 mx-0" style={{ height: "calc(100vh - 56px)" }}>
                 <Col style={{position: "relative", overflow: "hidden"}}>
                     <ActiveMap/>
+                    {!encounterError && !loadingEncounter && encounterData && (
+                        <div>Encounter loaded</div>
+                    )}
 
                     {!initiativeOpen && (
                         <button
@@ -70,7 +107,7 @@ function EncounterSimulation() {
                                     padding: "12px",
                                 }}
                             >
-                                <InitiativeList/>
+                                <InitiativeList eid={ENCOUNTER_EID}/>
                             </div>
 
                             <button
@@ -125,7 +162,7 @@ function EncounterSimulation() {
                                     padding: "12px",
                                 }}
                             >
-                                <ActionList/>
+                                <ActionList cid={CREATURE_CID} eid={ENCOUNTER_EID}/>
                             </div>
 
                             <button
@@ -152,7 +189,7 @@ function EncounterSimulation() {
                             zIndex: 15,
                         }}
                     >
-                        <Recommendation/>
+                        <Recommendation eid={ENCOUNTER_EID} cid={CREATURE_CID}/>
                     </div>
                 </Col>
             </Row>

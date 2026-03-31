@@ -66,8 +66,8 @@ export interface Monster {
     cr: string;
     creatureType: string;
     statArray: Record<string, number>;
-    hit_points: number;
-    AC: number;
+    hp: number;
+    ac: number;
     saveProfs: Record<string, number>;
     lResists: string;
     damResists: string;
