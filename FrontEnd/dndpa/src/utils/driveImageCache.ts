@@ -1,74 +1,35 @@
-// export async function getCachedDriveImage(maplink: string): Promise<string> {
-//     const cacheKey = `drive-img:${maplink}`;
-//
-//     // Return cached blob URL if it exists
-//     const cached = sessionStorage.getItem(cacheKey);
-//     if (cached) return cached;
-//
-//     // Fetch through your backend proxy
-//     const fileId = extractDriveFileId(maplink);
-//     if (!fileId) return maplink;
-//
-//     const response = await fetch(`/api/drive-image/${fileId}`);
-//     const blob = await response.blob();
-//     const blobUrl = URL.createObjectURL(blob);
-//
-//     sessionStorage.setItem(cacheKey, blobUrl);
-//     return blobUrl;
-// }
-//
-// function extractDriveFileId(url: string): string | null {
-//     const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-//     return match ? match[1] : null;
-// }
+const CACHE_PREFIX = 'drive-img:';
 
-// export async function getCachedDriveImage(maplink: string): Promise<string | null> {
-//     const cacheKey = `drive-img:${maplink}`;
-//
-//     const cached = sessionStorage.getItem(cacheKey);
-//     if (cached) return cached;
-//
-//     const fileId = extractDriveFileId(maplink);
-//     if (!fileId) {
-//         console.error("[DriveImage] Could not extract file ID from:", maplink);
-//         return null;
-//     }
-//
-//     try {
-//         const response = await fetch(`/api/drive-image/${fileId}`);
-//         console.log("Response: ",response);
-//
-//         if (!response.ok) {
-//             console.error(`[DriveImage] Backend returned ${response.status} for file ID: ${fileId}`);
-//             return null;
-//         }
-//
-//         const blob = await response.blob();
-//         const blobUrl = URL.createObjectURL(blob);
-//         sessionStorage.setItem(cacheKey, blobUrl);
-//         return blobUrl;
-//
-//     } catch (err) {
-//         console.error("[DriveImage] Fetch failed:", err);
-//         return null;
-//     }
-// }
-//
-// function extractDriveFileId(url: string): string | null {
-//     const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-//     return match ? match[1] : null;
-// }
+export async function warmDriveImageCache(maplink: string): Promise<void> {
+    const cacheKey = `${CACHE_PREFIX}${maplink}`;
+    if (sessionStorage.getItem(cacheKey)) return;
 
-export function getDriveImageUrl(maplink: string): string | null {
-    const fileId = extractDriveFileId(maplink);
-    if (!fileId) {
-        console.error("[DriveImage] Could not extract file ID from:", maplink);
-        return null;
+    console.log('[DriveImage] Warming:', maplink);
+
+    try {
+        const response = await fetch(maplink); // ← fetch directly, no extraction needed
+        console.log('[DriveImage] Response status:', response.status);
+
+        if (!response.ok) return;
+
+        const blob = await response.blob();
+        const base64 = await blobToBase64(blob);
+        sessionStorage.setItem(cacheKey, base64);
+        console.log('[DriveImage] Cached successfully:', cacheKey);
+    } catch (err) {
+        console.error('[DriveImage] Cache warm failed:', err);
     }
-    return `/api/drive-image/${fileId}`;
 }
 
-function extractDriveFileId(url: string): string | null {
-    const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-    return match ? match[1] : null;
+export function getCachedDriveImage(maplink: string): string | null {
+    return sessionStorage.getItem(`${CACHE_PREFIX}${maplink}`);
+}
+
+function blobToBase64(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
 }
