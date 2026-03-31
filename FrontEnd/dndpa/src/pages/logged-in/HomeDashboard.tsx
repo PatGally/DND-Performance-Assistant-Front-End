@@ -13,6 +13,7 @@ import { getMonsters, type Monster } from "../../api/MonstersGet.ts";
 import { getEncounters } from "../../api/EncountersGet";
 import creaturePacketGet from "../../api/CreaturePacketGet";
 import type { EncounterWithPacket, Encounter } from "../../types/encounter.ts";
+import {warmDriveImageCache} from "../../utils/driveImageCache.ts";
 
 function HomeDashboard() {
     const [activePage, setActivePage] = useState('SAVED_ENCOUNTERS');
@@ -37,7 +38,12 @@ function HomeDashboard() {
                 ...enc,
                 packet: undefined,
             }));
-
+            await Promise.all(
+                encountersWithPackets
+                    .map(e => e.maplink)
+                    .filter(Boolean)
+                    .map(link => warmDriveImageCache(link))
+            );
             setEncounters(encountersWithPackets);
 
             for (const encounterItem of encountersWithPackets) {

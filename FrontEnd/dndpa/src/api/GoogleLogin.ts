@@ -14,6 +14,7 @@ export const googleLogin = async (idToken: string) => {
     });
 
     console.log("Status  ", res.status);
+    console.log("Status maybe this is issue? ", idToken);
     if (!res.ok) {
         const error = await res.json();
         console.log("BACKEND ERROR:", error);

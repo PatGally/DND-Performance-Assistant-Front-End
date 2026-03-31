@@ -20,7 +20,7 @@ type EncounterCreationNavProps = {
     activePanel: ActivePanel;
     setActivePanel: (panel: ActivePanel) => void;
     formData: EncounterFormData;
-    onSuccess: () => void; // ← added
+    onSuccess: () => void;
 };
 
 const panelOrder: ActivePanel[] = [
@@ -80,7 +80,10 @@ function EncounterCreationNavAndSubmit({ activePanel, setActivePanel, formData, 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const { characters, monsters, ...rest } = formData;
+
+        // Destructure maplink and gridSize out explicitly so they don't
+        const { characters, monsters, maplink, gridSize, ...rest } = formData;
+
         let eid;
         try {
             eid = await fetchUUID();
@@ -91,19 +94,49 @@ function EncounterCreationNavAndSubmit({ activePanel, setActivePanel, formData, 
             console.error("No EID generated");
             return;
         }
+
+        const normalizedPlayers  = characters.map(normalizePlayer);
+        const normalizedMonsters = await Promise.all(monsters.map(normalizeMonster))
+
+        // cids already exist on the normalized objects — just reference them.
+        const creatureTokens = [
+            ...normalizedPlayers.map((p) => ({ cid: p.stats.cid })),
+            ...normalizedMonsters.map((m) => ({ cid: m.mid })),
+        ];
+
+        const mapdata = {
+            map: {
+                image: {
+                    mapLink: maplink,
+                    sourceType: "url",
+                    naturalSizePx: { w: 0, h: 0 },
+                },
+            },
+            grid: {
+                cellBounds: { cols: gridSize.cols, rows: gridSize.rows },
+                cellSizePx: 0,
+            },
+            layers: {
+                creatureTokens,
+                aoeTokens: [] as never[],
+            },
+        };
+
         const payload = {
             ...rest,
             eid,
             date: new Date().toISOString(),
-            players: characters.map(normalizePlayer),
-            monsters: monsters.map(normalizeMonster),
+            players:    normalizedPlayers,
+            monsters:   normalizedMonsters,
             initiative: rest.initiative.map(({ key, ...entry }) => entry),
-            completed: false
+            mapdata,
+            completed: false,
         };
+        console.log(JSON.stringify(payload));
 
         try {
             await EncounterPost(payload);
-            onSuccess(); // ← fires instead of navigate, HomeDashboard re-fetches
+            onSuccess();
         } catch (error) {
             console.error(error);
         }
