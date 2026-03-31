@@ -25,13 +25,15 @@ export default function Recommendation({ eid, cid }: RecommendationProps) {
         setShowPassTurn(false);
 
         const data = await recommendationGet(eid, cid);
-        setRecommendations(data);
+        console.log(data);
+        setRecommendations(Array.isArray(data) ? data : []);
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message);
         } else {
           setError("Failed to load recommendations.");
         }
+        setRecommendations([]);
       } finally {
         setLoading(false);
       }
@@ -60,7 +62,7 @@ export default function Recommendation({ eid, cid }: RecommendationProps) {
     return <div>Error: {error}</div>;
   }
 
-  if (showPassTurn || recommendations.length === 0) {
+  if (showPassTurn || recommendations.length === 0 || currentIndex >= recommendations.length) {
     return (
       <div
         style={{
@@ -79,6 +81,23 @@ export default function Recommendation({ eid, cid }: RecommendationProps) {
 
   const currentRecommendation = recommendations[currentIndex];
 
+  if (!currentRecommendation) {
+    return (
+      <div
+        style={{
+          border: "1px solid #ccc",
+          borderRadius: "6px",
+          padding: "10px 12px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <div><strong>Pass Turn</strong></div>
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
@@ -95,7 +114,7 @@ export default function Recommendation({ eid, cid }: RecommendationProps) {
         <div><strong>{currentRecommendation.name}</strong></div>
         <div>
           Target:{" "}
-          {currentRecommendation.target?.length
+          {Array.isArray(currentRecommendation.target) && currentRecommendation.target.length > 0
             ? currentRecommendation.target.join(", ")
             : "None"}
         </div>

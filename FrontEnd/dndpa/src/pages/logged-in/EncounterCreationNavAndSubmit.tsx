@@ -6,6 +6,38 @@ import { uuidPolyfill } from '../../api/uuidPolyfill.ts';
 import {EncounterPost} from '../../api/EncounterPost.ts'
 import {normalizePlayer} from "../../utils/normalizePlayer.ts";
 import { normalizeMonster } from '../../utils/normalizeMonster';
+
+// Player token imports
+import ArtificerToken from "../../assets/player_tokens/Artificer.png";
+import BarbarianToken from "../../assets/player_tokens/Barbarian.png";
+import BardToken from "../../assets/player_tokens/Bard.png";
+import ClericToken from "../../assets/player_tokens/Cleric.png";
+import DruidToken from "../../assets/player_tokens/Druid.png";
+import FighterToken from "../../assets/player_tokens/Fighter.png";
+import MonkToken from "../../assets/player_tokens/Monk.png";
+import PaladinToken from "../../assets/player_tokens/Paladin.png";
+import RangerToken from "../../assets/player_tokens/Ranger.png";
+import RogueToken from "../../assets/player_tokens/Rogue.png";
+import SorcererToken from "../../assets/player_tokens/Sorcerer.png";
+import WarlockToken from "../../assets/player_tokens/Warlock.png";
+import WizardToken from "../../assets/player_tokens/Wizard.png";
+
+// Monster token imports
+import AberrationToken from "../../assets/monster_tokens/Abberation.png";
+import BeastToken from "../../assets/monster_tokens/Beast.png";
+import CelestialToken from "../../assets/monster_tokens/Celestial.png";
+import ConstructToken from "../../assets/monster_tokens/Construct.png";
+import DragonToken from "../../assets/monster_tokens/Dragon.png";
+import ElementalToken from "../../assets/monster_tokens/Elemental.png";
+import FeyToken from "../../assets/monster_tokens/Fey.png";
+import FiendToken from "../../assets/monster_tokens/Fiend.png";
+import GiantToken from "../../assets/monster_tokens/Giant.png";
+import HumanoidToken from "../../assets/monster_tokens/Humanoid.png";
+import MonstrosityToken from "../../assets/monster_tokens/Monstrosity.png";
+import OozeToken from "../../assets/monster_tokens/Ooze.png";
+import PlantToken from "../../assets/monster_tokens/Plant.png";
+import UndeadToken from "../../assets/monster_tokens/Undead.png";
+
 uuidPolyfill();
 
 export type ActivePanel =
@@ -32,6 +64,48 @@ const panelOrder: ActivePanel[] = [
     'ADD_GRIDSIZE',
 ];
 
+const playerTokenMap: Record<string, string> = {
+    artificer: ArtificerToken,
+    barbarian: BarbarianToken,
+    bard: BardToken,
+    cleric: ClericToken,
+    druid: DruidToken,
+    fighter: FighterToken,
+    monk: MonkToken,
+    paladin: PaladinToken,
+    ranger: RangerToken,
+    rogue: RogueToken,
+    sorcerer: SorcererToken,
+    warlock: WarlockToken,
+    wizard: WizardToken,
+};
+
+const monsterTokenMap: Record<string, string> = {
+    aberration: AberrationToken,
+    beast: BeastToken,
+    celestial: CelestialToken,
+    construct: ConstructToken,
+    dragon: DragonToken,
+    elemental: ElementalToken,
+    fey: FeyToken,
+    fiend: FiendToken,
+    giant: GiantToken,
+    humanoid: HumanoidToken,
+    monstrosity: MonstrosityToken,
+    ooze: OozeToken,
+    plant: PlantToken,
+    undead: UndeadToken,
+};
+
+const normalizeKey = (value: string | undefined | null): string =>
+    (value ?? "").trim().toLowerCase();
+
+const getPlayerTokenImage = (characterClass: string | undefined): string => {
+    return playerTokenMap[normalizeKey(characterClass)] ?? HumanoidToken;
+};
+const getMonsterTokenImage = (creatureType: string | undefined): string => {
+    return monsterTokenMap[normalizeKey(creatureType)] ?? MonstrosityToken;
+};
 function isPanelValid(panel: ActivePanel, formData: EncounterFormData): boolean {
     switch (panel) {
         case 'SET_ENCOUNTERNAME':
@@ -95,22 +169,27 @@ function EncounterCreationNavAndSubmit({ activePanel, setActivePanel, formData, 
             return;
         }
 
-        const normalizedPlayers  = characters.map(normalizePlayer);
-        const normalizedMonsters = await Promise.all(monsters.map(normalizeMonster))
+        const normalizedPlayers = characters.map(normalizePlayer);
+        const normalizedMonsters = await Promise.all(monsters.map(normalizeMonster));
 
         // cids already exist on the normalized objects — just reference them.
         const creatureTokens = [
-            ...normalizedPlayers.map((p) => ({ cid: p.stats.cid })),
-            ...normalizedMonsters.map((m) => ({ cid: m.mid })),
+            ...normalizedPlayers.map((p) => ({
+                cid: p.stats.cid,
+                token_image: getPlayerTokenImage(p.stats.characterClass),
+            })),
+            ...normalizedMonsters.map((m) => ({
+                cid: m.mid,
+                token_image: getMonsterTokenImage(m.creatureType),
+            })),
         ];
 
         const mapdata = {
             map: {
-                image: {
-                    mapLink: maplink,
-                    sourceType: "url",
-                    naturalSizePx: { w: 0, h: 0 },
-                },
+                mapLink: maplink,
+                sourceType: "url",
+                naturalSizePx: {w: 0, h: 0},
+                originPx: {x: 0, y: 0}
             },
             grid: {
                 cellBounds: { cols: gridSize.cols, rows: gridSize.rows },
