@@ -19,7 +19,6 @@ export async function recommendationGet(
   cid: string
 ): Promise<Recommendation[]> {
     try{
-        console.log(`/encounter/${eid}/recommendation/${cid}`);
          const response = await axiosTokenInstance.get(`/encounter/${eid}/recommendation/${cid}`);
     if( !response.data ) {
         console.error("Data not found in call", response.data);

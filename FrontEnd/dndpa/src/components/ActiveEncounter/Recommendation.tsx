@@ -25,7 +25,6 @@ export default function Recommendation({ eid, cid }: RecommendationProps) {
         setShowPassTurn(false);
 
         const data = await recommendationGet(eid, cid);
-        console.log(data);
         setRecommendations(Array.isArray(data) ? data : []);
       } catch (err) {
         if (err instanceof Error) {

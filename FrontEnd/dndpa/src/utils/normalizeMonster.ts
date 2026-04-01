@@ -22,10 +22,10 @@ function getSizeFootprint(size: string): [number, number][] {
 }
 
 export async function normalizeMonster(monster: any) {
-    const mid = monster.mid ?? await fetchUUID();
+    const cid = monster.cid ?? await fetchUUID();
     return {
         ...monster,
-        mid,
+        cid,
         position: monster.position ?? getSizeFootprint(monster.size),
     };
 }

@@ -12,8 +12,8 @@ import ActionList from "../../components/ActiveEncounter/ActionList.tsx";
 import Recommendation from "../../components/ActiveEncounter/Recommendation.tsx";
 
 import {getEncounter} from "../../api/EncounterGet.ts";
-const ENCOUNTER_EID = "enc_001";
-const CREATURE_CID = "930eacb8-a93b-413a-b834-53e6ae3793e0";
+const ENCOUNTER_EID = "6f3416a4-8916-47a6-b538-97128d1f9956";
+const CREATURE_CID = "d6f5d412-3f84-4b25-8e7e-cbc37f786a93";
 const SESSION_KEY = `encounter-${ENCOUNTER_EID}`;
 
 
@@ -29,7 +29,6 @@ function EncounterSimulation() {
         try {
             setLoadingEncounter(true);
             setEncounterError(null);
-
             const storedEncounter = sessionStorage.getItem(SESSION_KEY);
 
             if (storedEncounter !== null && storedEncounter !== "null") {
@@ -65,9 +64,8 @@ function EncounterSimulation() {
 
             <Row className="g-0 mx-0" style={{ height: "calc(100vh - 56px)" }}>
                 <Col style={{position: "relative", overflow: "hidden"}}>
-                    <ActiveMap/>
                     {!encounterError && !loadingEncounter && encounterData && (
-                        <div>Encounter loaded</div>
+                        <ActiveMap encounter={encounterData}/>
                     )}
 
                     {!initiativeOpen && (

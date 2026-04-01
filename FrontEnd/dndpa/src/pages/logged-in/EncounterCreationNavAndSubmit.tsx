@@ -8,35 +8,10 @@ import {normalizePlayer} from "../../utils/normalizePlayer.ts";
 import { normalizeMonster } from '../../utils/normalizeMonster';
 
 // Player token imports
-import ArtificerToken from "../../assets/player_tokens/Artificer.png";
-import BarbarianToken from "../../assets/player_tokens/Barbarian.png";
-import BardToken from "../../assets/player_tokens/Bard.png";
-import ClericToken from "../../assets/player_tokens/Cleric.png";
-import DruidToken from "../../assets/player_tokens/Druid.png";
-import FighterToken from "../../assets/player_tokens/Fighter.png";
-import MonkToken from "../../assets/player_tokens/Monk.png";
-import PaladinToken from "../../assets/player_tokens/Paladin.png";
-import RangerToken from "../../assets/player_tokens/Ranger.png";
-import RogueToken from "../../assets/player_tokens/Rogue.png";
-import SorcererToken from "../../assets/player_tokens/Sorcerer.png";
-import WarlockToken from "../../assets/player_tokens/Warlock.png";
-import WizardToken from "../../assets/player_tokens/Wizard.png";
-
-// Monster token imports
-import AberrationToken from "../../assets/monster_tokens/Abberation.png";
-import BeastToken from "../../assets/monster_tokens/Beast.png";
-import CelestialToken from "../../assets/monster_tokens/Celestial.png";
-import ConstructToken from "../../assets/monster_tokens/Construct.png";
-import DragonToken from "../../assets/monster_tokens/Dragon.png";
-import ElementalToken from "../../assets/monster_tokens/Elemental.png";
-import FeyToken from "../../assets/monster_tokens/Fey.png";
-import FiendToken from "../../assets/monster_tokens/Fiend.png";
-import GiantToken from "../../assets/monster_tokens/Giant.png";
-import HumanoidToken from "../../assets/monster_tokens/Humanoid.png";
-import MonstrosityToken from "../../assets/monster_tokens/Monstrosity.png";
-import OozeToken from "../../assets/monster_tokens/Ooze.png";
-import PlantToken from "../../assets/monster_tokens/Plant.png";
-import UndeadToken from "../../assets/monster_tokens/Undead.png";
+import {ArtificerToken, BarbarianToken, BardToken, ClericToken, DruidToken, FighterToken, MonkToken, PaladinToken,
+    RangerToken, RogueToken, SorcererToken, WarlockToken, WizardToken, AberrationToken, BeastToken, CelestialToken,
+    ConstructToken , DragonToken, ElementalToken, FeyToken, FiendToken, GiantToken, HumanoidToken, MonstrosityToken,
+    OozeToken, PlantToken, UndeadToken} from "../../assets/importTokens.ts"
 
 uuidPolyfill();
 
@@ -179,7 +154,7 @@ function EncounterCreationNavAndSubmit({ activePanel, setActivePanel, formData, 
                 token_image: getPlayerTokenImage(p.stats.characterClass),
             })),
             ...normalizedMonsters.map((m) => ({
-                cid: m.mid,
+                cid: m.cid,
                 token_image: getMonsterTokenImage(m.creatureType),
             })),
         ];
