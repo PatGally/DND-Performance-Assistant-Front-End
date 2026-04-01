@@ -13,7 +13,7 @@ export interface Encounter {
     date: string;
     eid: string;
     completed: boolean;
-    maplink: string;
+    mapdata: any;
 }
 
 export const getEncounter = async (eid: string): Promise<Encounter | null> => {

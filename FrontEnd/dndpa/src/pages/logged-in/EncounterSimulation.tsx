@@ -10,14 +10,15 @@ import ActiveMap from "../../components/ActiveEncounter/ActiveMap.tsx";
 import InitiativeList from "../../components/ActiveEncounter/InitiativeList.tsx";
 import ActionList from "../../components/ActiveEncounter/ActionList.tsx";
 import Recommendation from "../../components/ActiveEncounter/Recommendation.tsx";
-
 import {getEncounter} from "../../api/EncounterGet.ts";
-const ENCOUNTER_EID = "6f3416a4-8916-47a6-b538-97128d1f9956";
-const CREATURE_CID = "d6f5d412-3f84-4b25-8e7e-cbc37f786a93";
-const SESSION_KEY = `encounter-${ENCOUNTER_EID}`;
+import { useLocation } from "react-router-dom";
 
 
 function EncounterSimulation() {
+    const location = useLocation();
+    const eid = location.state?.eid;
+    const CREATURE_CID = "d6f5d412-3f84-4b25-8e7e-cbc37f786a93";
+    const SESSION_KEY = `encounter-${eid}`;
     const [initiativeOpen, setInitiativeOpen] = useState(false);
     const [actionOpen, setActionOpen] = useState(false);
     const [encounterData, setEncounterData] = useState<any | null>(null);
@@ -37,7 +38,7 @@ function EncounterSimulation() {
                 return;
             }
 
-            const data = await getEncounter(ENCOUNTER_EID);
+            const data = await getEncounter(eid);
             setEncounterData(data);
             sessionStorage.setItem(SESSION_KEY, JSON.stringify(data));
         } catch (error) {
@@ -105,7 +106,7 @@ function EncounterSimulation() {
                                     padding: "12px",
                                 }}
                             >
-                                <InitiativeList eid={ENCOUNTER_EID}/>
+                                <InitiativeList eid={eid}/>
                             </div>
 
                             <button
@@ -160,7 +161,7 @@ function EncounterSimulation() {
                                     padding: "12px",
                                 }}
                             >
-                                <ActionList cid={CREATURE_CID} eid={ENCOUNTER_EID}/>
+                                <ActionList cid={CREATURE_CID} eid={eid}/>
                             </div>
 
                             <button
@@ -187,7 +188,7 @@ function EncounterSimulation() {
                             zIndex: 15,
                         }}
                     >
-                        <Recommendation eid={ENCOUNTER_EID} cid={CREATURE_CID}/>
+                        <Recommendation eid={eid} cid={CREATURE_CID}/>
                     </div>
                 </Col>
             </Row>

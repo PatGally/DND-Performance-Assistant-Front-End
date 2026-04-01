@@ -46,6 +46,7 @@ function CreateEncounter({ monsters, onEncounterCreated }: Props) {
 
     useEffect(() => {
         const fetchCharacters = async () => {
+
             const data = await getCharacters();
             setCharacters(data);
         };

@@ -22,7 +22,7 @@ export interface Encounter {
     name: string;
     date: string;
     completed: boolean;
-    maplink: string;
+    mapdata: any;
 }
 
 export interface EncounterWithPacket extends Encounter {

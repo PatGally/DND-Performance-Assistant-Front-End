@@ -4,7 +4,6 @@ import {createBrowserRouter, RouterProvider} from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import ProtectedRoute from "./ProtectedRoute.tsx";
 import './index.css'
-
 import HomeDashboard from "./pages/logged-in/HomeDashboard.tsx";
 import NotFoundPage from "./pages/NotFoundPage.tsx";
 import Encounter from "./pages/logged-in/Encounter.tsx";
