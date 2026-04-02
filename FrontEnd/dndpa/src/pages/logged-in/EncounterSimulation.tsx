@@ -33,11 +33,14 @@ interface Encounter {
     monsters: MonsterCreature[];
 }
 const ENCOUNTER_EID = "9d8709dd-7ee0-43f2-9c72-f27824a89382";
-const CREATURE_CID = "a31b337a-68f3-4e5b-9512-bdc3d34738ab";
-const SESSION_KEY = `encounter-${ENCOUNTER_EID}`;
+import { useLocation } from "react-router-dom";
 
 
 function EncounterSimulation() {
+    const location = useLocation();
+    const eid = location.state?.eid;
+    const CREATURE_CID = "d6f5d412-3f84-4b25-8e7e-cbc37f786a93";
+    const SESSION_KEY = `encounter-${eid}`;
     const [initiativeOpen, setInitiativeOpen] = useState(false);
     const [actionOpen, setActionOpen] = useState(false);
     const [manualMode, setManualMode] = useState(false);
@@ -73,7 +76,7 @@ function EncounterSimulation() {
                     return;
                 }
 
-                const data = await getEncounter(ENCOUNTER_EID);
+                const data = await getEncounter(eid);
                 if (!data) {
                     setEncounterError("Encounter was not found.");
                     setEncounterData(undefined);
@@ -373,9 +376,8 @@ function EncounterSimulation() {
                         }}
                     >
                         {activeEncounter && (
-                          <Recommendation eid={ENCOUNTER_EID} cid={CREATURE_CID}/>
+                            <Recommendation eid={eid} cid={CREATURE_CID}/>
                         )}
-
                     </div>
                 </Col>
             </Row>

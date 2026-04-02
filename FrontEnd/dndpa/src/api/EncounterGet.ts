@@ -10,8 +10,6 @@ export interface Player {
     stats: { name: string };
 }
 
-import type {PlayerCreature, MonsterCreature} from "../../api/CreatureGet.ts";
-
 interface Encounter {
     eid: string;
     name: string;

@@ -6,7 +6,6 @@ import LoadCharacter from "../../components/Home-Dashboard/LoadCharacter.tsx";
 import EncounterView from "../../components/Home-Dashboard/EncounterView";
 import CreateEncounter from "../../components/Home-Dashboard/CreateEncounter";
 import UserMenu from "./UserMenu.tsx";
-
 import { useEffect, useState } from 'react';
 import CharCreation from "../../components/Home-Dashboard/CharCreation.tsx";
 import { getMonsters, type Monster } from "../../api/MonstersGet.ts";
@@ -14,6 +13,8 @@ import { getEncounters } from "../../api/EncountersGet";
 import creaturePacketGet from "../../api/CreaturePacketGet";
 import type { EncounterWithPacket, Encounter } from "../../types/encounter.ts";
 import {warmDriveImageCache} from "../../utils/driveImageCache.ts";
+import {deleteEncounter} from "../../api/DeleteEncounter.ts"
+import {deletePlayer} from "../../api/DeletePlayer.ts";
 
 function HomeDashboard() {
     const [activePage, setActivePage] = useState('SAVED_ENCOUNTERS');
@@ -29,6 +30,23 @@ function HomeDashboard() {
         fetchMonsters();
     }, []);
 
+    const handleDeleteEncounter = async (eid: string) => {
+        try {
+            await deleteEncounter(eid);
+            await fetchEncounters();
+        } catch (err) {
+            console.error("Error deleting encounter", err);
+        }
+    };
+
+    const onDeletePlayer = async (cid: string) => {
+        try{
+            await deletePlayer(cid);
+        }catch(err){
+            console.error("Error deleting player", err);
+        }
+    }
+
     const fetchEncounters = async () => {
         setLoadingEncounter(true);
         try {
@@ -40,7 +58,7 @@ function HomeDashboard() {
             }));
             await Promise.all(
                 encountersWithPackets
-                    .map(e => e.maplink)
+                    .map(e => e.mapdata?.map?.mapLink)
                     .filter(Boolean)
                     .map(link => warmDriveImageCache(link))
             );
@@ -69,8 +87,9 @@ function HomeDashboard() {
         fetchEncounters();
     }, []);
 
-    const handleEncounterCreated = () => {
-        fetchEncounters();
+    const handleEncounterCreated = async() => {
+        await fetchEncounters();
+        setActivePage("SAVED_ENCOUNTERS");
     };
 
     return (
@@ -100,9 +119,9 @@ function HomeDashboard() {
                     style={{ height: '100%', overflowY: 'auto', position: 'relative' }}
                 >
                     <Row className="flex-grow-1 mx-0" style={{ zIndex: 1, position: 'relative' }}>
-                        {activePage === 'SAVED_ENCOUNTERS' && <EncounterView encounters={encounters} loadingEncounter={loadingEncounter} />}
+                        {activePage === 'SAVED_ENCOUNTERS' && <EncounterView encounters={encounters} loadingEncounter={loadingEncounter} onDeleteEncounter={handleDeleteEncounter} />}
                         {activePage === 'CREATE_ENCOUNTER' && <CreateEncounter monsters={monsters} onEncounterCreated={handleEncounterCreated} />}
-                        {activePage === 'LOAD_CHARACTERS' && <LoadCharacter />}
+                        {activePage === 'LOAD_CHARACTERS' && <LoadCharacter onDeletePlayer={onDeletePlayer}/>}
                         {activePage === 'CREATE_CHARACTER' && <CharCreation />}
                         {activePage === 'HOW_TO_USE' && <div>How To Use</div>}
                     </Row>
