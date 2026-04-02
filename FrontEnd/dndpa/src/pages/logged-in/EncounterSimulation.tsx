@@ -32,14 +32,13 @@ interface Encounter {
     players : PlayerCreature[];
     monsters: MonsterCreature[];
 }
-const ENCOUNTER_EID = "9d8709dd-7ee0-43f2-9c72-f27824a89382";
 import { useLocation } from "react-router-dom";
 
 
 function EncounterSimulation() {
     const location = useLocation();
     const eid = location.state?.eid;
-    const CREATURE_CID = "d6f5d412-3f84-4b25-8e7e-cbc37f786a93";
+    const CREATURE_CID = "f4d5525d-1685-4797-a350-f0974662a779";
     const SESSION_KEY = `encounter-${eid}`;
     const [initiativeOpen, setInitiativeOpen] = useState(false);
     const [actionOpen, setActionOpen] = useState(false);
@@ -197,11 +196,11 @@ function EncounterSimulation() {
         }
 
         await axiosTokenInstance.post(
-            `/encounter/${ENCOUNTER_EID}/creature/${selectedCID}/simulate/movement`,
+            `/encounter/${eid}/creature/${selectedCID}/simulate/movement`,
             newPos
         );
 
-        const updatedEncounter = await getEncounter(ENCOUNTER_EID);
+        const updatedEncounter = await getEncounter(eid);
         if (!updatedEncounter) {
             console.error("Encounter reload failed after movement.");
             return;
@@ -293,7 +292,7 @@ function EncounterSimulation() {
                                     padding: "12px",
                                 }}
                             >
-                                <InitiativeList eid={ENCOUNTER_EID}/>
+                                <InitiativeList eid={eid}/>
                             </div>
 
                             <button
@@ -348,7 +347,7 @@ function EncounterSimulation() {
                                     padding: "12px",
                                 }}
                             >
-                                <ActionList cid={CREATURE_CID} eid={ENCOUNTER_EID}/>
+                                <ActionList cid={CREATURE_CID} eid={eid}/>
                             </div>
 
                             <button
@@ -375,8 +374,8 @@ function EncounterSimulation() {
                             zIndex: 15,
                         }}
                     >
-                        {activeEncounter && (
-                            <Recommendation eid={eid} cid={CREATURE_CID}/>
+                        {activeEncounter && currentTurnCreature && (
+                            <Recommendation eid={eid} cid={getCreatureCid(currentTurnCreature)}/>
                         )}
                     </div>
                 </Col>
