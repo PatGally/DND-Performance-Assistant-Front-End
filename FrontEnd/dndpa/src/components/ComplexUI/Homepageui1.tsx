@@ -3,22 +3,20 @@ import "./HomePageUI1.css";
 export default function HomePageUI1() {
     return (
         <section className="hpu1-section">
-            {/* Decorative corner frames top-left */}
-            <div className="hpu1-frame hpu1-frame--tl">
-                <svg width="140" height="140" viewBox="0 0 140 140" fill="none">
-                    <polyline points="0,70 0,0 70,0" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" fill="none"/>
-                    <polyline points="0,90 0,0 90,0" stroke="rgba(255,255,255,0.09)" strokeWidth="1" fill="none"/>
-                </svg>
-            </div>
+            {/*<div className="hpu1-frame hpu1-frame--tl">*/}
+            {/*    <svg width="140" height="140" viewBox="0 0 140 140" fill="none">*/}
+            {/*        <polyline points="0,70 0,0 70,0" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" fill="none"/>*/}
+            {/*        <polyline points="0,90 0,0 90,0" stroke="rgba(255,255,255,0.09)" strokeWidth="1" fill="none"/>*/}
+            {/*    </svg>*/}
+            {/*</div>*/}
 
-            {/* Hero art banner */}
-            <div className="hpu1-banner">
-                <div className="hpu1-banner__teal" />
-                <div className="hpu1-banner__dark-overlay" />
-                <div className="hpu1-banner__diagonal-cut" />
-                {/* Silhouette shape suggestion */}
-                <div className="hpu1-banner__figure" />
-            </div>
+            {/*<div className="hpu1-banner">*/}
+            {/*    <div className="hpu1-banner__teal" />*/}
+            {/*    <div className="hpu1-banner__dark-overlay" />*/}
+            {/*    <div className="hpu1-banner__diagonal-cut" />*/}
+            {/*    /!* Silhouette shape suggestion *!/*/}
+            {/*    <div className="hpu1-banner__figure" />*/}
+            {/*</div>*/}
 
             {/* Main content row */}
             <div className="hpu1-content">
@@ -37,7 +35,7 @@ export default function HomePageUI1() {
                 </div>
             </div>
 
-            {/* Bottom separator bar */}
+
             <div className="hpu1-footer-bar" />
         </section>
     );
