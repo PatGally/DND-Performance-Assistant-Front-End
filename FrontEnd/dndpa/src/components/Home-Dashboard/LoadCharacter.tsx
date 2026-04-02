@@ -1,9 +1,12 @@
-import { useState, useEffect } from "react";
+import {useState, useEffect} from "react";
 import AnimatedList from "../../css/AnimatedList.tsx";
-import { Form, Row, Col } from "react-bootstrap";
+import { Form, Row, Col, Dropdown } from "react-bootstrap";
 import { getCharacters, type Character } from "../../api/CharactersGet.ts";
 
-function LoadCharacter() {
+type Props = {
+    onDeletePlayer: (cid: string) => Promise<void>;
+}
+function LoadCharacter({onDeletePlayer}: Props) {
     const [search, setSearch] = useState("");
     const [filterClass, setFilterClass] = useState("");
     const [filterLevel, setFilterLevel] = useState("");
@@ -12,6 +15,18 @@ function LoadCharacter() {
     useEffect(() => {
         getCharacters().then(setCharacters);
     }, []);
+
+    const handleDelete = async (cid: string) => {
+        try {
+            await onDeletePlayer(cid);
+
+            setCharacters((prev) =>
+                prev.filter((character) => character.stats.cid !== cid)
+            );
+        } catch (err) {
+            console.error("Error deleting character:", err);
+        }
+    };
 
     const filteredCharacters = characters.filter((c) => {
         const matchesName = c.stats.name.toLowerCase().includes(search.toLowerCase());
@@ -26,6 +41,31 @@ function LoadCharacter() {
             <span style={{ flex: 3 }}>{c.stats.characterClass}</span>
             <span style={{ flex: 1 }}>{c.stats.level}</span>
             <span style={{ flex: 1 }}>{c.stats.maxhp}</span>
+            <div style={{ flex: 0.2 }} className="text-end">
+                <Dropdown align="end">
+                    <Dropdown.Toggle
+                        variant="link"
+                        id={`dots-menu-${c.stats.cid}`}
+                        className="p-0 border-0 text-white text-decoration-none fs-4 shadow-none"
+                        style={{ boxShadow: "none"}}>
+                        &#8942;
+                    </Dropdown.Toggle>
+
+                    <Dropdown.Menu>
+                        <Dropdown.Item
+                            onClick={async () => {
+                                try {
+                                    await handleDelete(c.stats.cid);
+                                } catch (err) {
+                                    console.error(err);
+                                }
+                            }}
+                        >
+                            Delete
+                        </Dropdown.Item>
+                    </Dropdown.Menu>
+                </Dropdown>
+            </div>
         </div>
     ));
 
@@ -67,10 +107,10 @@ function LoadCharacter() {
             </Form>
 
             <div className="d-flex px-4 text-dark mb-1">
-                <span style={{ flex: 3 }}>Name</span>
-                <span style={{ flex: 2.9 }}>Class</span>
-                <span style={{ flex: 1.1 }}>Level</span>
-                <span style={{ flex: 1 }}>HP</span>
+                <span style={{flex: 3}}>Name</span>
+                <span style={{flex: 2.9}}>Class</span>
+                <span style={{flex: 1.1}}>Level</span>
+                <span style={{flex: 1}}>HP</span>
             </div>
 
             <AnimatedList
