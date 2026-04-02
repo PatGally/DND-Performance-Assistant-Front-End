@@ -20,7 +20,6 @@ function renderValue(value: unknown): string {
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
 }
-
 function renderList(label: string, items: unknown[] | undefined) {
   return (
     <div>
@@ -29,7 +28,6 @@ function renderList(label: string, items: unknown[] | undefined) {
     </div>
   );
 }
-
 function renderRecord(label: string, record: Record<string, unknown> | undefined) {
   return (
     <div style={{ marginTop: "8px" }}>
@@ -48,7 +46,6 @@ function renderRecord(label: string, record: Record<string, unknown> | undefined
     </div>
   );
 }
-
 function renderPlayer(creature: PlayerCreature) {
   const stats = creature.stats;
 
@@ -93,7 +90,6 @@ function renderPlayer(creature: PlayerCreature) {
     </div>
   );
 }
-
 function renderMonster(creature: MonsterCreature) {
   const activeConditions = creature.activeConditions ?? creature.activeCons ?? [];
 

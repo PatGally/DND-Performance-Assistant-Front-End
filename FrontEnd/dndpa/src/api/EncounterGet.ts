@@ -1,4 +1,6 @@
 import axiosTokenInstance from "./AxiosTokenInstance.ts";
+import type {MonsterCreature, PlayerCreature} from "./CreatureGet.ts";
+import type {InitiativeEntry} from "../pages/logged-in/EncounterSimulation.tsx";
 
 export interface Monster {
     stats: { name: string };
@@ -8,12 +10,17 @@ export interface Player {
     stats: { name: string };
 }
 
-export interface Encounter {
+import type {PlayerCreature, MonsterCreature} from "../../api/CreatureGet.ts";
+
+interface Encounter {
+    eid: string;
     name: string;
     date: string;
-    eid: string;
     completed: boolean;
-    maplink: string;
+    mapdata: any;
+    initiative : InitiativeEntry[];
+    players : PlayerCreature[];
+    monsters: MonsterCreature[];
 }
 
 export const getEncounter = async (eid: string): Promise<Encounter | null> => {
