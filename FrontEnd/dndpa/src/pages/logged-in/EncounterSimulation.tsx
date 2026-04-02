@@ -38,19 +38,29 @@ import { useLocation } from "react-router-dom";
 function EncounterSimulation() {
     const location = useLocation();
     const eid = location.state?.eid;
-    const CREATURE_CID = "f4d5525d-1685-4797-a350-f0974662a779";
     const SESSION_KEY = `encounter-${eid}`;
+
+    //Side components
     const [initiativeOpen, setInitiativeOpen] = useState(false);
     const [actionOpen, setActionOpen] = useState(false);
     const [manualMode, setManualMode] = useState(false);
+
+    //Pre/post enc logic
     const [encStart, setEncStart] = useState(false);
     const [activeEncounter, setActiveEncounter] = useState(true);
+
     const [encounterData, setEncounterData] = useState<Encounter>();
     const [loadingEncounter, setLoadingEncounter] = useState(true);
     const [encounterError, setEncounterError] = useState<string | null>(null);
-    const [selectedCID, setSelectedCID] = useState<string | null>(null);
-    const [handlingInput, setHandlingInput] = useState(false);
     const [currentTurnCreature, setCurrentTurnCreature] = useState<Creature>();
+
+    //selectedCID used for token selection
+    const [selectedCID, setSelectedCID] = useState<string | null>(null);
+    //Locks the top three buttons
+    const [handlingInput, setHandlingInput] = useState(false);
+    const [preTurnEffects, setPreTurnEffects] = useState(false);
+
+
     //ONLOAD EFFECTS
     function readStoredJson<T>(key: string): T | null {
             const raw = sessionStorage.getItem(key);
@@ -64,6 +74,7 @@ function EncounterSimulation() {
             }
         }
     useEffect(() => {
+        //Loads the encounter from the DB/SessionStorage
         const loadEncounter = async (): Promise<void> => {
             try {
                 setLoadingEncounter(true);
@@ -96,20 +107,44 @@ function EncounterSimulation() {
     loadEncounter();
 }, []);
     useEffect(() => {
+        //Checks startup logic -> if not startup, then grab currentTurnCreature.
     if (!encounterData || loadingEncounter || encounterError) return;
 
-    const storedTurn = readStoredJson<Creature>("Current Turn");
-    if (storedTurn) {
-        setCurrentTurnCreature(storedTurn);
-        return;
+    const allCreatures: Creature[] = [
+        ...(encounterData.players ?? []),
+        ...(encounterData.monsters ?? []),
+    ];
+
+    const zeroOccupants = allCreatures.filter((creature) => {
+        const position = getCreaturePosition(creature);
+        return position.some(
+            (tile) =>
+                Array.isArray(tile) &&
+                tile.length === 2 &&
+                tile[0] === 0 &&
+                tile[1] === 0
+        );
+    });
+    const noCollisionAtZero = zeroOccupants.length <= 1;
+
+    if (!noCollisionAtZero) {
+        console.log("Encounter start!");
+        setEncStart(true);
+        setActiveEncounter(false);
+    }
+    else {
+        const storedTurn = readStoredJson<Creature>("Current Turn");
+        if (storedTurn) {
+            setCurrentTurnCreature(storedTurn);
+            return;
+        }
+        else {
+            //Edge case: User refreshed/exited after moving all tokens without hitting start.
+            simStart()
+        }
     }
 
-    simStart();
 }, [encounterData, loadingEncounter, encounterError]);
-    useEffect(() => {
-        simStart();
-       setCurrentTurnCreature(JSON.parse(sessionStorage.getItem("Current Turn") as string));
-    }, [encounterData, loadingEncounter, encounterError]);
 
     //SIM FUNCTIONS
     function simStart(): void {
@@ -143,7 +178,6 @@ function EncounterSimulation() {
     function getCreatureName(creature: Creature): string {
         return isPlayerCreature(creature) ? creature.stats.name : creature.name;
     }
-
     function getCreatureCid(creature: Creature): string {
         return isPlayerCreature(creature) ? creature.stats.cid : creature.cid;
     }
@@ -162,6 +196,15 @@ function EncounterSimulation() {
         if (!encounterData) return;
         console.log("In handleTokenSelect");
         setSelectedCID((prev) => (prev === cid ? null : cid));
+    }
+    function handleNextTurn() {
+        if (handlingInput || !encounterData || encStart || !activeEncounter) return;
+    }
+    function handleManualSimulate() {
+        handleNextTurn();
+    }
+    function handleRulesetSimulate() {
+        handleNextTurn();
     }
     async function handleGridCellClick(cellX: number, cellY: number) {
     if (!selectedCID || !encounterData) return;
@@ -227,6 +270,12 @@ function EncounterSimulation() {
                                 currentTurnCreature.stats.name : currentTurnCreature.name}</p>
                             <button>Ruleset</button>
                             <button>Manual</button>
+                            {manualMode && (
+                                <button onClick={handleManualSimulate}>Submit</button>
+                            )}
+                            {!manualMode && (
+                                <button onClick={handleRulesetSimulate}>Next Turn</button>
+                            )}
                         </>
                         )
                     }
@@ -325,7 +374,7 @@ function EncounterSimulation() {
                         </button>
                     )}
 
-                    {actionOpen && (
+                    {actionOpen && encounterData && currentTurnCreature && (
                         <div
                             style={{
                                 position: "absolute",
@@ -347,7 +396,7 @@ function EncounterSimulation() {
                                     padding: "12px",
                                 }}
                             >
-                                <ActionList cid={CREATURE_CID} eid={eid}/>
+                                <ActionList cid={getCreatureCid(currentTurnCreature)} eid={eid}/>
                             </div>
 
                             <button
@@ -374,9 +423,12 @@ function EncounterSimulation() {
                             zIndex: 15,
                         }}
                     >
-                        {activeEncounter && currentTurnCreature && (
+                        {activeEncounter && currentTurnCreature && !preTurnEffects && (
                             <Recommendation eid={eid} cid={getCreatureCid(currentTurnCreature)}/>
                         )}
+                        {activeEncounter && preTurnEffects && (
+                           <div>WOAH WOAH WOAH</div>
+                        )};
                     </div>
                 </Col>
             </Row>
