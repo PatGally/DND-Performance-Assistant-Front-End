@@ -4,18 +4,28 @@ import {useState} from "react";
 const SLIDES = [
     {
         number: "01",
-        title: "Add your characters",
-        body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
+        title: "Personal Assistant",
+        body: "Powerful, fast, incredibly brutal you name it! Personal Assistant is an amazing tool" +
+            " for DM's. It tracks your encounters, sending" +
+            " you smart data driven suggestions on every turn." +
+            " DND PA will assist your decision making making every encounter more " +
+            "manageable so can you focus on what's most important!" +
+            " TPKs! "
     },
     {
         number: "02",
-        title: "Select your monsters",
-        body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae.",
+        title: "Manual Mode",
+        body: "Gives you full control over your encounter",
     },
     {
         number: "03",
-        title: "Enter a google drive image link",
-        body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur pretium tincidunt lacus. Nulla gravida orci a odio, et tempus feugiat. Nullam varius turpis quis ligula scelerisque tincidunt.",
+        title: "Google Drive Image Link",
+        body: "Paste your google drive images when creating an encounter and we'll load your map every time.",
+    },
+    {
+        number: "04",
+        title: "Dynamic Weighting",
+        body: "This is what makes the Personal Assistant more... brutal",
     },
 ];
 
@@ -31,17 +41,12 @@ export default function HomePageUI2() {
         <section className="hpu2-section">
             {/* Section heading */}
             <div className="hpu2-heading-wrap">
-                <h2 className="hpu2-heading">GAMEPLAY FEATURES</h2>
+                <h2 className="hpu2-heading">CORE FEATURES</h2>
                 <div className="hpu2-heading-ornament">
-                    {/*<span className="hpu2-ornament-line" />*/}
-                    {/*<svg className="hpu2-ornament-icon" viewBox="0 0 40 12" fill="none">*/}
-                    {/*    <path d="M0 6 Q10 0 20 6 Q30 12 40 6" stroke="currentColor" strokeWidth="1" fill="none"/>*/}
-                    {/*</svg>*/}
-                    {/*<span className="hpu2-ornament-line" />*/}
                 </div>
             </div>
 
-            {/* Main panel */}
+
             <div className="hpu2-panel">
                 {/* Left: image placeholder */}
                 <div className="hpu2-image-col">
