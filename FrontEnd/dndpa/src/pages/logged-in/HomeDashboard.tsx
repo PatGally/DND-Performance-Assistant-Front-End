@@ -14,6 +14,7 @@ import creaturePacketGet from "../../api/CreaturePacketGet";
 import type { EncounterWithPacket, Encounter } from "../../types/encounter.ts";
 import {warmDriveImageCache} from "../../utils/driveImageCache.ts";
 import {deleteEncounter} from "../../api/DeleteEncounter.ts"
+import {deletePlayer} from "../../api/DeletePlayer.ts";
 
 function HomeDashboard() {
     const [activePage, setActivePage] = useState('SAVED_ENCOUNTERS');
@@ -37,6 +38,14 @@ function HomeDashboard() {
             console.error("Error deleting encounter", err);
         }
     };
+
+    const onDeletePlayer = async (cid: string) => {
+        try{
+            await deletePlayer(cid);
+        }catch(err){
+            console.error("Error deleting player", err);
+        }
+    }
 
     const fetchEncounters = async () => {
         setLoadingEncounter(true);
@@ -112,7 +121,7 @@ function HomeDashboard() {
                     <Row className="flex-grow-1 mx-0" style={{ zIndex: 1, position: 'relative' }}>
                         {activePage === 'SAVED_ENCOUNTERS' && <EncounterView encounters={encounters} loadingEncounter={loadingEncounter} onDeleteEncounter={handleDeleteEncounter} />}
                         {activePage === 'CREATE_ENCOUNTER' && <CreateEncounter monsters={monsters} onEncounterCreated={handleEncounterCreated} />}
-                        {activePage === 'LOAD_CHARACTERS' && <LoadCharacter />}
+                        {activePage === 'LOAD_CHARACTERS' && <LoadCharacter onDeletePlayer={onDeletePlayer}/>}
                         {activePage === 'CREATE_CHARACTER' && <CharCreation />}
                         {activePage === 'HOW_TO_USE' && <div>How To Use</div>}
                     </Row>

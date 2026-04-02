@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-
 import {ArtificerToken, BarbarianToken, BardToken, ClericToken, DruidToken, FighterToken, MonkToken, PaladinToken,
     RangerToken, RogueToken, SorcererToken, WarlockToken, WizardToken, AberrationToken, BeastToken, CelestialToken,
     ConstructToken , DragonToken, ElementalToken, FeyToken, FiendToken, GiantToken, HumanoidToken, MonstrosityToken,
     OozeToken, PlantToken, UndeadToken} from "../../assets/importTokens.ts"
 
 type GridCoord = [number, number];
-
 type PlayerLike = {
   stats: {
     cid: string;
@@ -16,19 +14,16 @@ type PlayerLike = {
   };
   [key: string]: unknown;
 };
-
 type MonsterLike = {
   cid: string;
   name: string;
   position: GridCoord[];
   [key: string]: unknown;
 };
-
 type CreatureToken = {
   cid: string;
   token_image: string;
 };
-
 type AoeToken = {
   tid: string;
   cid: string;
@@ -44,14 +39,12 @@ type AoeToken = {
   };
   timing: string;
 };
-
 type MapImage = {
   mapLink: string;
   sourceType: string;
   originPx: { x: number; y: number };
   naturalSizePx: { w: number; h: number };
 };
-
 type EncounterMapData = {
   map: MapImage;
   grid: {
@@ -66,23 +59,26 @@ type EncounterMapData = {
     aoeTokens: AoeToken[];
   };
 };
-
 type EncounterLike = {
+  completed: boolean;
   mapdata: EncounterMapData;
   players: PlayerLike[];
   monsters: MonsterLike[];
 };
-
 type ActiveMapProps = {
   encounter: EncounterLike;
+  manualMode: boolean;
+  encStart: boolean;
+  activeEncounter: boolean;
+  selectedCID: string | null;
+  onTokenSelect: (cid: string) => void;
+  onGridCellClick: (x: number, y: number) => void;
 };
-
 type ResolvedCreature = {
   cid: string;
   name: string;
   position: GridCoord[];
 };
-
 const tokenAssetMap: Record<string, string> = {
   "Artificer.png": ArtificerToken,
   "Barbarian.png": BarbarianToken,
@@ -130,10 +126,8 @@ function getCreatureName(creature: PlayerLike | MonsterLike): string {
 }
 function getCreaturePosition(creature: PlayerLike | MonsterLike): GridCoord[] {
   if (isPlayerCreature(creature)) {
-    console.log(`${creature.stats.name} Pos: ${creature.stats.position}`)
     return normalizePosition(creature.stats.position ?? []);
   }
-  console.log(`${creature.name} Pos: ${creature.position}`)
   return normalizePosition(creature.position ?? []);
 }
 function resolveTokenImage(tokenImage: string): string {
@@ -146,12 +140,10 @@ function resolveTokenImage(tokenImage: string): string {
     tokenImage.startsWith("data:") ||
       tokenImage.startsWith("/src/")
   ) {
-    console.log("Starts with token")
     return tokenImage;
   }
 
   // Convert /src/assets/.../Humanoid.png -> Humanoid.png
-  console.log("Asset map")
   const filename = tokenImage.split("/").pop() ?? "";
   return tokenAssetMap[filename] ?? tokenImage;
 }
@@ -178,7 +170,6 @@ function normalizePosition(position: unknown): GridCoord[] {
 }
 function normalizeCreatures(encounter: EncounterLike): Record<string, ResolvedCreature> {
   const allCreatures = [...(encounter.players ?? []), ...(encounter.monsters ?? [])];
-  console.log("allCreatures", allCreatures)
   const byCid: Record<string, ResolvedCreature> = {};
 
   for (const creature of allCreatures) {
@@ -190,7 +181,6 @@ function normalizeCreatures(encounter: EncounterLike): Record<string, ResolvedCr
       position: getCreaturePosition(creature),
     };
   }
-  console.log("byCid", byCid);
   return byCid;
 }
 
@@ -198,7 +188,16 @@ function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
 }
 
-export default function ActiveMap({ encounter }: ActiveMapProps) {
+export default function ActiveMap({
+  encounter,
+  manualMode,
+  encStart,
+  activeEncounter,
+  selectedCID,
+  onTokenSelect,
+  onGridCellClick,
+}: ActiveMapProps) {
+
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [renderSize, setRenderSize] = useState({ width: 0, height: 0 });
 
@@ -219,10 +218,8 @@ export default function ActiveMap({ encounter }: ActiveMapProps) {
 
   const creatureTokens = layers.creatureTokens ?? [];
   const aoeTokens = layers.aoeTokens ?? [];
-
   const creaturesByCid = useMemo(() => normalizeCreatures(encounter), [encounter]);
 
-  //TODO: Look into this useEffect
   useEffect(() => {
     const element = containerRef.current;
     if (!element) return;
@@ -245,6 +242,9 @@ export default function ActiveMap({ encounter }: ActiveMapProps) {
   if (!mapdata || !mapLink || cols <= 0 || rows <= 0) {
     return <div>No active map data found.</div>;
   }
+  function handleTokenClick(cid: string) {
+    onTokenSelect(cid);
+  }
 
   const displayedWidth = renderSize.width || naturalWidth || 800;
   const displayedHeight =
@@ -255,7 +255,6 @@ export default function ActiveMap({ encounter }: ActiveMapProps) {
 
   const cellWidth = displayedWidth / cols;
   const cellHeight = displayedHeight / rows;
-  const tokenSize = Math.min(cellWidth, cellHeight) * 0.85;
 
   return (
     <div
@@ -308,18 +307,28 @@ export default function ActiveMap({ encounter }: ActiveMapProps) {
               display: "grid",
               gridTemplateColumns: `repeat(${cols}, 1fr)`,
               gridTemplateRows: `repeat(${rows}, 1fr)`,
-              pointerEvents: "none",
+              pointerEvents: selectedCID ? "auto" : "none",
             }}
           >
-            {Array.from({ length: cols * rows }).map((_, index) => (
-              <div
-                key={index}
-                style={{
-                  border: "1px solid rgba(255,255,255,0.25)",
-                  boxSizing: "border-box",
-                }}
-              />
-            ))}
+            {Array.from({ length: cols * rows }).map((_, index) => {
+              const x = index % cols;
+              const y = Math.floor(index / cols);
+
+              return (
+                <div
+                  key={index}
+                  onClick={() => onGridCellClick(x, y)}
+                  style={{
+                    border: "1px solid rgba(255,255,255,0.25)",
+                    boxSizing: "border-box",
+                    cursor: selectedCID ? "pointer" : "default",
+                    background: selectedCID
+                      ? "rgba(0, 180, 255, 0.04)"
+                      : "transparent",
+                  }}
+                />
+              );
+            })}
           </div>
 
           {aoeTokens.map((aoe) => {
@@ -383,49 +392,63 @@ export default function ActiveMap({ encounter }: ActiveMapProps) {
   }
 
   const resolvedSrc = resolveTokenImage(token.token_image);
-  console.log("token", token);
-  console.log("creature", creature);
-  console.log("resolvedSrc", resolvedSrc);
+  if (!resolvedSrc) {
+    console.error("No resolved token source for", token);
+    return null;
+  }
 
-  return creature.position.map((pos, index) => {
-    const [x, y] = pos;
+  const positions = creature.position;
 
-    const clampedX = Math.max(0, Math.min(x, cols - 1));
-    const clampedY = Math.max(0, Math.min(y, rows - 1));
+  const xs = positions.map(([x]) => x);
+  const ys = positions.map(([, y]) => y);
 
-    const left = clampedX * cellWidth + (cellWidth - tokenSize) / 2;
-    const top = clampedY * cellHeight + (cellHeight - tokenSize) / 2;
+  const minX = Math.max(0, Math.min(...xs));
+  const maxX = Math.min(cols - 1, Math.max(...xs));
+  const minY = Math.max(0, Math.min(...ys));
+  const maxY = Math.min(rows - 1, Math.max(...ys));
 
-    return (
+  const widthCells = maxX - minX + 1;
+  const heightCells = maxY - minY + 1;
+
+  const left = minX * cellWidth;
+  const top = minY * cellHeight;
+  const width = widthCells * cellWidth;
+  const height = heightCells * cellHeight;
+
+  return (
       <img
-        key={`${token.cid}-${index}`}
-        src={resolvedSrc}
-        alt={creature.name}
-        title={`${creature.name} (${x}, ${y})`}
-        onError={() => {
-          console.error("Failed to load token image", {
-            cid: token.cid,
-            original: token.token_image,
-            resolved: resolvedSrc,
-            creature,
-          });
-        }}
-        style={{
-          position: "absolute",
-          left,
-          top,
-          width: tokenSize,
-          height: tokenSize,
-          objectFit: "contain",
-          zIndex: 3,
-          userSelect: "none",
-          pointerEvents: "none",
-          filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.7))",
-        }}
+          key={token.cid}
+          src={resolvedSrc}
+          alt={creature.name}
+          title={`${creature.name} (${widthCells}x${heightCells})`}
+          onClick={() => handleTokenClick(token.cid)}
+          onError={() => {
+            console.error("Failed to load token image", {
+              cid: token.cid,
+              original: token.token_image,
+              resolved: resolvedSrc,
+              creature,
+            });
+          }}
+          style={{
+            position: "absolute",
+            left,
+            top,
+            width,
+            height,
+            objectFit: "contain",
+            zIndex: 3,
+            userSelect: "none",
+            pointerEvents: "auto",
+            cursor: encounter ? "pointer" : "default",
+            filter:
+                selectedCID === token.cid
+                    ? "drop-shadow(0 0 8px rgba(0,255,255,0.95))"
+                    : "drop-shadow(0 1px 2px rgba(0,0,0,0.7))",
+          }}
       />
-    );
-  });
-})}
+  );
+          })}
         </div>
       </div>
     </div>
