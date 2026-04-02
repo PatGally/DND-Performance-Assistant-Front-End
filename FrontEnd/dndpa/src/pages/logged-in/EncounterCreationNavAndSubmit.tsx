@@ -232,7 +232,7 @@ function EncounterCreationNavAndSubmit({
                 completed: false,
             };
 
-            console.log(JSON.stringify(payload));
+            console.log(payload);
 
             await EncounterPost(payload);
             onSuccess();

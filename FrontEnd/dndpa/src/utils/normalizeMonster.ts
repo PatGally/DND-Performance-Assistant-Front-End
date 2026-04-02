@@ -26,6 +26,7 @@ export async function normalizeMonster(monster: any) {
     return {
         ...monster,
         cid,
+        maxhp: monster.hp,
         position: monster.position ?? getSizeFootprint(monster.size),
     };
 }
