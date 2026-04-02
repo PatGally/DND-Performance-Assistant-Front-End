@@ -109,9 +109,13 @@ function AddInitiative({ formData, updateFormData }: Props) {
             });
             updateFormData({
                 initiative: formData.initiative.filter((e) => validKeys.has(e.key)),
+
             });
+            console.log("Form Data initiatives", formData.initiative.filter((e) => validKeys.has(e.key)));
+
         }
     }, [allParticipants.length]);
+    // console.log("Order of participants",allParticipants);
 
     const getEntry = (key: string) => formData.initiative.find((e) => e.key === key);
 
@@ -139,8 +143,10 @@ function AddInitiative({ formData, updateFormData }: Props) {
                     dex: p.dex,
                 },
             ];
+        //Fixed initivative and updates here correctly
+        const sortedInitiative = sortInitiative(updated);
+        updateFormData({ initiative: sortedInitiative });
 
-        updateFormData({ initiative: updated });
     };
 
     const handleClear = (key: string) => {
@@ -151,7 +157,6 @@ function AddInitiative({ formData, updateFormData }: Props) {
     };
 
     const sortedInitiative = sortInitiative(formData.initiative);
-
 
     return (
         <Container fluid className="p-4">

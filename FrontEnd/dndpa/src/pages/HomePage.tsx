@@ -9,7 +9,6 @@ import HomePageUI2 from "../components/ComplexUI/Homepageui2.tsx";
 import LogoLoop from '../components/ComplexUI/LogoLoop.tsx';
 import { SiReact, SiNextdotjs, SiTypescript } from 'react-icons/si';
 
-import bg_UI1 from '../assets/bg_UI1.png'
 
 //TODO Give me logos and Products we used to make this project possible like CloudFlare or Docker
 // Whatever we would like to be public with
@@ -40,11 +39,12 @@ function homePage(){
                 </nav>
             </Row>
             <Row>
-                <img
-                    src={bg_UI1}
-                    alt="Company Background"
-                    className="img-fluid p-0"
-                />
+                {/*<img*/}
+                {/*    src={bg_UI1}*/}
+                {/*    alt="Company Background"*/}
+                {/*    className="img-fluid p-0"*/}
+                {/*/>*/}
+                {/*<HomePageUI1 />*/}
                 <HomePageUI1 />
                 <HomePageUI2 />
             </Row>
