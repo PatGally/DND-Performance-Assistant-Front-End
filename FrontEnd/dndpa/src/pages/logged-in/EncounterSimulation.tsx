@@ -389,9 +389,9 @@ function EncounterSimulation() {
     }
 
     return (
-        <Container fluid className="p-0" style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+        <Container fluid className="p-0 bg-dark" style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
 
-            {/* Fixed header */}
+
             <Row className="bg-dark text-white px-3 mx-0" style={{ height: "56px", flexShrink: 0 }}>
                 <Col className="d-flex align-items-center">
                     {encounterData
@@ -421,11 +421,9 @@ function EncounterSimulation() {
                 </Col>
             </Row>
 
-            {/* Main area */}
+
             <Row className="g-0 mx-0" style={{ flex: 1, minHeight: 0 }}>
                 <Col style={{ position: "relative", overflow: "hidden", height: "100%", padding: 0 }}>
-
-                    {/* MAP VIEWPORT — only this layer zooms/pans */}
                     <div
                         ref={mapViewportRef}
                         style={{
@@ -464,9 +462,9 @@ function EncounterSimulation() {
                         </div>
                     </div>
 
-                    {/* OVERLAYS — siblings to map viewport, never zoom */}
 
-                    {/* Initiative — left sidebar */}
+
+
                     {!initiativeOpen && (
                         <button
                             onClick={() => setInitiativeOpen(true)}
@@ -518,7 +516,7 @@ function EncounterSimulation() {
                         </div>
                     )}
 
-                    {/* Actions — right sidebar */}
+
                     {!actionOpen && (
                         <button
                             onClick={() => setActionOpen(true)}
@@ -570,7 +568,6 @@ function EncounterSimulation() {
                         </div>
                     )}
 
-                    {/* Recommendation — bottom center */}
                     {activeEncounter && currentTurnCreature && (
                         <div style={{
                             position: "absolute",
