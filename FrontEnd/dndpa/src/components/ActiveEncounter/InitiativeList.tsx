@@ -1,5 +1,3 @@
-// InitiativeList.tsx
-
 import { useEffect, useState } from "react";
 import initiativeGet from "../../api/InitiativeGet";
 import SimpleInitiativeEntry from "./SimpleInitiativeEntry";
@@ -36,6 +34,7 @@ export default function InitiativeList({ eid }: InitiativeListProps) {
         setError("");
         const data = await initiativeGet(eid);
         setInitiative(data);
+        console.log("Init data", data);
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message);

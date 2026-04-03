@@ -224,7 +224,7 @@ function EncounterCreationNavAndSubmit({
             const payload = {
                 ...rest,
                 eid,
-                date: new Date().toISOString(),
+                date: new Date().toISOString(), //TODO fix date so people see a regular x/xx/xxxx
                 players: normalizedPlayers,
                 monsters: normalizedMonsters,
                 initiative: rest.initiative.map(({ key, ...entry }) => entry),

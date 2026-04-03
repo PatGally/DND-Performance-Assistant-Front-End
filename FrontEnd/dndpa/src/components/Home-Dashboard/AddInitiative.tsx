@@ -10,6 +10,7 @@ export interface InitiativeEntry {
     turnType: "Player" | "Monster";
     movementResource: number;
     dex: number;
+    currentTurn: boolean;
 }
 
 type Participant = {
@@ -115,7 +116,6 @@ function AddInitiative({ formData, updateFormData }: Props) {
 
         }
     }, [allParticipants.length]);
-    // console.log("Order of participants",allParticipants);
 
     const getEntry = (key: string) => formData.initiative.find((e) => e.key === key);
 
@@ -141,10 +141,14 @@ function AddInitiative({ formData, updateFormData }: Props) {
                     turnType: p.type === "character" ? "Player" : "Monster",
                     movementResource: p.movement,
                     dex: p.dex,
+                    currentTurn: false,
                 },
             ];
-        //Fixed initivative and updates here correctly
-        const sortedInitiative = sortInitiative(updated);
+        //Fixed initiative and updates here correctly and gives first creature a value of true for current turn
+        const sortedInitiative = sortInitiative(updated).map((e, i) => ({
+            ...e,
+            currentTurn: i === 0,
+        }));
         updateFormData({ initiative: sortedInitiative });
 
     };
