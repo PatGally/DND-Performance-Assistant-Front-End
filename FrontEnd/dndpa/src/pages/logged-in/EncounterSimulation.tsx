@@ -133,9 +133,10 @@ function EncounterSimulation() {
         setActiveEncounter(false);
     }
     else {
-        const storedTurn = readStoredJson<Creature>("Current Turn");
+        const storedTurn = readStoredJson<Creature>(`encounter-current-turn-${eid}`);
         if (storedTurn) {
             setCurrentTurnCreature(storedTurn);
+            //Check for pre-turn effects
             return;
         }
         else {
@@ -168,12 +169,12 @@ function EncounterSimulation() {
     if (!matchingCreature) {
         console.warn("Could not find initiative starting creature.");
         setCurrentTurnCreature(undefined);
-        sessionStorage.removeItem("Current Turn");
+        sessionStorage.removeItem(`encounter-current-turn-${eid}`);
         return;
     }
 
     setCurrentTurnCreature(matchingCreature);
-    sessionStorage.setItem("Current Turn", JSON.stringify(matchingCreature));
+    sessionStorage.setItem(`encounter-current-turn-${eid}`, JSON.stringify(matchingCreature));
 }
     function getCreatureName(creature: Creature): string {
         return isPlayerCreature(creature) ? creature.stats.name : creature.name;
@@ -192,18 +193,64 @@ function EncounterSimulation() {
     function getCreatureSize(creature: Creature): string {
         return isPlayerCreature(creature) ? "medium" : String(creature.size ?? "medium").toLowerCase();
     }
+    function getCurrentTurnCreatureFromEncounter(encounter: Encounter): Creature | undefined {
+        const currentTurnEntry = encounter.initiative.find((entry) => entry.currentTurn);
+        if (!currentTurnEntry) return undefined;
+
+        const allCreatures: Creature[] = [
+            ...(encounter.players ?? []),
+            ...(encounter.monsters ?? []),
+        ];
+
+        return allCreatures.find(
+            (creature) => getCreatureName(creature).toLowerCase() === currentTurnEntry.name.toLowerCase()
+        );
+    }
     function handleTokenSelect(cid: string) {
         if (!encounterData) return;
         console.log("In handleTokenSelect");
         setSelectedCID((prev) => (prev === cid ? null : cid));
     }
-    function handleNextTurn() {
-        if (handlingInput || !encounterData || encStart || !activeEncounter) return;
+    async function handleNextTurn() {
+        if (handlingInput || !encounterData || encStart || !activeEncounter || !eid || preTurnEffects) return;
+
+        try {
+            setHandlingInput(true);
+
+            const response = await axiosTokenInstance.get(`/encounter/${eid}/initiative/nextturn`);
+            const preEffects = Array.isArray(response.data.preEffects) ? response.data.preEffects : [];
+            const updatedEncounter = await getEncounter(eid);
+            if (!updatedEncounter) {
+                console.error("Failed to reload encounter after advancing turn.");
+                return;
+            }
+
+            setEncounterData(updatedEncounter);
+            sessionStorage.setItem(SESSION_KEY, JSON.stringify(updatedEncounter));
+
+            const newCurrentTurnCreature = getCurrentTurnCreatureFromEncounter(updatedEncounter);
+            if (!newCurrentTurnCreature) {
+                console.error("Could not determine current turn creature from updated encounter.");
+                setCurrentTurnCreature(undefined);
+                sessionStorage.removeItem(`encounter-current-turn-${eid}`);
+            } else {
+                setCurrentTurnCreature(newCurrentTurnCreature);
+                sessionStorage.setItem(
+                    `encounter-current-turn-${eid}`,
+                    JSON.stringify(newCurrentTurnCreature)
+                );
+            }
+            if(preEffects) {
+                setPreTurnEffects(preEffects);
+            }
+        } catch (error) {
+            console.error("Failed to advance turn:", error);
+        } finally {
+            setHandlingInput(false);
+        }
     }
     function handleManualSimulate() {
-        handleNextTurn();
-    }
-    function handleRulesetSimulate() {
+        //Manual mode logic goes here
         handleNextTurn();
     }
     async function handleGridCellClick(cellX: number, cellY: number) {
@@ -274,7 +321,7 @@ function EncounterSimulation() {
                                 <button onClick={handleManualSimulate}>Submit</button>
                             )}
                             {!manualMode && (
-                                <button onClick={handleRulesetSimulate}>Next Turn</button>
+                                <button onClick={handleNextTurn}>Next Turn</button>
                             )}
                         </>
                         )
@@ -427,7 +474,7 @@ function EncounterSimulation() {
                             <Recommendation eid={eid} cid={getCreatureCid(currentTurnCreature)}/>
                         )}
                         {activeEncounter && preTurnEffects && (
-                           <div>WOAH WOAH WOAH</div>
+                           <div>WOAH PRE TURN WOAAH</div>
                         )};
                     </div>
                 </Col>

@@ -1,6 +1,3 @@
-
-import calcConMod from './calcConMod.ts';
-
 const hitDieList: Record<string, number> = {
     Barbarian: 12,
     Fighter: 10,
@@ -18,14 +15,14 @@ const hitDieList: Record<string, number> = {
 
 function calculateHP(level: number, characterClass: string, constitution: number): number {
     const hitDie = hitDieList[characterClass];
-    const conMod = calcConMod(constitution);
+    const conMod = Math.floor((constitution - 10) / 2);
 
     const firstLevelHP = hitDie + conMod;
     const avgHitDie = Math.ceil((hitDie + 1) / 2);
     const additionalHP = (level - 1) * (avgHitDie + conMod);
-    let HP = firstLevelHP + additionalHP //45 + 13
+    const hp = firstLevelHP + additionalHP //45 + 13
 
-    return HP; //changed to return a number not a string
+    return hp; //changed to return a number not a string
 }
 
 export default calculateHP;
