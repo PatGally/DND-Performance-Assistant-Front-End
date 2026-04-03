@@ -430,7 +430,7 @@ function EncounterSimulation() {
                         </button>
                     )}
 
-                    {actionOpen && encounterData && currentTurnCreature && !preTurnEffects && (
+                    {actionOpen && encounterData && currentTurnCreature && !preTurnEffects && !manualMode && (
                         <div
                             style={{
                                 position: "absolute",
@@ -480,7 +480,7 @@ function EncounterSimulation() {
                         }}
                     >
                         {activeEncounter && currentTurnCreature && (
-                            preTurnEffects ? (
+                            preTurnEffects && preTurnEffects.length > 0 ? (
                                 <div className="bg-light border rounded p-3">
                                     <h5>Resolve Pre-Turn Effects</h5>
                                     <p>This creature has effects that must be resolved before continuing.</p>
@@ -491,6 +491,8 @@ function EncounterSimulation() {
                                         </div>
                                     ))}
                                 </div>
+                            ) : manualMode ? (
+                                <div>Manual Mode</div>
                             ) : (
                                 <Recommendation eid={eid} cid={getCreatureCid(currentTurnCreature)} />
                             )
