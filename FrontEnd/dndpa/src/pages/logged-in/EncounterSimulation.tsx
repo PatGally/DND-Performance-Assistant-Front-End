@@ -32,6 +32,13 @@ interface Encounter {
     players : PlayerCreature[];
     monsters: MonsterCreature[];
 }
+interface PreTurnEffect {
+    "name" : string;
+    "effect" : {
+        "spellName" : string;
+        "resultID": string;
+    }
+}
 import { useLocation } from "react-router-dom";
 
 
@@ -42,6 +49,7 @@ function EncounterSimulation() {
 
     //Side components
     const [initiativeOpen, setInitiativeOpen] = useState(false);
+    const [initiativeRefreshKey, setInitiativeRefreshKey] = useState(0);
     const [actionOpen, setActionOpen] = useState(false);
     const [manualMode, setManualMode] = useState(false);
 
@@ -58,7 +66,7 @@ function EncounterSimulation() {
     const [selectedCID, setSelectedCID] = useState<string | null>(null);
     //Locks the top three buttons
     const [handlingInput, setHandlingInput] = useState(false);
-    const [preTurnEffects, setPreTurnEffects] = useState(false);
+    const [preTurnEffects, setPreTurnEffects] = useState<PreTurnEffect[]>();
 
 
     //ONLOAD EFFECTS
@@ -139,13 +147,12 @@ function EncounterSimulation() {
             //Check for pre-turn effects
             return;
         }
-        else {
+        else if (activeEncounter) {
             //Edge case: User refreshed/exited after moving all tokens without hitting start.
             simStart()
         }
     }
-
-}, [encounterData, loadingEncounter, encounterError]);
+}, [encounterData, loadingEncounter, encounterError, eid, activeEncounter]);
 
     //SIM FUNCTIONS
     function simStart(): void {
@@ -208,7 +215,6 @@ function EncounterSimulation() {
     }
     function handleTokenSelect(cid: string) {
         if (!encounterData) return;
-        console.log("In handleTokenSelect");
         setSelectedCID((prev) => (prev === cid ? null : cid));
     }
     async function handleNextTurn() {
@@ -240,12 +246,14 @@ function EncounterSimulation() {
                     JSON.stringify(newCurrentTurnCreature)
                 );
             }
-            if(preEffects) {
+            if(Array.isArray(preEffects) && preEffects.length !== 0) {
+                console.log(`preEffects: ${preEffects}`);
                 setPreTurnEffects(preEffects);
             }
         } catch (error) {
             console.error("Failed to advance turn:", error);
         } finally {
+            setInitiativeRefreshKey((prev) => prev + 1);
             setHandlingInput(false);
         }
     }
@@ -308,15 +316,16 @@ function EncounterSimulation() {
         <Container fluid className="p-0" style={{ height: "100vh", overflow: "hidden" }}>
             <Row className="bg-dark text-white px-3 mx-0" style={{ height: "56px" }}>
                 <Col className="d-flex align-items-center">
-                    <h3 className="mb-0">Encounter Simulation</h3>
+                    {encounterData && (<h3 className="mb-0">{encounterData.name} Simulation</h3>)}
+                    {!encounterData && (<h3 className="mb-0">Encounter Simulation</h3>)}
                 </Col>
                 <Col className="d-flex align-items-center">
                     {activeEncounter && currentTurnCreature && (
                         <>
                             <p>Current Turn: {isPlayerCreature(currentTurnCreature) ?
                                 currentTurnCreature.stats.name : currentTurnCreature.name}</p>
-                            <button>Ruleset</button>
-                            <button>Manual</button>
+                            <button onClick={() => setManualMode(false)}>Ruleset</button>
+                            <button disabled={handlingInput} onClick={() => setManualMode(true)}>Manual</button>
                             {manualMode && (
                                 <button onClick={handleManualSimulate}>Submit</button>
                             )}
@@ -388,7 +397,7 @@ function EncounterSimulation() {
                                     padding: "12px",
                                 }}
                             >
-                                <InitiativeList eid={eid}/>
+                                <InitiativeList key={`${eid}-${initiativeRefreshKey}`} eid={eid} />
                             </div>
 
                             <button
@@ -421,7 +430,7 @@ function EncounterSimulation() {
                         </button>
                     )}
 
-                    {actionOpen && encounterData && currentTurnCreature && (
+                    {actionOpen && encounterData && currentTurnCreature && !preTurnEffects && (
                         <div
                             style={{
                                 position: "absolute",
@@ -470,12 +479,22 @@ function EncounterSimulation() {
                             zIndex: 15,
                         }}
                     >
-                        {activeEncounter && currentTurnCreature && !preTurnEffects && (
-                            <Recommendation eid={eid} cid={getCreatureCid(currentTurnCreature)}/>
+                        {activeEncounter && currentTurnCreature && (
+                            preTurnEffects ? (
+                                <div className="bg-light border rounded p-3">
+                                    <h5>Resolve Pre-Turn Effects</h5>
+                                    <p>This creature has effects that must be resolved before continuing.</p>
+
+                                    {preTurnEffects.map((effect, index) => (
+                                        <div key={index} className="mb-2">
+                                            <strong>{effect.name ?? "Unnamed Effect"}</strong>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <Recommendation eid={eid} cid={getCreatureCid(currentTurnCreature)} />
+                            )
                         )}
-                        {activeEncounter && preTurnEffects && (
-                           <div>WOAH PRE TURN WOAAH</div>
-                        )};
                     </div>
                 </Col>
             </Row>

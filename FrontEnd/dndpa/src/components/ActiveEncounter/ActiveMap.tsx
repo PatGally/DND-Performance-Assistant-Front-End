@@ -387,7 +387,6 @@ export default function ActiveMap({
           {creatureTokens.map((token) => {
   const creature = creaturesByCid[token.cid];
   if (!creature || !creature.position || creature.position.length === 0) {
-    console.log("Skipping token: no creature or no valid position", token);
     return null;
   }
 

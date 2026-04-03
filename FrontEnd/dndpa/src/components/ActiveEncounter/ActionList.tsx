@@ -1,5 +1,3 @@
-// ActionList.tsx
-
 import { useEffect, useState } from "react";
 import type {CreatureAction, SpellAction, WeaponAction, MonsterAction} from "../../api/ActionsGet.ts";
 import {actionsGet} from "../../api/ActionsGet.ts";
@@ -19,7 +17,6 @@ function isMonsterAction(action: CreatureAction): action is MonsterAction {
     console.log(action);
     return "desc" in action;
 }
-
 function getActionName(action: CreatureAction): string {
   if (isSpellAction(action)) return action.spellname;
   return action.name;
@@ -54,7 +51,6 @@ function renderSpellDetails(action: SpellAction) {
     </div>
   );
 }
-
 function renderWeaponDetails(action: WeaponAction) {
   return (
     <div style={{ marginTop: "8px", paddingLeft: "8px" }}>
@@ -65,7 +61,6 @@ function renderWeaponDetails(action: WeaponAction) {
     </div>
   );
 }
-
 function renderMonsterDetails(action: MonsterAction) {
   return (
     <div style={{ marginTop: "8px", paddingLeft: "8px" }}>
@@ -91,7 +86,7 @@ function renderMonsterDetails(action: MonsterAction) {
 }
 
 function renderActionDetails(action: CreatureAction) {
-  if (isSpellAction(action)) return renderSpellDetails(action);
+    if (isSpellAction(action)) return renderSpellDetails(action);
   if (isWeaponAction(action)) return renderWeaponDetails(action);
   if (isMonsterAction(action)) return renderMonsterDetails(action);
   return <div style={{ marginTop: "8px" }}>No details available.</div>;
@@ -117,9 +112,6 @@ export default function ActionList({ eid, cid }: ActionListProps) {
           setError("Failed to load actions.");
         }
       } finally {
-          actions.forEach(action => {
-            console.log(action);
-          });
         setLoading(false);
       }
     }

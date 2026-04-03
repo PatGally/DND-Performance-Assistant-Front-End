@@ -68,7 +68,6 @@ export async function actionsGet(
   cid: string
 ): Promise<CreatureAction[]> {
     try{
-        console.log(`/encounter/${eid}/creature/${cid}/actions`);
          const response = await axiosTokenInstance.get(`/encounter/${eid}/creature/${cid}/actions`);
     if( !response.data ) {
         console.error("Data not found in call", response.data);
