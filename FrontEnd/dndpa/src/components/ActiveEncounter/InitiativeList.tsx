@@ -2,27 +2,14 @@ import { useEffect, useState } from "react";
 import initiativeGet from "../../api/InitiativeGet";
 import SimpleInitiativeEntry from "./SimpleInitiativeEntry";
 import ComplexInitiativeEntry from "./ComplexInitiativeEntry";
-
-export type InitiativeEntry = {
-  name: string;
-  iValue: number;
-  turnType: string;
-  currentTurn: boolean;
-  actionResource: number;
-  bonusActionResource: number;
-  movementResource: number;
-  hp: number;
-  maxhp: number;
-  ac: number;
-  cid: string;
-};
+import type {InitiativeEntryDisplay} from "../../types/SimulationTypes.ts";
 
 type InitiativeListProps = {
   eid: string;
 };
 
 export default function InitiativeList({ eid }: InitiativeListProps) {
-  const [initiative, setInitiative] = useState<InitiativeEntry[]>([]);
+  const [initiative, setInitiative] = useState<InitiativeEntryDisplay[]>([]);
   const [expandedCid, setExpandedCid] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
@@ -81,7 +68,7 @@ export default function InitiativeList({ eid }: InitiativeListProps) {
                 entry={entry}
                 onToggle={() => toggleExpanded(entry.cid)}
               />
-            ) : (
+            ) : ( //Extra check here, call ComplexManualEntry if manualMode
               <ComplexInitiativeEntry
                 eid={eid}
                 cid={entry.cid}

@@ -1,46 +1,133 @@
 //adding the party size and enemies are here, create character, then create map will be here
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-import {ArrowRightShort, ArrowLeftShort} from "react-bootstrap-icons";
+import {ArrowLeftShort, ArrowRightShort} from "react-bootstrap-icons";
 import axiosTokenInstance from "../../api/AxiosTokenInstance.ts";
+import {useLocation} from "react-router-dom";
 
 import UserMenu from "./UserMenu.tsx";
 import ActiveMap from "../../components/ActiveEncounter/ActiveMap.tsx";
 import InitiativeList from "../../components/ActiveEncounter/InitiativeList.tsx";
 import ActionList from "../../components/ActiveEncounter/ActionList.tsx";
 import Recommendation from "../../components/ActiveEncounter/Recommendation.tsx";
-import {getEncounter} from "../../api/EncounterGet.ts";
-import {type PlayerCreature, type MonsterCreature, type Creature, isPlayerCreature} from "../../api/CreatureGet.ts";
-export type InitiativeEntry = {
-    name: string;
-    iValue: number;
-    turnType: string;
-    currentTurn: boolean;
-    actionResource: number;
-    bonusActionResource: number;
-    movementResource: number;
-}
-interface Encounter {
-    eid: string;
-    name: string;
-    date: string;
-    completed: boolean;
-    mapdata: any;
-    initiative : InitiativeEntry[];
-    players : PlayerCreature[];
-    monsters: MonsterCreature[];
-}
-interface PreTurnEffect {
-    "name" : string;
-    "effect" : {
-        "spellName" : string;
-        "resultID": string;
-    }
-}
-import { useLocation } from "react-router-dom";
+import InputHandler from "../../components/ActiveEncounter/InputHandler.tsx";
 
+import {isMonsterAction, isSpellAction} from "../../utils/ActionTypeChecker.ts";
+import {
+    getCreatureName, getCreatureCid, getCreatureSize, getCreaturePosition,
+    getCurrentTurnCreatureFromEncounter, resolveTargetToCid
+} from "../../utils/CreatureHelpers.ts";
+
+import {getEncounter} from "../../api/EncounterGet.ts";
+import {fetchUUID} from "../../api/UUIDGet.ts";
+import {type Creature, isPlayerCreature} from "../../api/CreatureGet.ts";
+import type {CreatureAction, SpellAction} from "../../api/ActionsGet.ts";
+
+import type {Encounter, PreTurnEffect, NormalizedAction, ActionRequestDraft,
+    ActionExecutionSession, RollMode} from "../../types/SimulationTypes.ts";
+const WEAPON_DEFAULTS = {
+  targetMode: "single" as const,
+  targetCount: 1,
+  range: "5",
+  shape: "",
+  radius: "",
+  rollMode: "toHit" as const,
+  saveType: "",
+  halfSave: false,
+  actionCost: "action",
+};
+
+function parseCount(value?: string | number): number | null {
+  if (value === undefined || value === null || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+function buildRequiredInputs(normalized: NormalizedAction) {
+  const fields: string[] = [];
+
+  if (normalized.rollMode === "toHit" || normalized.rollMode === "onHit") fields.push("attackRoll");
+  else if (normalized.rollMode === "save") fields.push("save");
+  if (normalized.hasDamage) fields.push("damageRoll");
+
+  return fields;
+}
+function normalizeAction(action: CreatureAction): NormalizedAction {
+  if (isSpellAction(action)) {
+    const target = action.targeting?.[0];
+    const count = parseCount(target?.number);
+    const isAoe = !!target?.shape;
+    const isSelf = !!target?.self;
+
+    return {
+      kind: "spell",
+      name: action.spellname,
+      targetMode: isSelf
+        ? "self"
+        : isAoe
+          ? "aoe"
+          : count === 1
+            ? "single"
+            : (count ?? 0) > 1
+              ? "multi"
+              : "none",
+      targetCount: isSelf ? 0 : count,
+      range: target?.actionRange ?? "",
+      shape: target?.shape ?? "",
+      radius: target?.radius ?? "",
+      rollMode: (target?.rolls?.rollType as RollMode) || "none",
+      saveType: target?.rolls?.saveType ?? "",
+      halfSave: target?.rolls?.halfSave ?? false,
+      hasDamage: !!target?.rolls?.damage,
+      actionCost: target?.actionCost ?? "",
+      damage: target?.rolls?.damage ?? "",
+      damageMod: target?.rolls?.damageMod ?? "",
+      damageType: target?.damType?.[0] ?? "",
+    };
+  }
+  if (isMonsterAction(action)) {
+    const count = parseCount(action.number);
+    const isAoe = !!action.shape;
+
+    return {
+      kind: "monster",
+      name: action.name,
+      targetMode: isAoe
+        ? "aoe"
+        : count === 1
+          ? "single"
+          : (count ?? 0) > 1
+            ? "multi"
+            : "none",
+      targetCount: count,
+      range: action.actionRange ?? "",
+      shape: action.shape ?? "",
+      radius: "",
+      rollMode: (action.rolls?.rollType as RollMode) || "none",
+      saveType: action.rolls?.saveType ?? "",
+      halfSave: action.rolls?.halfSave ?? false,
+      hasDamage: !!action.rolls?.damage,
+      actionCost: action.actionCost ?? "",
+      damage: action.rolls?.damage ?? "",
+      damageMod: action.rolls?.damageMod ?? "",
+      damageType: action.damType?.[0] ?? "",
+    };
+  }
+
+  // Weapon defaults
+    //TODO: Account for ranged weapons in terms of range
+  return {
+  kind: "weapon",
+  name: action.name,
+  ...WEAPON_DEFAULTS,
+  hasDamage: !!action.properties.damage,
+  damage: action.properties.damage,
+  damageType: action.properties.damageType,
+  damageMod: "",
+  weaponStat: action.properties.weaponStat,
+};
+}
 
 function EncounterSimulation() {
     const location = useLocation();
@@ -65,8 +152,10 @@ function EncounterSimulation() {
     //selectedCID used for token selection
     const [selectedCID, setSelectedCID] = useState<string | null>(null);
     //Locks the top three buttons
-    const [handlingInput, setHandlingInput] = useState(false);
+    const [actionExecutionSession, setActionExecutionSession] = useState<ActionExecutionSession>();
+    const [handlingNextTurn, setHandlingNextTurn] = useState(false);
     const [preTurnEffects, setPreTurnEffects] = useState<PreTurnEffect[]>();
+    const [manualLock, setManualLock] = useState(false);
 
 
     //ONLOAD EFFECTS
@@ -113,7 +202,7 @@ function EncounterSimulation() {
         };
 
     loadEncounter();
-}, []);
+}, [SESSION_KEY, eid]);
     useEffect(() => {
         //Checks startup logic -> if not startup, then grab currentTurnCreature.
     if (!encounterData || loadingEncounter || encounterError) return;
@@ -183,45 +272,24 @@ function EncounterSimulation() {
     setCurrentTurnCreature(matchingCreature);
     sessionStorage.setItem(`encounter-current-turn-${eid}`, JSON.stringify(matchingCreature));
 }
-    function getCreatureName(creature: Creature): string {
-        return isPlayerCreature(creature) ? creature.stats.name : creature.name;
-    }
-    function getCreatureCid(creature: Creature): string {
-        return isPlayerCreature(creature) ? creature.stats.cid : creature.cid;
-    }
-    function getCreaturePosition(creature: Creature): number[][] {
-        if (isPlayerCreature(creature)) {
-            return Array.isArray((creature as { position?: number[][] }).position)
-                ? ((creature as { position?: number[][] }).position ?? [])
-                : (creature.stats.position ?? []);
+    async function basicActionGet(name : string) {
+        if (["dodge", "shove", "grapple", "hide"].includes(name.toLowerCase())) {
+            const response = await axiosTokenInstance.get("basic-actions");
+            const basicActions = response.data as SpellAction[];
+            return basicActions.find(basic => basic.spellname === name);
         }
-        return creature.position ?? [];
-    }
-    function getCreatureSize(creature: Creature): string {
-        return isPlayerCreature(creature) ? "medium" : String(creature.size ?? "medium").toLowerCase();
-    }
-    function getCurrentTurnCreatureFromEncounter(encounter: Encounter): Creature | undefined {
-        const currentTurnEntry = encounter.initiative.find((entry) => entry.currentTurn);
-        if (!currentTurnEntry) return undefined;
-
-        const allCreatures: Creature[] = [
-            ...(encounter.players ?? []),
-            ...(encounter.monsters ?? []),
-        ];
-
-        return allCreatures.find(
-            (creature) => getCreatureName(creature).toLowerCase() === currentTurnEntry.name.toLowerCase()
-        );
+        return;
     }
     function handleTokenSelect(cid: string) {
-        if (!encounterData) return;
+        if (!encounterData || actionExecutionSession || preTurnEffects) return;
         setSelectedCID((prev) => (prev === cid ? null : cid));
     }
     async function handleNextTurn() {
-        if (handlingInput || !encounterData || encStart || !activeEncounter || !eid || preTurnEffects) return;
+        if (handlingNextTurn || actionExecutionSession || !encounterData || !currentTurnCreature ||
+            encStart || !activeEncounter || !eid || preTurnEffects) return;
 
         try {
-            setHandlingInput(true);
+            setHandlingNextTurn(true);
 
             const response = await axiosTokenInstance.get(`/encounter/${eid}/initiative/nextturn`);
             const preEffects = Array.isArray(response.data.preEffects) ? response.data.preEffects : [];
@@ -250,19 +318,19 @@ function EncounterSimulation() {
                 console.log(`preEffects: ${preEffects}`);
                 setPreTurnEffects(preEffects);
             }
+            if(sessionStorage.getItem(`encounter-${eid}-${getCreatureCid(currentTurnCreature)}-actions`)) {
+                sessionStorage.removeItem(`encounter-${eid}-${getCreatureCid(currentTurnCreature)}-actions`);
+            }
         } catch (error) {
             console.error("Failed to advance turn:", error);
         } finally {
             setInitiativeRefreshKey((prev) => prev + 1);
-            setHandlingInput(false);
+            setHandlingNextTurn(false);
+            setManualLock(false);
         }
     }
-    function handleManualSimulate() {
-        //Manual mode logic goes here
-        handleNextTurn();
-    }
     async function handleGridCellClick(cellX: number, cellY: number) {
-    if (!selectedCID || !encounterData) return;
+    if (!selectedCID || !encounterData || actionExecutionSession || preTurnEffects) return;
 
     try {
         const allCreatures: Creature[] = [
@@ -307,10 +375,182 @@ function EncounterSimulation() {
         setEncounterData(updatedEncounter);
         sessionStorage.setItem(SESSION_KEY, JSON.stringify(updatedEncounter));
         setSelectedCID(null);
+        setManualLock(true);
     } catch (error) {
         console.error("Movement simulation failed:", error);
     }
 }
+    async function handleActionSubmission(action : CreatureAction) {
+        console.log("ACTION SUBMISSION");
+        console.log(action);
+        setManualLock(true);
+        const normalized = normalizeAction(action);
+        const requiredInputs = buildRequiredInputs(normalized);
+        let resultID;
+        try {
+            resultID = await fetchUUID();
+        } catch (err) {
+            resultID = "a";
+            console.error("Failed to fetch CID", err);
+        }
+        const draft : ActionRequestDraft = {
+            resultID,
+            actor : (currentTurnCreature ? getCreatureName(currentTurnCreature) : ""),
+            action : (isSpellAction(action) ? action.spellname : action.name),
+            actionType : (isSpellAction(action) ? `Lvl ${action.level} Spell`
+                : isMonsterAction(action) ? "MonAction" : "Weapon"),
+            actionProb : 0,
+            actionEDam : 0,
+            actionImpact : 0,
+            targets : [],
+            conditions : [],
+            statusEffects : [],
+            outcome : {
+                rollResults : [],
+                diceResults : []
+            },
+            extraOutcome : {
+                extraRollResults : [],
+                extraDiceResults : []
+            },
+            timestamp : "" //TODO: Fill timestamp on submit
+        };
+
+        console.log("normalized", normalized);
+        console.log("requiredInputs", requiredInputs);
+        const actionSession = {
+            action : normalized,
+            requiredInputs : requiredInputs,
+            draft : draft,
+            error : ""
+        }
+        setActionExecutionSession(actionSession);
+        //TODO: Save this into sessionStorage, and check on second useEffect.
+    }
+    async function handlePASubmission(name: string, prob: number,
+                       eDam: number, impact: number, targets: string[]) {
+        if (!currentTurnCreature || !encounterData) return;
+        const rawActionList = sessionStorage.getItem(
+          `encounter-${eid}-${getCreatureCid(currentTurnCreature)}-actions`
+        );
+        if (!rawActionList) return;
+        const actionList : CreatureAction[] = JSON.parse(rawActionList);
+        let action;
+        action = actionList.find(a => isSpellAction(a) ? a.spellname === name : a.name === name);
+        if (!action) {
+            action = await basicActionGet(name);
+        }
+        if (!action) {
+            console.error("Action does not exist in statblock!");
+            return;
+        }
+        console.log("ACTION SUBMISSION");
+        console.log(action);
+        setManualLock(true);
+        const resolvedTargets = targets
+          .map((target) => resolveTargetToCid(target, encounterData))
+          .filter((target): target is string => target !== null);
+        const normalized = normalizeAction(action);
+        const requiredInputs = buildRequiredInputs(normalized);
+        let resultID;
+        try {
+            resultID = await fetchUUID();
+        } catch (err) {
+            resultID = "-1";
+            console.error("Failed to fetch CID", err);
+        }
+        const draft : ActionRequestDraft = {
+            resultID,
+            actor : (currentTurnCreature ? getCreatureName(currentTurnCreature) : ""),
+            action : (isSpellAction(action) ? action.spellname : action.name),
+            actionType : (isSpellAction(action) ? `Lvl ${action.level} Spell`
+                : isMonsterAction(action) ? "MonAction" : "Weapon"),
+            actionProb : prob,
+            actionEDam : eDam,
+            actionImpact : impact,
+            targets : resolvedTargets,
+            conditions : [],
+            statusEffects : [],
+            outcome : {
+                rollResults : [],
+                diceResults : []
+            },
+            extraOutcome : {
+                extraRollResults : [],
+                extraDiceResults : []
+            },
+            timestamp : "" //TODO: Fill timestamp on submit
+        };
+        console.log("normalized", normalized);
+        console.log("requiredInputs", requiredInputs);
+        console.log("draft", draft);
+        const actionSession = {
+            action : normalized,
+            requiredInputs : requiredInputs,
+            draft : draft,
+            error : ""
+        }
+        setActionExecutionSession(actionSession);
+        //TODO: Save this into sessionStorage, and check on second useEffect.
+}
+    async function handleActionExecution(finalDraft: ActionRequestDraft) {
+          if (!eid || !currentTurnCreature || !encounterData || !actionExecutionSession) return;
+            console.log("In handleActionExecution");
+          try {
+            const missingTargets =
+              finalDraft.targets.length === 0 &&
+              (actionExecutionSession?.action.targetCount ?? 0) > 0;
+
+            console.log(`Missing targets: ${missingTargets}`)
+            if (missingTargets) {
+              setActionExecutionSession((prev) =>
+                prev ? { ...prev, error: "Targets are required." } : prev
+              );
+              return;
+            }
+
+            console.log(`Final draft pre-sim:`, finalDraft);
+            await axiosTokenInstance.post(
+              `/encounter/${eid}/simulate/ruleset`,
+              finalDraft
+            );
+
+            const updatedEncounter = await getEncounter(eid);
+            if (!updatedEncounter) {
+              console.error("Failed to reload encounter after action execution.");
+              return;
+            }
+
+            setEncounterData(updatedEncounter);
+            sessionStorage.setItem(SESSION_KEY, JSON.stringify(updatedEncounter));
+
+            const newCurrentTurnCreature = getCurrentTurnCreatureFromEncounter(updatedEncounter);
+            setCurrentTurnCreature(newCurrentTurnCreature);
+
+            if (newCurrentTurnCreature) {
+              sessionStorage.setItem(
+                `encounter-current-turn-${eid}`,
+                JSON.stringify(newCurrentTurnCreature)
+              );
+            } else {
+              sessionStorage.removeItem(`encounter-current-turn-${eid}`);
+            }
+
+            setActionExecutionSession(undefined);
+            setManualLock(false);
+          } catch (error) {
+            console.error("Failed to execute action:", error);
+            setActionExecutionSession((prev) =>
+              prev ? { ...prev, error: "Action execution failed." } : prev
+            );
+          }
+}
+    async function handleManualSimulate() {
+        //Manual mode logic goes here
+        if (manualLock || !manualMode) return;
+        console.log("IN MANUAL SIMULATE");
+        await handleNextTurn();
+    }
 
     return (
         <Container fluid className="p-0" style={{ height: "100vh", overflow: "hidden" }}>
@@ -325,12 +565,14 @@ function EncounterSimulation() {
                             <p>Current Turn: {isPlayerCreature(currentTurnCreature) ?
                                 currentTurnCreature.stats.name : currentTurnCreature.name}</p>
                             <button onClick={() => setManualMode(false)}>Ruleset</button>
-                            <button disabled={handlingInput} onClick={() => setManualMode(true)}>Manual</button>
+                            <button disabled={actionExecutionSession !== undefined || handlingNextTurn || manualLock}
+                                    onClick={() => setManualMode(true)}>Manual</button>
                             {manualMode && (
                                 <button onClick={handleManualSimulate}>Submit</button>
                             )}
                             {!manualMode && (
-                                <button onClick={handleNextTurn}>Next Turn</button>
+                                <button disabled={actionExecutionSession !== undefined || preTurnEffects !== undefined}
+                                        onClick={handleNextTurn}>Next Turn</button>
                             )}
                         </>
                         )
@@ -452,7 +694,7 @@ function EncounterSimulation() {
                                     padding: "12px",
                                 }}
                             >
-                                <ActionList cid={getCreatureCid(currentTurnCreature)} eid={eid}/>
+                                <ActionList cid={getCreatureCid(currentTurnCreature)} eid={eid} handleActionSubmission={handleActionSubmission} handleManualSimulate={handleManualSimulate}/>
                             </div>
 
                             <button
@@ -479,7 +721,7 @@ function EncounterSimulation() {
                             zIndex: 15,
                         }}
                     >
-                        {activeEncounter && currentTurnCreature && (
+                        {activeEncounter && currentTurnCreature && encounterData && (
                             preTurnEffects && preTurnEffects.length > 0 ? (
                                 <div className="bg-light border rounded p-3">
                                     <h5>Resolve Pre-Turn Effects</h5>
@@ -493,8 +735,14 @@ function EncounterSimulation() {
                                 </div>
                             ) : manualMode ? (
                                 <div>Manual Mode</div>
+                            ) : actionExecutionSession ? (
+                                <InputHandler encounter={encounterData}
+                                    actionSession={actionExecutionSession}
+                                    setActionExecutionSession={setActionExecutionSession}
+                                    handleActionExecution={handleActionExecution}/>
                             ) : (
-                                <Recommendation eid={eid} cid={getCreatureCid(currentTurnCreature)} />
+                                 <Recommendation eid={eid} cid={getCreatureCid(currentTurnCreature)}
+                                     handlePASubmission={handlePASubmission} />
                             )
                         )}
                     </div>

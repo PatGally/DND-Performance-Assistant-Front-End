@@ -1,29 +1,26 @@
 import { useEffect, useState } from "react";
-import type {CreatureAction, SpellAction, WeaponAction, MonsterAction} from "../../api/ActionsGet.ts";
-import {actionsGet} from "../../api/ActionsGet.ts";
+import type {
+  CreatureAction,
+  SpellAction,
+  WeaponAction,
+  MonsterAction,
+} from "../../api/ActionsGet.ts";
+import { actionsGet } from "../../api/ActionsGet.ts";
+import {isSpellAction, isWeaponAction, isMonsterAction} from "../../utils/ActionTypeChecker.ts"
 
 type ActionListProps = {
   eid: string;
   cid: string;
+  handleActionSubmission: (action: CreatureAction) => void;
+  handleManualSimulate: () => void;
 };
 
-function isSpellAction(action: CreatureAction): action is SpellAction {
-  return "spellname" in action;
-}
-function isWeaponAction(action: CreatureAction): action is WeaponAction {
-  return "properties" in action;
-}
-function isMonsterAction(action: CreatureAction): action is MonsterAction {
-    console.log(action);
-    return "desc" in action;
-}
 function getActionName(action: CreatureAction): string {
   if (isSpellAction(action)) return action.spellname;
   return action.name;
 }
 
 function renderSpellDetails(action: SpellAction) {
-    console.log(`SPELL DETAILS: ${action.targeting}`);
   const target = action.targeting?.[0];
 
   return (
@@ -51,6 +48,7 @@ function renderSpellDetails(action: SpellAction) {
     </div>
   );
 }
+
 function renderWeaponDetails(action: WeaponAction) {
   return (
     <div style={{ marginTop: "8px", paddingLeft: "8px" }}>
@@ -61,6 +59,7 @@ function renderWeaponDetails(action: WeaponAction) {
     </div>
   );
 }
+
 function renderMonsterDetails(action: MonsterAction) {
   return (
     <div style={{ marginTop: "8px", paddingLeft: "8px" }}>
@@ -85,23 +84,47 @@ function renderMonsterDetails(action: MonsterAction) {
   );
 }
 
-function renderActionDetails(action: CreatureAction) {
-    if (isSpellAction(action)) return renderSpellDetails(action);
-  if (isWeaponAction(action)) return renderWeaponDetails(action);
-  if (isMonsterAction(action)) return renderMonsterDetails(action);
-  return <div style={{ marginTop: "8px" }}>No details available.</div>;
-}
-
-export default function ActionList({ eid, cid }: ActionListProps) {
+export default function ActionList({
+  eid,
+  cid,
+  handleActionSubmission,
+  handleManualSimulate,
+}: ActionListProps) {
   const [actions, setActions] = useState<CreatureAction[]>([]);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
 
-  useEffect(() => {
-    async function loadActions() {
-      try {
-        setLoading(true);
+  function renderActionDetails(action: CreatureAction) {
+    let actionElement;
+
+    if (isSpellAction(action)) actionElement = renderSpellDetails(action);
+    else if (isWeaponAction(action)) actionElement = renderWeaponDetails(action);
+    else if (isMonsterAction(action)) actionElement = renderMonsterDetails(action);
+
+    return (
+      <div style={{ marginTop: "8px" }}>
+        {!actionElement ?
+            <div>No details available.
+                <button onClick={handleManualSimulate} style={{color: "red"}}>
+                Select
+                </button>
+            </div>
+            : <>
+                {actionElement}
+                <button onClick={() => handleActionSubmission(action)} style={{color: "blue"}}>
+                    Select
+                </button>
+            </>
+        }
+      </div>
+    );
+  }
+
+    useEffect(() => {
+        async function loadActions() {
+            try {
+                setLoading(true);
         setError("");
         const data = await actionsGet(eid, cid);
         setActions(data);
@@ -123,18 +146,18 @@ export default function ActionList({ eid, cid }: ActionListProps) {
     setExpandedIndex((prev) => (prev === index ? null : index));
   };
 
-  if (loading) {
-    return <div>Loading actions...</div>;
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-
+  if (loading) return <div>Loading actions...</div>;
+  if (error) return <div>Error: {error}</div>;
   if (actions.length === 0) {
-    return <div>No actions found.</div>;
+    return (
+      <div>
+        No actions found.
+      </div>
+    );
   }
-
+    if(!sessionStorage.getItem(`encounter-${eid}-${cid}-actions`)) {
+        sessionStorage.setItem(`encounter-${eid}-${cid}-actions`, JSON.stringify(actions));
+    }
   return (
     <div style={{ width: "100%" }}>
       {actions.map((action, index) => {

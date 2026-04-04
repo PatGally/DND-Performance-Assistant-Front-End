@@ -7,9 +7,11 @@ import {
 type RecommendationProps = {
   eid: string;
   cid: string;
+  handlePASubmission: (name: string, prob: number,
+                       eDam: number, impact: number, targets: string[]) => void;
 };
 
-export default function Recommendation({ eid, cid }: RecommendationProps) {
+export default function Recommendation({ eid, cid, handlePASubmission }: RecommendationProps) {
   const [recommendations, setRecommendations] = useState<RecommendationType[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [showPassTurn, setShowPassTurn] = useState<boolean>(false);
@@ -50,7 +52,12 @@ export default function Recommendation({ eid, cid }: RecommendationProps) {
   }
 
   function handleAccept() {
-    // Do nothing for now
+      const name = currentRecommendation.name;
+      const prob = currentRecommendation.prob;
+      const eDam = currentRecommendation.eDam;
+      const impact = currentRecommendation.impact;
+      const targets = currentRecommendation.target;
+    handlePASubmission(name, prob, eDam, impact, targets)
   }
 
   if (loading) {

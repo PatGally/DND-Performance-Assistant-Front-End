@@ -3,7 +3,7 @@
 import axiosTokenInstance from "./AxiosTokenInstance";
 import type {SpellAction, WeaponAction, MonsterAction} from "./ActionsGet.ts";
 
-export type StatArray = {
+type StatArray = {
   STR: number | string;
   DEX: number | string;
   CON: number | string;
@@ -12,7 +12,7 @@ export type StatArray = {
   CHA: number | string;
 };
 
-export type SaveProfs = {
+type SaveProfs = {
   STR: number | string;
   DEX: number | string;
   CON: number | string;
@@ -20,6 +20,44 @@ export type SaveProfs = {
   WIS: number | string;
   CHA: number | string;
 };
+
+type SpellInfoDetails =
+  | {
+      name: string;
+      spellData?: SpellAction;
+      charges: string;
+    }
+  | {
+      name: string;
+      spellData?: SpellAction;
+      charges?: never;
+    };
+
+export type SpellInfo =
+  | {
+      type: string;
+      DC: number;
+      attackRoll: number;
+      spells: Extract<SpellInfoDetails, { charges: string }>[];
+      spellSlots?: never;
+    }
+  | {
+      type: string;
+      DC: number;
+      attackRoll: number;
+      spells: Extract<SpellInfoDetails, { charges?: never }>[];
+      spellSlots: number[][];
+    };
+
+type MultiAttackSplit = {
+  name : string;
+  number : number;
+}
+export type MultiAttack = {
+  name : string;
+  total : number;
+  split : MultiAttackSplit[];
+}
 
 export type PlayerStats = {
   statArray: StatArray;
@@ -38,7 +76,7 @@ export type PlayerStats = {
   level: number | string;
   ac: number | string;
   characterClass: string;
-  spellSlots: Array<[string, string]> | string[][];
+  spellSlots: Array<[number, number]> | number[][];
   modifiers?: Record<string, number | string>;
 };
 
@@ -56,8 +94,7 @@ export type MonsterCreature = {
   damImmunes: string[];
   damVulns: string[];
   conImmunes: string[];
-  activeConditions?: string[];
-  activeCons?: string[];
+  activeConditions: string[];
   activeStatusEffects: unknown[];
   hp: number | string;
   maxhp: number | string;
@@ -75,8 +112,8 @@ export type MonsterCreature = {
   movement: number | string;
   actions: MonsterAction[];
   legActions: unknown[];
-  spellInfo?: Record<string, unknown>;
-  multiattack?: Record<string, unknown>;
+  spellInfo: SpellInfo | Record<string, never>;
+  multiattack: MultiAttack | Record<string, never>;
   modifiers?: Record<string, number | string>;
   [key: string]: unknown;
 };

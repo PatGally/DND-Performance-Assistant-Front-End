@@ -1,7 +1,7 @@
-import type {InitiativeEntry} from "./InitiativeList";
+import type {InitiativeEntryDisplay} from "../../types/SimulationTypes.ts";
 
 type SimpleInitiativeEntryProps = {
-  entry: InitiativeEntry;
+  entry: InitiativeEntryDisplay;
   onToggle: () => void;
 };
 
