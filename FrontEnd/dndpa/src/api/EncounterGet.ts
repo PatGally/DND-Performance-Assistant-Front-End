@@ -24,7 +24,6 @@ interface Encounter {
 export const getEncounter = async (eid: string): Promise<Encounter | null> => {
     try {
         const response = await axiosTokenInstance.get(`/encounter/${eid}/state`);
-        console.log(response.data);
 
         if (!response.data || typeof response.data !== "object") {
             console.error("Unexpected response format:", response.data);

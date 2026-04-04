@@ -87,7 +87,6 @@ export interface Monster {
 export const getMonsters = async (): Promise<Monster[]> => {
     try {
         const response = await axiosTokenInstance.get(`dashboard/monsters`);
-        console.log(response.data);
 
         if (!Array.isArray(response.data)) {
             console.error("Unexpected response format:", response.data);
