@@ -656,12 +656,7 @@ function EncounterSimulation() {
                         </>
                         )
                     }
-                    {encStart && (
-                        <>
-                            <button onClick={simStart}>Start!</button>
-                        </>
-                    )}
-                    {encStart && <button onClick={simStart}>Start!</button>}
+                    {encStart && (<button onClick={simStart}>Start!</button>)}
                 </Col>
                 <Col className="d-flex justify-content-end align-items-center">
                     <ExitSimulation />
@@ -709,9 +704,6 @@ function EncounterSimulation() {
                         </div>
                     </div>
 
-
-
-
                     {!initiativeOpen && (
                         <button
                             onClick={() => setInitiativeOpen(true)}
@@ -741,7 +733,8 @@ function EncounterSimulation() {
                         }}>
                             <div style={{
                                 flex: 1,
-                                background: "#f8f9fa",
+                                background: "#222222",
+                                color: "white",
                                 borderRight: "1px solid #ccc",
                                 overflowY: "auto",
                                 padding: "12px",
@@ -763,7 +756,6 @@ function EncounterSimulation() {
                         </div>
                     )}
 
-
                     {!actionOpen && (
                         <button
                             onClick={() => setActionOpen(true)}
@@ -779,28 +771,6 @@ function EncounterSimulation() {
                         </button>
                     )}
                     {actionOpen && encounterData && currentTurnCreature && !preTurnEffects && !manualMode && (
-                        <div
-                            style={{
-                                position: "absolute",
-                                top: 0,
-                                right: 0,
-                                height: "100%",
-                                width: "15%",
-                                minWidth: "220px",
-                                maxWidth: "320px",
-                                zIndex: 20,
-                            }}
-                        >
-                            <div
-                                style={{
-                                    height: "100%",
-                                    background: "#f8f9fa",
-                                    borderRight: "1px solid #ccc",
-                                    overflowY: "auto",
-                                    padding: "12px",
-                                }}
-                            >
-                                <ActionList cid={getCreatureCid(currentTurnCreature)} eid={eid} handleActionSubmission={handleActionSubmission} handleManualSimulate={handleManualSimulate}/>
                         <div style={{
                             position: "absolute",
                             top: 0,
@@ -815,7 +785,8 @@ function EncounterSimulation() {
                         }}>
                             <div style={{
                                 flex: 1,
-                                background: "#f8f9fa",
+                                background: "#222222",
+                                color: "white",
                                 borderLeft: "1px solid #ccc",
                                 overflowY: "auto",
                                 padding: "12px",
@@ -838,38 +809,47 @@ function EncounterSimulation() {
                     )}
 
                     {activeEncounter && currentTurnCreature && (
-                        <div style={{
-                            position: "absolute",
-                            bottom: 16,
-                            left: "50%",
-                            transform: "translateX(-50%)",
-                            zIndex: 15,
-                        }}
-                    >
-                        {activeEncounter && currentTurnCreature && encounterData && (
-                            preTurnEffects && preTurnEffects.length > 0 ? (
-                                <div className="bg-light border rounded p-3">
-                                    <h5>Resolve Pre-Turn Effects</h5>
-                                    <p>This creature has effects that must be resolved before continuing.</p>
-                                    {preTurnEffects.map((effect, index) => (
-                                        <div key={index} className="mb-2">
-                                            <strong>{effect.name ?? "Unnamed Effect"}</strong>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : manualMode ? (
-                                <div>Manual Mode</div>
-                            ) : actionExecutionSession ? (
-                                <InputHandler encounter={encounterData}
-                                    actionSession={actionExecutionSession}
-                                    setActionExecutionSession={setActionExecutionSession}
-                                    handleActionExecution={handleActionExecution}/>
-                            ) : (
-                                 <Recommendation eid={eid} cid={getCreatureCid(currentTurnCreature)}
-                                     handlePASubmission={handlePASubmission} />
-                            )
-                        )}
-                    </div>
+                        <div
+                            style={{
+                                position: "absolute",
+                                bottom: 16,
+                                color: "white",
+                                left: "50%",
+                                transform: "translateX(-50%)",
+                                zIndex: 15,
+                            }}
+                        >
+                            {encounterData && (
+                                preTurnEffects && preTurnEffects.length > 0 ? (
+                                    <div className="bg-light border rounded p-3">
+                                        <h5>Resolve Pre-Turn Effects</h5>
+                                        <p>This creature has effects that must be resolved before continuing.</p>
+
+                                        {preTurnEffects.map((effect, index) => (
+                                            <div key={index} className="mb-2">
+                                                <strong>{effect.name ?? "Unnamed Effect"}</strong>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : manualMode ? (
+                                    <div>Manual Mode</div>
+                                ) : actionExecutionSession ? (
+                                    <InputHandler
+                                        encounter={encounterData}
+                                        actionSession={actionExecutionSession}
+                                        setActionExecutionSession={setActionExecutionSession}
+                                        handleActionExecution={handleActionExecution}
+                                    />
+                                ) : (
+                                    <Recommendation
+                                        eid={eid}
+                                        cid={getCreatureCid(currentTurnCreature)}
+                                        handlePASubmission={handlePASubmission}
+                                    />
+                                )
+                            )}
+                        </div>
+                    )}
                 </Col>
             </Row>
         </Container>
@@ -877,5 +857,3 @@ function EncounterSimulation() {
 }
 
 export default EncounterSimulation;
-
-
