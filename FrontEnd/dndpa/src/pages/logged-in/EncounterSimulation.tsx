@@ -14,6 +14,7 @@ import Recommendation from "../../components/ActiveEncounter/Recommendation.tsx"
 import {getEncounter} from "../../api/EncounterGet.ts";
 import {type PlayerCreature, type MonsterCreature, type Creature, isPlayerCreature} from "../../api/CreatureGet.ts";
 import { useLocation } from "react-router-dom";
+import ExitSimulation from "../../components/ActiveEncounter/ExitSimulation.tsx";
 
 export type InitiativeEntry = {
     name: string;
@@ -417,7 +418,8 @@ function EncounterSimulation() {
                     {encStart && <button onClick={simStart}>Start!</button>}
                 </Col>
                 <Col className="d-flex justify-content-end align-items-center">
-                    <UserMenu />
+                    {/*<UserMenu />*/}
+                    <ExitSimulation />
                 </Col>
             </Row>
 
