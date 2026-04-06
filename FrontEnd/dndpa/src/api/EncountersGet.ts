@@ -1,23 +1,8 @@
 import axiosTokenInstance from "./AxiosTokenInstance.ts";
-
-export interface Monster {
-    stats: { name: string };
-}
-
-export interface Player {
-    stats: { name: string };
-}
-
-export interface Encounter {
-    name: string;
-    date: string;
-    eid: string;
-    completed: boolean;
-    mapdata: any;
-}
+import {type EncounterDash} from "../types/encounter.ts";
 
 
-export const getEncounters = async (): Promise<Encounter[]> => {
+export const getEncounters = async (): Promise<EncounterDash[]> => {
     try {
         const response = await axiosTokenInstance.get(`/dashboard/encounters`);
         // Ensure the backend returned an array

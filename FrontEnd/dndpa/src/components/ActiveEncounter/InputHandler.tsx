@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { Encounter, ActionExecutionSession, ActionRequestDraft } from "../../types/SimulationTypes.ts";
-import type { Creature} from "../../api/CreatureGet.ts";
+import type { Creature} from "../../types/creature.ts";
 import {getCreatureName, getCreatureCid} from "../../utils/CreatureHelpers.ts";
 
 type PerTargetInput = {

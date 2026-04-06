@@ -64,7 +64,6 @@ const panelOrder: ActivePanel[] = [
     "ADD_MAPLINK",
     "ADD_GRIDSIZE",
 ];
-
 const playerTokenMap: Record<string, string> = {
     artificer: ArtificerToken,
     barbarian: BarbarianToken,
@@ -80,7 +79,6 @@ const playerTokenMap: Record<string, string> = {
     warlock: WarlockToken,
     wizard: WizardToken,
 };
-
 const monsterTokenMap: Record<string, string> = {
     aberration: AberrationToken,
     beast: BeastToken,
@@ -227,7 +225,7 @@ function EncounterCreationNavAndSubmit({
                 date: new Date().toISOString(), //TODO fix date so people see a regular x/xx/xxxx
                 players: normalizedPlayers,
                 monsters: normalizedMonsters,
-                initiative: rest.initiative.map(({ key, ...entry }) => entry),
+                initiative: rest.initiative.map(({key, ...entry }) => entry),
                 mapdata,
                 completed: false,
             };

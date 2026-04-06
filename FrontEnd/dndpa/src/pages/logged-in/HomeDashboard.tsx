@@ -5,17 +5,18 @@ import CreateEncounter from "../../components/Home-Dashboard/CreateEncounter";
 import UserMenu from "./UserMenu.tsx";
 import { useEffect, useState } from 'react';
 import CharCreation from "../../components/Home-Dashboard/CharCreation.tsx";
-import { getMonsters, type Monster } from "../../api/MonstersGet.ts";
+import { getMonsters} from "../../api/MonstersGet.ts";
+import type {MonsterCreature} from "../../types/creature.ts";
 import { getEncounters } from "../../api/EncountersGet";
 import creaturePacketGet from "../../api/CreaturePacketGet";
-import type { EncounterWithPacket, Encounter } from "../../types/encounter.ts";
+import type { EncounterWithPacket, EncounterDash } from "../../types/encounter.ts";
 import {warmDriveImageCache} from "../../utils/driveImageCache.ts";
 import {deleteEncounter} from "../../api/DeleteEncounter.ts"
 import {deletePlayer} from "../../api/DeletePlayer.ts";
 
 function HomeDashboard() {
     const [activePage, setActivePage] = useState('SAVED_ENCOUNTERS');
-    const [monsters, setMonsters] = useState<Monster[]>([]);
+    const [monsters, setMonsters] = useState<MonsterCreature[]>([]);
     const [encounters, setEncounters] = useState<EncounterWithPacket[]>([]);
     const [loadingEncounter, setLoadingEncounter] = useState<boolean>(false);
 
@@ -47,7 +48,7 @@ function HomeDashboard() {
     const fetchEncounters = async () => {
         setLoadingEncounter(true);
         try {
-            const data: Encounter[] = await getEncounters();
+            const data: EncounterDash[] = await getEncounters();
 
             const encountersWithPackets: EncounterWithPacket[] = data.map((enc) => ({
                 ...enc,

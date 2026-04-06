@@ -1,13 +1,13 @@
-import type {MonsterCreature, PlayerCreature} from "../api/CreatureGet.ts";
+import type {MonsterCreature, PlayerCreature} from "./creature.ts";
 
 export type InitiativeEntry = {
     name: string;
     iValue: number;
     turnType: string;
     currentTurn: boolean;
-    actionResource: number;
-    bonusActionResource: number;
-    movementResource: number;
+    actionResource?: number;
+    bonusActionResource?: number;
+    movementResource?: number;
 };
 export type InitiativeEntryDisplay = {
   name: string;

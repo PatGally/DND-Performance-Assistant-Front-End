@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import type { EncounterFormData } from "./CreateEncounter";
-import { type Monster } from "../../api/MonstersGet.ts";
+import { type MonsterCreature } from "../../types/creature.ts";
 import AnimatedList from "../../css/AnimatedList.tsx";
 import { Form, Row, Col } from "react-bootstrap";
 
@@ -8,7 +8,7 @@ import { Form, Row, Col } from "react-bootstrap";
 type Props = {
     formData: EncounterFormData;
     updateFormData: (updates: Partial<EncounterFormData>) => void;
-    monsters: Monster[];
+    monsters: MonsterCreature[];
 };
 
 function AddMonsters({ formData, updateFormData, monsters }: Props) {

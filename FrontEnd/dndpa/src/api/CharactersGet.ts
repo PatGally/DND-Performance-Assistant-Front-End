@@ -1,32 +1,7 @@
 import axiosTokenInstance from "./AxiosTokenInstance.ts";
+import {type CharacterPayload} from "../types/creature.ts";
 
-export interface CharacterStats {
-    cid: string;
-    name: string;
-    level: string;
-    characterClass: string;
-    hp: string;
-    maxhp: string;
-    ac: string;
-    position: number[];
-    statArray: Record<string, string>;
-    saveProfs: Record<string, string>;
-    spellSlots: string[][];
-    conImmunes: string[];
-    damImmunes: string[];
-    damResists: string[];
-    damVulns: string[];
-    activeStatusEffects: string[];
-    activeConditions: string[];
-}
-
-export interface Character {
-    stats: CharacterStats;
-    weapons?: string[];
-    spells?: string[];
-}
-
-export const getCharacters = async (): Promise<Character[]> => {
+export const getCharacters = async (): Promise<CharacterPayload[]> => {
     try {
         const response = await axiosTokenInstance.get(`/dashboard/players`);
         console.log(response.data);
@@ -36,7 +11,7 @@ export const getCharacters = async (): Promise<Character[]> => {
             return [];
         }
 
-        return response.data as Character[];
+        return response.data as CharacterPayload[];
     } catch (error) {
         console.error("Failed to fetch characters:", error);
         return [];

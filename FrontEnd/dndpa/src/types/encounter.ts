@@ -1,23 +1,25 @@
-export interface Player {
+import type {InitiativeEntry} from "./SimulationTypes.ts";
+import type {MonsterCreature, PlayerCreature} from "./creature.ts";
+
+interface PacketPlayer {
     name: string;
     level: number;
     characterClass: string;
     location?: string;
 }
-export interface PacketMonster {
+interface PacketMonster {
     name: string;
     cr: number;
     size: string;
     location?: string;
 }
 
-
 export interface EncounterPacket {
-    players: Player[];
+    players: PacketPlayer[];
     monsters: PacketMonster[];
 }
 
-export interface Encounter {
+export interface EncounterDash {
     eid: string;
     name: string;
     date: string;
@@ -25,7 +27,18 @@ export interface Encounter {
     mapdata: any;
 }
 
-export interface EncounterWithPacket extends Encounter {
+export interface EncounterFull {
+    eid: string;
+    name: string;
+    date: string;
+    completed: boolean;
+    mapdata: any;
+    initiative : InitiativeEntry[];
+    players : PlayerCreature[];
+    monsters: MonsterCreature[];
+}
+
+export interface EncounterWithPacket extends EncounterDash {
     packet?: EncounterPacket;
     mapLink?: string;
 }

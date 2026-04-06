@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import creatureGet, {
+import {
     type Creature,
-  isPlayerCreature,
     type MonsterCreature,
     type PlayerCreature,
-} from "../../api/CreatureGet";
-import type {InitiativeEntry} from "./InitiativeList";
+} from "../../types/creature.ts";
+import creatureGet from "../../api/CreatureGet.ts";
+import {isPlayerCreature} from "../../api/CreatureGet.ts";
+import type {InitiativeEntry} from "../../types/SimulationTypes.ts";
 
 type ComplexInitiativeEntryProps = {
   eid: string;

@@ -191,9 +191,6 @@ function clamp(n: number, min: number, max: number): number {
 
 export default function ActiveMap({
                                       encounter,
-                                      manualMode,
-                                      encStart,
-                                      activeEncounter,
                                       selectedCID,
                                       onTokenSelect,
                                       onGridCellClick,

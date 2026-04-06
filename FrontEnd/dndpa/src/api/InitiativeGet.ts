@@ -1,25 +1,12 @@
 import axiosTokenInstance from "./AxiosTokenInstance";
-
-export type InitiativeEntry = {
-  name: string;
-  iValue: number;
-  turnType: string;
-  currentTurn: boolean;
-  actionResource: number;
-  bonusActionResource: number;
-  movementResource: number;
-  hp: number;
-  maxhp: number;
-  ac: number;
-  cid: string;
-};
+import type {InitiativeEntryDisplay} from "../types/SimulationTypes.ts";
 
 export default async function initiativeGet(
   eid: string
-): Promise<InitiativeEntry[]> {
+): Promise<InitiativeEntryDisplay[]> {
   try {
     const response = await axiosTokenInstance.get(`/encounter/${eid}/initiative`);
-    return response.data as InitiativeEntry[];
+    return response.data as InitiativeEntryDisplay[];
   } catch (error) {
     console.error("Failed to fetch initiative", error);
     return [];

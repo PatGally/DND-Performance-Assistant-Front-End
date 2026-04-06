@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import AnimatedList from "../../css/AnimatedList.tsx";
 import { Form, Row, Col, Dropdown, Modal, Button } from "react-bootstrap";
-import { getCharacters, type Character } from "../../api/CharactersGet.ts";
+import { getCharacters } from "../../api/CharactersGet.ts";
+import {type CharacterPayload} from "../../types/creature.ts";
 
 type Props = {
     onDeletePlayer: (cid: string) => Promise<void>;
@@ -11,9 +12,9 @@ function LoadCharacter({ onDeletePlayer }: Props) {
     const [search, setSearch] = useState("");
     const [filterClass, setFilterClass] = useState("");
     const [filterLevel, setFilterLevel] = useState("");
-    const [characters, setCharacters] = useState<Character[]>([]);
+    const [characters, setCharacters] = useState<CharacterPayload[]>([]);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
+    const [selectedCharacter, setSelectedCharacter] = useState<CharacterPayload | null>(null);
 
     useEffect(() => {
         getCharacters().then(setCharacters);
@@ -38,7 +39,7 @@ function LoadCharacter({ onDeletePlayer }: Props) {
         return matchesName && matchesClass && matchesLevel;
     });
 
-    const openDeleteConfirm = (character: Character) => {
+    const openDeleteConfirm = (character: CharacterPayload) => {
         setSelectedCharacter(character);
         setShowDeleteConfirm(true);
     };

@@ -21,8 +21,9 @@ import {
 
 import {getEncounter} from "../../api/EncounterGet.ts";
 import {fetchUUID} from "../../api/UUIDGet.ts";
-import {type Creature, isPlayerCreature} from "../../api/CreatureGet.ts";
-import type {CreatureAction, SpellAction} from "../../api/ActionsGet.ts";
+import {isPlayerCreature} from "../../api/CreatureGet.ts";
+import type {Creature} from "../../types/creature.ts";
+import type {CreatureAction, SpellAction} from "../../types/action.ts";
 
 import type {Encounter, PreTurnEffect, NormalizedAction, ActionRequestDraft,
     ActionExecutionSession, RollMode} from "../../types/SimulationTypes.ts";
@@ -577,6 +578,7 @@ function EncounterSimulation() {
 
             setActionExecutionSession(undefined);
             setManualLock(false);
+            setInitiativeRefreshKey((prev) => prev + 1);
           } catch (error) {
             console.error("Failed to execute action:", error);
             setActionExecutionSession((prev) =>
@@ -613,7 +615,8 @@ function EncounterSimulation() {
         const mouseY = e.clientY - rect.top;
 
         // 1.01 is slow, 1.05 is moderate, 1.1 is fast
-        const factor = e.deltaY < 0 ? 1.01 : 0.991;
+        //Zoom in : Zoom out.
+        const factor = e.deltaY < 0 ? 1.01 : 0.990;
 
         setZoom(prevZoom => {
             const nextZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, prevZoom * factor));

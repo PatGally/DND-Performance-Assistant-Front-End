@@ -4,7 +4,7 @@ import type {
   SpellAction,
   WeaponAction,
   MonsterAction,
-} from "../../api/ActionsGet.ts";
+} from "../../types/action.ts";
 import { actionsGet } from "../../api/ActionsGet.ts";
 import {isSpellAction, isWeaponAction, isMonsterAction} from "../../utils/ActionTypeChecker.ts"
 
@@ -97,11 +97,10 @@ export default function ActionList({
 
   function renderActionDetails(action: CreatureAction) {
     let actionElement;
-
     if (isSpellAction(action)) actionElement = renderSpellDetails(action);
     else if (isWeaponAction(action)) actionElement = renderWeaponDetails(action);
     else if (isMonsterAction(action)) actionElement = renderMonsterDetails(action);
-
+    //NOTE: This function is rerendering every time the user scrolls on the map!
     return (
       <div style={{ marginTop: "8px" }}>
         {!actionElement ?

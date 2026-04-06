@@ -1,13 +1,15 @@
-import {type Creature, isPlayerCreature} from "../api/CreatureGet.ts";
+import {isPlayerCreature} from "../api/CreatureGet.ts";
+import {type Creature} from "../types/creature.ts";
 import type {Encounter, InitiativeEntry} from "../types/SimulationTypes.ts";
+import type {GridCoord} from "../types/creature.ts";
 
 export function getCreatureCid(creature: Creature): string {
     return isPlayerCreature(creature) ? creature.stats.cid : creature.cid;
 }
-export function getCreaturePosition(creature: Creature): number[][] {
+export function getCreaturePosition(creature: Creature): GridCoord[] {
     if (isPlayerCreature(creature)) {
         return Array.isArray((creature as { position?: number[][] }).position)
-            ? ((creature as { position?: number[][] }).position ?? [])
+            ? ((creature as { position?: GridCoord[] }).position ?? [])
             : (creature.stats.position ?? []);
     }
     return creature.position ?? [];
