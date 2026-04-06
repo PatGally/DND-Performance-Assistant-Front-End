@@ -244,8 +244,8 @@ function EncounterCreationNavAndSubmit({
     };
 
     return (
-        <Container fluid className="p-3 bg-dark mx-0">
-            <div className="d-flex gap-2">
+        <Container fluid className="p-3 mx-0" style={{backgroundColor: "rgba(15, 24, 40, 0.85)"}}>
+            <div className="d-flex gap-1">
                 <button
                     className={`btn border-0 ${
                         activePanel === "SET_ENCOUNTERNAME" ? "btn-secondary" : "btn-dark"

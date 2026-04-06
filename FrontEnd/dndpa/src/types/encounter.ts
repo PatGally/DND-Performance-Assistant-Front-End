@@ -27,4 +27,5 @@ export interface Encounter {
 
 export interface EncounterWithPacket extends Encounter {
     packet?: EncounterPacket;
+    mapLink?: string;
 }

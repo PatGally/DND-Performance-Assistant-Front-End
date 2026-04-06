@@ -39,50 +39,82 @@ const EncounterView = ({ encounters, loadingEncounter, onDeleteEncounter }: Prop
 
     if (loadingEncounter) return <div>Loading...</div>;
     if (encounters.length === 0) return <div>No encounters found</div>;
-
     return (
         <>
             <div className="container">
                 <div className="row g-3">
                     {(encounters ?? []).map((enc) => (
                         <div key={enc.eid} className="col-12 col-md-6 col-lg-4">
-                            <Card>
-                                {enc.mapdata?.map?.mapLink && (
-                                    <Card.Img
-                                        variant="top"
-                                        src={enc.mapdata.map.mapLink}
-                                        alt={`Map for ${enc.name}`}
-                                    />
-                                )}
+                            <Card style={{ overflow: 'hidden' }}>
+
+                                <div style={{ height: '200px', overflow: 'hidden', position: 'relative' }}>
+                                    {enc.mapLink ? (
+                                        <img
+                                            src={enc.mapLink}
+                                            alt={`Map for ${enc.name}`}
+                                            style={{
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'cover',
+                                                objectPosition: 'center',
+                                                display: 'block',
+                                            }}
+                                        />
+                                    ) : (
+                                        <div style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            backgroundColor: '#1a1a2e',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: '#666',
+                                            fontSize: '0.85rem',
+                                        }}>
+                                            No map available
+                                        </div>
+                                    )}
+
+                                    <div
+                                        style={{
+                                            position: 'absolute',
+                                            bottom: 0,
+                                            left: 0,
+                                            right: 0,
+                                            padding: '0.5rem 0.75rem',
+                                            background: 'linear-gradient(transparent, rgba(0,0,0,0.75))',
+                                            color: '#fff',
+                                            fontWeight: 600,
+                                            fontSize: '1.1rem',
+                                        }}
+                                    >
+                                        {enc.name}
+                                    </div>
+                                </div>
 
                                 <Card.Body>
-                                    <h4>{enc.name}</h4>
-                                    <p>{enc.date} --- Completed: {String(enc.completed)}</p>
+                                    <p className="text-muted mb-3" style={{ fontSize: '0.8rem' }}>
+                                        {new Date(enc.date).toLocaleDateString()} &mdash; Completed: {String(enc.completed)}
+                                    </p>
 
-                                    <div className="container">
-                                        <div className="row">
-                                            <div className="col-6">
-                                                <button
-                                                    className="btn btn-primary mt-3 me-1"
-                                                    onClick={() =>
-                                                        navigate("/encounter-simulation", {
-                                                            state: { eid: enc.eid },
-                                                        })
-                                                    }
-                                                >
-                                                    Play
-                                                </button>
-                                            </div>
+                                    <div className="d-flex justify-content-between">
+                                        <button
+                                            className="btn btn-primary"
+                                            onClick={() =>
+                                                navigate("/encounter-simulation", {
+                                                    state: { eid: enc.eid },
+                                                })
+                                            }
+                                        >
+                                            Play
+                                        </button>
 
-                                            <div className="col-6">
-                                                <button
-                                                    className="btn btn-danger mt-3 ms-5"
-                                                    onClick={() => openDeleteConfirm(enc)}
-                                                >
-                                                    Delete
-                                                </button>
-                                            </div>
-                                        </div>
+                                        <button
+                                            className="btn btn-danger"
+                                            onClick={() => openDeleteConfirm(enc)}
+                                        >
+                                            Delete
+                                        </button>
                                     </div>
                                 </Card.Body>
                             </Card>
@@ -95,12 +127,10 @@ const EncounterView = ({ encounters, loadingEncounter, onDeleteEncounter }: Prop
                 <Modal.Header closeButton>
                     <Modal.Title>Confirm Delete</Modal.Title>
                 </Modal.Header>
-
                 <Modal.Body>
                     Are you sure you want to delete{" "}
                     <strong>{selectedEncounter?.name}</strong>?
                 </Modal.Body>
-
                 <Modal.Footer>
                     <Button variant="light" onClick={closeDeleteConfirm}>
                         Cancel
@@ -112,6 +142,7 @@ const EncounterView = ({ encounters, loadingEncounter, onDeleteEncounter }: Prop
             </Modal>
         </>
     );
+
 };
 
 export default EncounterView;

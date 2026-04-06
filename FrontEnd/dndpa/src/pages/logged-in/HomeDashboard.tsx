@@ -92,7 +92,6 @@ function HomeDashboard() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
 
-            {/* Top bar — sticks to top naturally since it's first in a fixed-height flex column */}
             <div
                 className="text-white px-3 d-flex align-items-center justify-content-between"
                 style={{ flexShrink: 0, height: '56px', zIndex: 1000, backgroundColor: "rgba(15, 24, 40, 0.85)", }}
