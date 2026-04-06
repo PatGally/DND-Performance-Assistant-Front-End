@@ -29,7 +29,6 @@ export interface Character {
 export const getCharacters = async (): Promise<Character[]> => {
     try {
         const response = await axiosTokenInstance.get(`/dashboard/players`);
-        console.log(response.data);
 
         if (!Array.isArray(response.data)) {
             console.error("Unexpected response format:", response.data);
