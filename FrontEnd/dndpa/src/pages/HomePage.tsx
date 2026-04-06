@@ -60,11 +60,11 @@ function homePage(){
                         fadeOut
                     />
                 </div>
-            </nav>
+            </Row>
             <Container>
                 <Row><Col> Development Server </Col></Row>
             </Container>
-        </>
+        </Container>
     );
 }
 
