@@ -414,7 +414,6 @@ function EncounterSimulation() {
         setEncounterData(updatedEncounter);
         sessionStorage.setItem(SESSION_KEY, JSON.stringify(updatedEncounter));
         setSelectedCID(null);
-        setManualLock(true);
     } catch (error) {
         console.error("Movement simulation failed:", error);
     }
@@ -607,7 +606,7 @@ function EncounterSimulation() {
     }
     function onPanEnd() { setIsPanning(false); }
     function onWheel(e: React.WheelEvent) {
-        e.preventDefault();
+        // e.preventDefault();
         const rect = mapViewportRef.current!.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
@@ -813,6 +812,7 @@ function EncounterSimulation() {
                             style={{
                                 position: "absolute",
                                 bottom: 16,
+                                background : "#222222",
                                 color: "white",
                                 left: "50%",
                                 transform: "translateX(-50%)",

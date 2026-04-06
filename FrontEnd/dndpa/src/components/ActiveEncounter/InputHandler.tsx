@@ -110,72 +110,94 @@ export default function InputHandler({
     setLocalError("");
   }
   function handleSubmit() {
-    const targets = actionSession.draft.targets;
+  const targets = actionSession.draft.targets;
 
-    const rollResults: string[] = [];
-    const diceResults: number[] = [];
+  const rollResults: string[] = [];
+  const diceResults: number[] = [];
 
-    for (const cid of targets) {
-      const entry = perTargetInputs[cid];
+  const extraRollResults = [...(actionSession.draft.extraOutcome?.extraRollResults ?? [])];
+  const extraDiceResults = [...(actionSession.draft.extraOutcome?.extraDiceResults ?? [])];
 
-      if (!entry) {
-        setLocalError("Missing input data for one or more targets.");
-        return;
-      }
+  for (const cid of targets) {
+    const entry = perTargetInputs[cid];
 
-      if (
-        (actionSession.action.rollMode === "toHit" || actionSession.action.rollMode === "onHit") &&
-        entry.attackRoll.trim() === ""
-      ) {
-        setLocalError("All attack roll inputs must be filled.");
-        return;
-      }
+    if (!entry) {
+      setLocalError("Missing input data for one or more targets.");
+      return;
+    }
 
-      if (actionSession.action.rollMode === "save" && entry.saveRoll.trim() === "") {
-        setLocalError("All save roll inputs must be filled.");
-        return;
-      }
+    let rollValue = "";
 
-      if (actionSession.action.hasDamage && entry.damageRoll.trim() === "") {
-        setLocalError("All damage roll inputs must be filled.");
-        return;
-      }
+    if (
+      (actionSession.action.rollMode === "toHit" || actionSession.action.rollMode === "onHit") &&
+      entry.attackRoll.trim() === ""
+    ) {
+      setLocalError("All attack roll inputs must be filled.");
+      return;
+    }
 
-      if (actionSession.action.rollMode === "toHit" || actionSession.action.rollMode === "onHit") {
-        rollResults.push(entry.attackRoll.trim());
-      } else if (actionSession.action.rollMode === "save") {
-        rollResults.push(entry.saveRoll.trim());
-      }
+    if (actionSession.action.rollMode === "save" && entry.saveRoll.trim() === "") {
+      setLocalError("All save roll inputs must be filled.");
+      return;
+    }
+
+    if (actionSession.action.hasDamage && entry.damageRoll.trim() === "") {
+      setLocalError("All damage roll inputs must be filled.");
+      return;
+    }
+
+    if (actionSession.action.rollMode === "toHit" || actionSession.action.rollMode === "onHit") {
+      rollValue = entry.attackRoll.trim();
+    } else if (actionSession.action.rollMode === "save") {
+      rollValue = entry.saveRoll.trim();
+    }
+
+    if (rollValue !== "") {
+      rollResults.push(rollValue);
 
       if (actionSession.action.hasDamage) {
         diceResults.push(Number(entry.damageRoll));
+      } else {
+        diceResults.push(0);
       }
     }
-
-    const finalDraft: ActionRequestDraft = {
-      ...actionSession.draft,
-      outcome: {
-        rollResults,
-        diceResults,
-      },
-      timestamp: getCurrentTimeString(),
-    };
-
-    setActionExecutionSession((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        draft: finalDraft,
-        error: null,
-      };
-    });
-
-    setLocalError("");
-    handleActionExecution(finalDraft);
   }
 
+  while (extraDiceResults.length < extraRollResults.length) {
+    extraDiceResults.push(0);
+  }
+  while (extraRollResults.length < extraDiceResults.length) {
+    extraRollResults.push("");
+  }
+
+  const finalDraft: ActionRequestDraft = {
+    ...actionSession.draft,
+    outcome: {
+      rollResults,
+      diceResults,
+    },
+    extraOutcome: {
+      extraRollResults,
+      extraDiceResults,
+    },
+    timestamp: getCurrentTimeString(),
+  };
+
+  setActionExecutionSession((prev) => {
+    if (!prev) return prev;
+    return {
+      ...prev,
+      draft: finalDraft,
+      error: null,
+    };
+  });
+
+  setLocalError("");
+  handleActionExecution(finalDraft);
+}
+
   return (
-    <div className="bg-light border rounded p-3" style={{ minWidth: "420px", maxWidth: "700px" }}>
+    <div className="bg-dark border rounded p-3" style={{ minWidth: "420px", maxWidth: "700px" }}>
       <h5 className="mb-3">{actionSession.draft.action}</h5>
 
       {needsTargetSelection ? (
