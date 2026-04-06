@@ -1,4 +1,4 @@
-import type { CharacterPayload } from "../types/character";
+import type { CharacterPayload } from "../types/creature.ts";
 import axiosTokenInstance from "./AxiosTokenInstance.ts";
 import axios from "axios";
 

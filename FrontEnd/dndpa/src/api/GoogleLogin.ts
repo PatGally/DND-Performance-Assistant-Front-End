@@ -13,7 +13,6 @@ export const googleLogin = async (idToken: string) => {
         credentials: "include",
     });
 
-    console.log("Status  ", res.status);
     if (!res.ok) {
         const error = await res.json();
         console.log("BACKEND ERROR:", error);

@@ -1,0 +1,243 @@
+/* ============================================
+   HomePageUI2.css
+   Gameplay Features slider section
+   ============================================ */
+
+/* Reuses the same design token names as HomePageUI1 where possible */
+:root {
+    --hpu2-bg: #0e0e0e;
+    --hpu2-panel-bg: #141414;
+    --hpu2-teal: #3bcea8;
+    --hpu2-gold: #c8a84b;
+    --hpu2-text: #c8c8c8;
+    --hpu2-text-dim: #666;
+    --hpu2-border: #2a2a2a;
+    --hpu2-font-title: 'Barlow Condensed', 'Impact', 'Arial Narrow', sans-serif;
+    --hpu2-font-body: 'Barlow', 'Helvetica Neue', sans-serif;
+}
+
+/* ---- Section shell ---- */
+.hpu2-section {
+    position: relative;
+    background-color: var(--hpu2-bg);
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 56px 4% 64px;
+    box-sizing: border-box;
+}
+
+/* ---- Heading ---- */
+.hpu2-heading-wrap {
+    text-align: center;
+    margin-bottom: 36px;
+}
+
+.hpu2-heading {
+    font-family: var(--hpu2-font-title);
+    font-weight: 800;
+    font-size: clamp(2rem, 4.5vw, 3.2rem);
+    letter-spacing: 0.06em;
+    color: var(--hpu2-teal);
+    text-transform: uppercase;
+    margin: 0 0 12px;
+    text-shadow: 0 0 40px rgba(59, 206, 168, 0.25);
+}
+
+.hpu2-heading-ornament {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--hpu2-text-dim);
+}
+
+.hpu2-ornament-line {
+    display: block;
+    width: 80px;
+    height: 1px;
+    background: var(--hpu2-border);
+}
+
+.hpu2-ornament-icon {
+    width: 40px;
+    height: 12px;
+    color: var(--hpu2-text-dim);
+}
+
+/* ---- Main panel ---- */
+.hpu2-panel {
+    display: flex;
+    width: 100%;
+    max-width: 1200px;
+    border: 1px solid var(--hpu2-border);
+    background: var(--hpu2-panel-bg);
+    min-height: 460px;
+}
+
+/* ---- Image column ---- */
+.hpu2-image-col {
+    flex: 0 0 62%;
+    position: relative;
+    overflow: hidden;
+}
+
+.hpu2-image-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 460px;
+    background:
+            linear-gradient(135deg, #0d1f1a 0%, #0a2a22 50%, #111 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Remove once you drop in a real <img> */
+}
+
+/* When you add an image, just do:
+   .hpu2-image-placeholder img {
+     width: 100%;
+     height: 100%;
+     object-fit: cover;
+     display: block;
+   }
+*/
+
+/* ---- Text column ---- */
+.hpu2-text-col {
+    flex: 1 1 0;
+    padding: 48px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 16px;
+    border-left: 1px solid var(--hpu2-border);
+}
+
+.hpu2-slide-number {
+    font-family: var(--hpu2-font-title);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--hpu2-gold);
+    line-height: 1;
+}
+
+.hpu2-slide-title {
+    font-family: var(--hpu2-font-title);
+    font-size: clamp(1.4rem, 2.2vw, 1.9rem);
+    font-weight: 800;
+    color: var(--hpu2-teal);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1.15;
+    margin: 0;
+}
+
+.hpu2-slide-body {
+    font-family: var(--hpu2-font-body);
+    font-size: 0.95rem;
+    line-height: 1.75;
+    color: var(--hpu2-text);
+    margin: 0;
+}
+
+/* ---- Tab navigation ---- */
+.hpu2-nav {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-top: 28px;
+}
+
+.hpu2-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hpu2-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0 8px;
+}
+
+.hpu2-tab-label {
+    font-family: var(--hpu2-font-title);
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--hpu2-text-dim);
+    transition: color 0.25s ease;
+}
+
+.hpu2-tab--active .hpu2-tab-label {
+    color: var(--hpu2-teal);
+}
+
+.hpu2-tab-bar {
+    display: block;
+    width: 48px;
+    height: 3px;
+    background: var(--hpu2-border);
+    border-radius: 2px;
+    transition: background 0.25s ease;
+}
+
+.hpu2-tab--active .hpu2-tab-bar {
+    background: var(--hpu2-teal);
+}
+
+/* ---- Arrow buttons ---- */
+.hpu2-arrow {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--hpu2-border);
+    background: #1a1a1a;
+    color: var(--hpu2-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.hpu2-arrow svg {
+    width: 18px;
+    height: 18px;
+}
+
+.hpu2-arrow:hover {
+    border-color: var(--hpu2-teal);
+    color: var(--hpu2-teal);
+    background: rgba(59, 206, 168, 0.08);
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+    .hpu2-panel {
+        flex-direction: column;
+    }
+
+    .hpu2-image-col {
+        flex: none;
+    }
+
+    .hpu2-image-placeholder {
+        min-height: 240px;
+    }
+
+    .hpu2-text-col {
+        border-left: none;
+        border-top: 1px solid var(--hpu2-border);
+        padding: 32px 24px;
+    }
+}

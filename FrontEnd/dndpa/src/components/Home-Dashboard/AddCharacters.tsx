@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import type { EncounterFormData } from "./CreateEncounter";
 import AnimatedList from "../../css/AnimatedList.tsx";
 import { Form, Row, Col } from "react-bootstrap";
-import type {Character} from "../../api/CharactersGet.ts";
+import type {CharacterPayload} from "../../types/creature.ts";
 
 
 type Props = {
     formData: EncounterFormData;
     updateFormData: (updates: Partial<EncounterFormData>) => void;
-    characters: Character[];
+    characters: CharacterPayload[];
 };
 
 function AddCharacters({ formData, updateFormData, characters }: Props) {
