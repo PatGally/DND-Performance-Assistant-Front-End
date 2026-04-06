@@ -4,7 +4,6 @@ import {type CharacterPayload} from "../types/creature.ts";
 export const getCharacters = async (): Promise<CharacterPayload[]> => {
     try {
         const response = await axiosTokenInstance.get(`/dashboard/players`);
-        console.log(response.data);
 
         if (!Array.isArray(response.data)) {
             console.error("Unexpected response format:", response.data);
