@@ -1,6 +1,3 @@
-import Container from 'react-bootstrap/Container';
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
 import HomeDashNav from '../../components/nav/HomeDashNav.tsx';
 import LoadCharacter from "../../components/Home-Dashboard/LoadCharacter.tsx";
 import EncounterView from "../../components/Home-Dashboard/EncounterView";
@@ -93,42 +90,36 @@ function HomeDashboard() {
     };
 
     return (
-        <Container fluid className="p-0" style={{ height: '100vh', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
 
-            <Row className="bg-dark text-white px-3 mx-0" style={{ position: 'sticky', top: 0, zIndex: 1000 }}>
-                <Col>
-                    <h3>dndpa</h3>
-                </Col>
-                <Col className="text-end">
-                    <UserMenu />
-                </Col>
-            </Row>
+            <div
+                className="text-white px-3 d-flex align-items-center justify-content-between"
+                style={{ flexShrink: 0, height: '56px', zIndex: 1000, backgroundColor: "rgba(15, 24, 40, 0.85)", }}
+            >
+                <h3 className="mb-0">dndpa</h3>
+                <UserMenu />
+            </div>
 
-            <Row className="g-0 mx-0" style={{ height: 'calc(100vh - 56px)', overflow: 'hidden' }}>
-                <Col
-                    className="bg-dark"
-                    style={{ width: '70px', flex: '0 0 70px', height: '100%', overflowY: 'auto' }}
+            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+
+                <div
+                    className="p-2"
+                    style={{ width: '70px',
+                        backgroundColor: "rgba(15, 24, 40, 0.85)"}}
                 >
-                    <Row className="flex-grow-1 mx-0">
-                        <HomeDashNav setActivePage={setActivePage} />
-                    </Row>
-                </Col>
+                    <HomeDashNav setActivePage={setActivePage} />
+                </div>
 
-                <Col
-                    className="d-flex flex-column"
-                    style={{ height: '100%', overflowY: 'auto', position: 'relative' }}
-                >
-                    <Row className="flex-grow-1 mx-0" style={{ zIndex: 1, position: 'relative' }}>
-                        {activePage === 'SAVED_ENCOUNTERS' && <EncounterView encounters={encounters} loadingEncounter={loadingEncounter} onDeleteEncounter={handleDeleteEncounter} />}
-                        {activePage === 'CREATE_ENCOUNTER' && <CreateEncounter monsters={monsters} onEncounterCreated={handleEncounterCreated} />}
-                        {activePage === 'LOAD_CHARACTERS' && <LoadCharacter onDeletePlayer={onDeletePlayer}/>}
-                        {activePage === 'CREATE_CHARACTER' && <CharCreation />}
-                        {activePage === 'HOW_TO_USE' && <div>How To Use</div>}
-                    </Row>
-                </Col>
-            </Row>
+                <div style={{ flex: 1, overflowY: 'auto' }}>
+                    {activePage === 'SAVED_ENCOUNTERS' && <EncounterView encounters={encounters} loadingEncounter={loadingEncounter} onDeleteEncounter={handleDeleteEncounter} />}
+                    {activePage === 'CREATE_ENCOUNTER' && <CreateEncounter monsters={monsters} onEncounterCreated={handleEncounterCreated} />}
+                    {activePage === 'LOAD_CHARACTERS' && <LoadCharacter onDeletePlayer={onDeletePlayer} />}
+                    {activePage === 'CREATE_CHARACTER' && <CharCreation />}
+                    {activePage === 'HOW_TO_USE' && <div>How To Use</div>}
+                </div>
 
-        </Container>
+            </div>
+        </div>
     );
 }
 

@@ -72,8 +72,7 @@ export default function Recommendation({ eid, cid, handlePASubmission }: Recomme
     return (
       <div
         style={{
-          border: "1px solid #ccc",
-          borderRadius: "6px",
+          border: "none",
           padding: "10px 12px",
           display: "flex",
           justifyContent: "space-between",
@@ -89,74 +88,78 @@ export default function Recommendation({ eid, cid, handlePASubmission }: Recomme
 
   if (!currentRecommendation) {
     return (
-      <div
-        style={{
-          border: "1px solid #ccc",
-          borderRadius: "6px",
-          padding: "10px 12px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <div><strong>Pass Turn</strong></div>
-      </div>
+        <div
+            style={{
+                border: "none",
+                padding: "10px 12px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                color: "white",
+            }}
+        >
+            <div>
+                <strong>Pass Turn</strong>
+            </div>
+        </div>
     );
   }
 
   return (
-    <div
-      style={{
-        border: "1px solid #ccc",
-        borderRadius: "6px",
-        padding: "10px 12px",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: "12px",
-      }}
-    >
-      <div style={{ flex: 1 }}>
-        <div><strong>{currentRecommendation.name}</strong></div>
-        <div>
-          Target:{" "}
-          {Array.isArray(currentRecommendation.target) && currentRecommendation.target.length > 0
-            ? currentRecommendation.target.join(", ")
-            : "None"}
-        </div>
-      </div>
-
-      <div style={{ display: "flex", gap: "8px" }}>
-        <button
-          type="button"
-          onClick={handleAccept}
+      <div
           style={{
-            border: "1px solid #ccc",
-            borderRadius: "4px",
-            background: "white",
-            cursor: "pointer",
-            padding: "6px 10px",
+              border: "none",
+              padding: "10px 12px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "12px",
+              color: "white",
           }}
-          aria-label="Accept recommendation"
-        >
-          ✅
-        </button>
+      >
+          <div style={{ flex: 1 }}>
+              <div><strong>{currentRecommendation.name}</strong></div>
+              <div style={{ opacity: 0.8 }}>
+                  Target:{" "}
+                  {Array.isArray(currentRecommendation.target) && currentRecommendation.target.length > 0
+                      ? currentRecommendation.target.join(", ")
+                      : "None"}
+              </div>
+          </div>
 
-        <button
-          type="button"
-          onClick={handleReject}
-          style={{
-            border: "1px solid #ccc",
-            borderRadius: "4px",
-            background: "white",
-            cursor: "pointer",
-            padding: "6px 10px",
-          }}
-          aria-label="Reject recommendation"
-        >
-          ❌
-        </button>
+          <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                  type="button"
+                  onClick={handleAccept}
+                  style={{
+                      border: "none",
+                      background: "rgba(255,255,255,0.1)",
+                      cursor: "pointer",
+                      padding: "6px 10px",
+                      borderRadius: "6px",
+                      backdropFilter: "blur(4px)",
+                  }}
+                  aria-label="Accept recommendation"
+              >
+                  ✅
+              </button>
+
+              <button
+                  type="button"
+                  onClick={handleReject}
+                  style={{
+                      border: "none",
+                      background: "rgba(255,255,255,0.1)",
+                      cursor: "pointer",
+                      padding: "6px 10px",
+                      borderRadius: "6px",
+                      backdropFilter: "blur(4px)",
+                  }}
+                  aria-label="Reject recommendation"
+              >
+                  ❌
+              </button>
+          </div>
       </div>
-    </div>
   );
 }

@@ -38,7 +38,8 @@ const WEAPON_DEFAULTS = {
   actionCost: "action",
 };
 import ExitSimulation from "../../components/ActiveEncounter/ExitSimulation.tsx";
-
+import { Card } from "react-bootstrap";
+import Orb from '../../css/Orb.tsx';
 
 function parseCount(value?: string | number): number | null {
   if (value === undefined || value === null || value === "") return null;
@@ -808,32 +809,50 @@ function EncounterSimulation() {
                     )}
 
                     {activeEncounter && currentTurnCreature && (
-                        <div
-                            style={{
-                                position: "absolute",
-                                bottom: 16,
-                                background : "#222222",
-                                color: "white",
-                                left: "50%",
-                                transform: "translateX(-50%)",
-                                zIndex: 15,
-                            }}
+                        <Card className="text-white "
+                              style={{
+                                  position: "absolute",
+                                  bottom: 16,
+                                  left: "50%",
+                                  transform: "translateX(-50%)",
+                                  zIndex: 15,
+                                  width: "30%",
+                                  backgroundColor: "rgba(15, 24, 40, 0.85)",
+                                  backdropFilter: "blur(6px)",
+                                  WebkitBackdropFilter: "blur(6px)",
+                                  border: "none",
+                                  outline: "none",
+                                  boxShadow: "none"
+                              }}
                         >
-                            {encounterData && (
-                                preTurnEffects && preTurnEffects.length > 0 ? (
-                                    <div className="bg-light border rounded p-3">
-                                        <h5>Resolve Pre-Turn Effects</h5>
-                                        <p>This creature has effects that must be resolved before continuing.</p>
+                            <Card.Body>
+                                <Row>
+                                    <Col lg={2}>
+                                        <Orb
+                                            hoverIntensity={2}
+                                            rotateOnHover={false}
+                                            hue={0}
+                                            forceHoverState={false}
+                                            backgroundColor="#100000"
+                                        />
+                                    </Col>
+                                    <Col xs="auto" >
+                                        {preTurnEffects && preTurnEffects.length > 0 ? (
+                                            <>
+                                                <Card.Title>Resolve Pre-Turn Effects</Card.Title>
+                                                <Card.Text>
+                                                    This creature has effects that must be resolved before continuing.
+                                                </Card.Text>
 
-                                        {preTurnEffects.map((effect, index) => (
-                                            <div key={index} className="mb-2">
-                                                <strong>{effect.name ?? "Unnamed Effect"}</strong>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : manualMode ? (
-                                    <div>Manual Mode</div>
-                                ) : actionExecutionSession ? (
+                                                {preTurnEffects.map((effect, index) => (
+                                                    <div key={index} className="mb-2">
+                                                        <strong>{effect.name ?? "Unnamed Effect"}</strong>
+                                                    </div>
+                                                ))}
+                                            </>
+                                        ) : manualMode ? (
+                                            <Card.Text>Manual Mode</Card.Text>
+                                        ) : encounterData && actionExecutionSession ? (
                                     <InputHandler
                                         encounter={encounterData}
                                         actionSession={actionExecutionSession}
@@ -846,9 +865,14 @@ function EncounterSimulation() {
                                         cid={getCreatureCid(currentTurnCreature)}
                                         handlePASubmission={handlePASubmission}
                                     />
-                                )
-                            )}
-                        </div>
+                                )}
+                                    </Col>
+                                </Row>
+
+                            </Card.Body>
+
+                        </Card>
+
                     )}
                 </Col>
             </Row>
@@ -857,3 +881,4 @@ function EncounterSimulation() {
 }
 
 export default EncounterSimulation;
+
