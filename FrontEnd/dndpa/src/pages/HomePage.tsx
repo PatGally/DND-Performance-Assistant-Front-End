@@ -60,16 +60,11 @@ function homePage(){
                         fadeOut
                     />
                 </div>
-            </Row>
-            <Row>
-                <Col className='text-start p-0'>
-                    <HomePageUI2 />
-                </Col>
-                <Col className='text-end p-0'>
-                    <HomePageUI2 />
-                </Col>
-            </Row>
-        </Container>
+            </nav>
+            <Container>
+                <Row><Col> Development Server </Col></Row>
+            </Container>
+        </>
     );
 }
 
