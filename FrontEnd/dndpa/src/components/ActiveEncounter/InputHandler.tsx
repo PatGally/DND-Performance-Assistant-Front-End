@@ -130,6 +130,7 @@ export default function InputHandler({
 
     let rollValue = "";
 
+    console.log("Checking actionSession", actionSession);
     if (
       (actionSession.action.rollMode === "toHit" || actionSession.action.rollMode === "onHit") &&
       entry.attackRoll.trim() === ""
@@ -148,7 +149,8 @@ export default function InputHandler({
       return;
     }
 
-    if (actionSession.action.rollMode.toLowerCase() === "toHit" || actionSession.action.rollMode === "onHit") {
+    console.log("Checking rollMode ", actionSession.action.rollMode);
+    if (actionSession.action.rollMode.toLowerCase() === "tohit" || actionSession.action.rollMode.toLowerCase() === "onhit") {
       rollValue = entry.attackRoll.trim();
     } else if (actionSession.action.rollMode.toLowerCase() === "save") {
       rollValue = entry.saveRoll.trim();
@@ -157,9 +159,11 @@ export default function InputHandler({
     }
 
     if (rollValue !== "") {
+      console.log("Adding Roll", rollValue);
       rollResults.push(rollValue);
 
       if (actionSession.action.hasDamage) {
+        console.log("Adding Dam", entry.damageRoll);
         diceResults.push(Number(entry.damageRoll));
       } else {
         diceResults.push(0);

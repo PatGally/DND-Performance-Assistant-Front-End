@@ -12,7 +12,7 @@ type ActionListProps = {
   eid: string;
   cid: string;
   handleActionSubmission: (action: CreatureAction) => void;
-  handleManualSimulate: () => void;
+  setManualState: () => void;
 };
 
 function getActionName(action: CreatureAction): string {
@@ -88,7 +88,7 @@ export default function ActionList({
   eid,
   cid,
   handleActionSubmission,
-  handleManualSimulate,
+  setManualState,
 }: ActionListProps) {
   const [actions, setActions] = useState<CreatureAction[]>([]);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
@@ -105,7 +105,7 @@ export default function ActionList({
       <div style={{ marginTop: "8px" }}>
         {!actionElement ?
             <div>No details available.
-                <button onClick={handleManualSimulate} style={{color: "red"}}>
+                <button onClick={setManualState} style={{color: "red"}}>
                 Select
                 </button>
             </div>
