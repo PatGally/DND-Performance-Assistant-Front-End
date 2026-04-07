@@ -614,7 +614,6 @@ function EncounterSimulation() {
 
           try {
             setManualLock(true);
-            console.log("In Manual Simulate");
             if (manualDraft.affectedCreatures.length > 0) {
               await axiosTokenInstance.post(
                 `/encounter/${eid}/simulate/manual`,

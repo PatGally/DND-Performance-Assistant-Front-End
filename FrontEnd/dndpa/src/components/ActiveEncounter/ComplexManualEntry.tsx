@@ -5,30 +5,7 @@ import type {
   MonsterCreature,
   PlayerCreature,
 } from "../../types/creature.ts";
-import type { InitiativeEntry } from "../../types/SimulationTypes.ts";
-
-type StatKey = "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA";
-
-export type ManualStatBlock = Partial<Record<StatKey, number>>;
-
-export type ManualAffectedCreature = {
-  cid: string;
-  statArray?: ManualStatBlock;
-  saveProfs?: ManualStatBlock;
-  modifiers?: ManualStatBlock;
-  damResists?: string[];
-  damImmunes?: string[];
-  damVulns?: string[];
-  conImmunes?: string[];
-  activeConditions?: string[];
-  activeStatusEffects?: Record<string, unknown>[];
-  hp?: number;
-  position?: number[][];
-  ac?: number;
-  lResists?: number;
-  enemy?: boolean;
-  spellSlots?: string[][];
-};
+import type { InitiativeEntry, ManualAffectedCreature, ManualStatBlock, StatKey } from "../../types/SimulationTypes.ts";
 
 type ComplexManualEntryProps = {
   eid: string;
@@ -44,24 +21,20 @@ const STAT_KEYS: StatKey[] = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
 function deepEqual(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
-
 function toNumberOrUndefined(value: string): number | undefined {
   if (value.trim() === "") return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
 }
-
 function parseCommaList(value: string): string[] {
   return value
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
 }
-
 function safeJsonStringify(value: unknown): string {
   return JSON.stringify(value ?? [], null, 2);
 }
-
 function normalizeStatBlock(
   value: Record<string, unknown> | undefined
 ): ManualStatBlock | undefined {
@@ -353,7 +326,7 @@ export default function ComplexManualEntry({
 
   function getDisplayValue<K extends keyof ManualAffectedCreature>(
     key: K
-  ): ManualAffectedCreature[K] {
+  ): ManualAffectedCreature[K] | undefined {
     if (draftValue && draftValue[key] !== undefined) {
       return draftValue[key];
     }
@@ -539,9 +512,9 @@ export default function ComplexManualEntry({
           />
 
           {isPlayerCreature(creature) && (
-            <JsonField<string[][]>
+            <JsonField<number[][]>
               label="Spell Slots"
-              value={getDisplayValue("spellSlots") as string[][] | undefined}
+              value={getDisplayValue("spellSlots") as number[][] | undefined}
               onChange={(next) =>
                 updatePatchField("spellSlots", next, baseline.spellSlots)
               }

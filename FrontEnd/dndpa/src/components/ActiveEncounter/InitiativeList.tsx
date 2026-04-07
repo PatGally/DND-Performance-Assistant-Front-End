@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import initiativeGet from "../../api/InitiativeGet";
 import SimpleInitiativeEntry from "./SimpleInitiativeEntry";
 import ComplexInitiativeEntry from "./ComplexInitiativeEntry";
-import ComplexManualEntry, {
+import ComplexManualEntry from "./ComplexManualEntry";
+import {
   type ManualAffectedCreature,
-} from "./ComplexManualEntry";
+} from "../../types/SimulationTypes.ts";
 import type { InitiativeEntryDisplay } from "../../types/SimulationTypes.ts";
 
 type ManualDraftState = {

@@ -91,8 +91,8 @@ export type ActionExecutionSession = {
   error: string | null;
 };
 
-type StatKey = "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA";
-type ManualStatBlock = Partial<Record<StatKey, number>>;
+export type StatKey = "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA";
+export type ManualStatBlock = Partial<Record<StatKey, number>>;
 
 export type ManualAffectedCreature = {
   cid: string;
