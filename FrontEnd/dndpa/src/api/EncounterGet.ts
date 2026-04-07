@@ -1,35 +1,18 @@
 import axiosTokenInstance from "./AxiosTokenInstance.ts";
+import type {EncounterFull} from "../types/encounter.ts";
 
-export interface Monster {
-    stats: { name: string };
-}
-
-export interface Player {
-    stats: { name: string };
-}
-
-export interface Encounter {
-    name: string;
-    date: string;
-    eid: string;
-    completed: boolean;
-}
-
-
-export const getEncounters = async (): Promise<Encounter[]> => {
+export const getEncounter = async (eid: string): Promise<EncounterFull | null> => {
     try {
-        const response = await axiosTokenInstance.get(`/dashboard/encounters`);
-        // Ensure the backend returned an array
-        if (!Array.isArray(response.data)) {
+        const response = await axiosTokenInstance.get(`/encounter/${eid}/state`);
+
+        if (!response.data || typeof response.data !== "object") {
             console.error("Unexpected response format:", response.data);
-            return [];
+            return null;
         }
+
         return response.data;
     } catch (error) {
-        console.error("Failed to fetch encounters:", error);
-        return [];
+        console.error(`Failed to fetch encounter ${eid}:`, error);
+        return null;
     }
 };
-
-
-

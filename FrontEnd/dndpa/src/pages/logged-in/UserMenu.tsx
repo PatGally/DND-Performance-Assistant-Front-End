@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { PersonCircle, BoxArrowRight } from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
-import { logout } from "../../api/logout.ts"; // 👈 import the call
+import { logout } from "../../api/logout.ts";
 
 const UserMenu = () => {
     const [open, setOpen] = useState(false);
@@ -20,7 +20,7 @@ const UserMenu = () => {
 
     const handleLogout = async () => {
         try {
-            await logout(); // 👈 just call it
+            await logout();
         } catch (e) {
             console.error("Logout failed", e);
         } finally {

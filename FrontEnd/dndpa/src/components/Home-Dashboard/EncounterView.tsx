@@ -1,115 +1,148 @@
-import { getEncounters } from "../../api/EncounterGet";
-import creaturePacketGet from "../../api/CreaturePacketGet";
-import React, { useEffect, useState } from "react";
-import { Card } from "react-bootstrap";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, Modal, Button } from "react-bootstrap";
+import type { EncounterWithPacket } from "../../types/encounter.ts";
+import "bootstrap/dist/css/bootstrap.min.css";
 
-interface Player {
-    name: string;
-    level: number;
-    characterClass: string;
-    location?: string;
-}
+type Props = {
+    encounters: EncounterWithPacket[];
+    loadingEncounter: boolean;
+    onDeleteEncounter: (eid: string) => Promise<void>;
+};
 
-interface Monster {
-    name: string;
-    cr: number;
-    size: string;
-    location?: string;
-}
+const EncounterView = ({ encounters, loadingEncounter, onDeleteEncounter }: Props) => {
+    const navigate = useNavigate();
 
-interface EncounterPacket {
-    players: Player[];
-    monsters: Monster[];
-}
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [selectedEncounter, setSelectedEncounter] = useState<EncounterWithPacket | null>(null);
 
-interface Encounter {
-    eid: string;
-    name: string;
-    date: string;
-    completed: boolean;
-}
+    const openDeleteConfirm = (encounter: EncounterWithPacket) => {
+        setSelectedEncounter(encounter);
+        setShowDeleteConfirm(true);
+    };
 
-interface EncounterWithPacket extends Encounter {
-    packet?: EncounterPacket; // optional at first
-}
+    const closeDeleteConfirm = () => {
+        setShowDeleteConfirm(false);
+        setSelectedEncounter(null);
+    };
 
-const EncounterView: React.FC = () => {
-    const [encounters, setEncounters] = useState<EncounterWithPacket[]>([]);
-    const [loadingEncounter, setLoadingEncounter] = useState<boolean>(false);
+    const confirmDelete = async () => {
+        if (!selectedEncounter) return;
 
-    useEffect(() => {
-        const fetchEncounters = async () => {
-            setLoadingEncounter(true);
-            try {
-                const data: Encounter[] = await getEncounters();
-
-                // Add a `packet` property for each encounter
-                const encountersWithPackets: EncounterWithPacket[] = data.map((enc) => ({
-                    ...enc,
-                    packet: undefined, // initially undefined
-                }));
-
-                setEncounters(encountersWithPackets);
-
-                // Fetch the packet for each encounter
-                for (const encounterItem of encountersWithPackets) {
-                    try {
-                        const packet = await creaturePacketGet(encounterItem.eid);
-                        setEncounters((prev) =>
-                            prev.map((e) =>
-                                e.eid === encounterItem.eid ? { ...e, packet } : e
-                            )
-                        );
-                    } catch (err) {
-                        console.error(`Error fetching packet for ${encounterItem.eid}`, err);
-                    }
-                }
-            } catch (err) {
-                console.error("Error fetching encounters", err);
-            } finally {
-                setLoadingEncounter(false);
-            }
-        };
-        fetchEncounters();
-    }, []);
+        try {
+            await onDeleteEncounter(selectedEncounter.eid);
+            closeDeleteConfirm();
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
     if (loadingEncounter) return <div>Loading...</div>;
     if (encounters.length === 0) return <div>No encounters found</div>;
-
     return (
-        <div>
-            {encounters.map((enc) => (
-                <div key={enc.eid} className="mb-3">
-                    <Card className="my-card">
-                        <Card.Body>
-                            <h4>{enc.name}</h4>
-                            <p>{enc.date} --- Completed: {enc.completed.toString()}</p>
+        <>
+            <div className="container">
+                <div className="row g-3">
+                    {(encounters ?? []).map((enc) => (
+                        <div key={enc.eid} className="col-12 col-md-6 col-lg-4">
+                            <Card style={{ overflow: 'hidden' }}>
 
-                            {enc.packet ? (
-                                <div>
-                                    <h5>Players:</h5>
-                                    {enc.packet.players.map((p) => (
-                                        <div key={p.name}>
-                                            {p.name} - Level {p.level} ({p.characterClass})
+                                <div style={{ height: '200px', overflow: 'hidden', position: 'relative' }}>
+                                    {enc.mapLink ? (
+                                        <img
+                                            src={enc.mapLink}
+                                            alt={`Map for ${enc.name}`}
+                                            style={{
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'cover',
+                                                objectPosition: 'center',
+                                                display: 'block',
+                                            }}
+                                        />
+                                    ) : (
+                                        <div style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            backgroundColor: '#1a1a2e',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: '#666',
+                                            fontSize: '0.85rem',
+                                        }}>
+                                            No map available
                                         </div>
-                                    ))}
+                                    )}
 
-                                    <h5>Monsters:</h5>
-                                    {enc.packet.monsters.map((m) => (
-                                        <div key={m.name}>
-                                            Name: {m.name}, CR: {m.cr}, Size: ({m.size})
-                                        </div>
-                                    ))}
+                                    <div
+                                        style={{
+                                            position: 'absolute',
+                                            bottom: 0,
+                                            left: 0,
+                                            right: 0,
+                                            padding: '0.5rem 0.75rem',
+                                            background: 'linear-gradient(transparent, rgba(0,0,0,0.75))',
+                                            color: '#fff',
+                                            fontWeight: 600,
+                                            fontSize: '1.1rem',
+                                        }}
+                                    >
+                                        {enc.name}
+                                    </div>
                                 </div>
-                            ) : (
-                                <p>Loading creatures...</p>
-                            )}
-                        </Card.Body>
-                    </Card>
+
+                                <Card.Body>
+                                    <p className="text-muted mb-3" style={{ fontSize: '0.8rem' }}>
+                                        {new Date(enc.date).toLocaleDateString()} &mdash; Completed: {String(enc.completed)}
+                                    </p>
+
+                                    <div className="d-flex justify-content-between">
+                                        <button
+                                            className="btn btn-primary"
+                                            onClick={() =>
+                                                navigate("/encounter-simulation", {
+                                                    state: { eid: enc.eid },
+                                                })
+                                            }
+                                        >
+                                            Play
+                                        </button>
+
+                                        <button
+                                            className="btn btn-danger"
+                                            onClick={() => openDeleteConfirm(enc)}
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                </Card.Body>
+                            </Card>
+                        </div>
+                    ))}
                 </div>
-            ))}
-        </div>
+            </div>
+
+            <Modal show={showDeleteConfirm} onHide={closeDeleteConfirm} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Confirm Delete</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    Are you sure you want to delete{" "}
+                    <strong>{selectedEncounter?.name}</strong>?
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="light" onClick={closeDeleteConfirm}>
+                        Cancel
+                    </Button>
+                    <Button variant="primary" onClick={confirmDelete}>
+                        Delete
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+        </>
     );
+
 };
 
 export default EncounterView;

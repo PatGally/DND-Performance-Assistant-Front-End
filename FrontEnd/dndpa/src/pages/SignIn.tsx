@@ -44,7 +44,7 @@ const LogInPage: React.FC = () =>{
             reset();
             navigate("/user-dashboard");
         } catch (error) {
-            setError("root", {message: "Incorrect username or password",});
+            setError("root", {message: `Incorrect username or password, error: ${error}`,});
         }
     }
 

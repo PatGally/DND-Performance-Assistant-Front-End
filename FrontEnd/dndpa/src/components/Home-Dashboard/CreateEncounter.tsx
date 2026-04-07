@@ -2,26 +2,24 @@ import EncounterCreationNavAndSubmit from "../../pages/logged-in/EncounterCreati
 import type { ActivePanel } from "../../pages/logged-in/EncounterCreationNavAndSubmit.tsx";
 
 import Container from "react-bootstrap/Container";
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import SetEncounterName from "./SetEncounterName.tsx";
 import AddCharacters from "./AddCharacters.tsx";
 import AddMonsters from "./AddMonsters.tsx";
 import AddMapLink from "./AddMapLink.tsx";
 import AddGridSize from "./AddGridSize.tsx";
-import AddInitiative, {type InitiativeEntry} from "./AddInitiative.tsx";
+import AddInitiative, { type InitiativeEntry } from "./AddInitiative.tsx";
 
-import {getMonsters, type Monster} from "../../api/MonstersGet.ts";
-import {type Character, getCharacters} from "../../api/CharactersGet.ts";
+import { type MonsterCreature, type CharacterPayload } from "../../types/creature.ts";
+import { getCharacters } from "../../api/CharactersGet.ts";
 
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 
-
-
 export interface EncounterFormData {
     name: string;
-    characters: Character[];
-    monsters: Monster[];
+    characters: CharacterPayload[];
+    monsters: MonsterCreature[];
     initiative: InitiativeEntry[];
     maplink: string;
     gridSize: { rows: number; cols: number };
@@ -36,22 +34,19 @@ const defaultFormData: EncounterFormData = {
     gridSize: { rows: 0, cols: 0 },
 };
 
-function CreateEncounter() {
+type Props = {
+    monsters: MonsterCreature[];
+    onEncounterCreated: () => void; // ← just void
+};
+
+function CreateEncounter({ monsters, onEncounterCreated }: Props) {
     const [activePanel, setActivePanel] = useState<ActivePanel>("SET_ENCOUNTERNAME");
     const [formData, setFormData] = useState<EncounterFormData>(defaultFormData);
-    const [monsters, setMonsters] = useState<Monster[]>([]);
-    const [characters, setCharacters] = useState<Character[]>([]);
-
-    useEffect(() => {
-        const fetchMonsters = async () => {
-            const data = await getMonsters();
-            setMonsters(data);
-        };
-        fetchMonsters();
-    }, []);
+    const [characters, setCharacters] = useState<CharacterPayload[]>([]);
 
     useEffect(() => {
         const fetchCharacters = async () => {
+
             const data = await getCharacters();
             setCharacters(data);
         };
@@ -87,15 +82,13 @@ function CreateEncounter() {
                         activePanel={activePanel}
                         setActivePanel={setActivePanel}
                         formData={formData}
-
+                        onSuccess={onEncounterCreated} // ← wired through
                     />
                     {renderPanel()}
                 </Col>
-
             </Row>
         </Container>
     );
 }
-
 
 export default CreateEncounter;

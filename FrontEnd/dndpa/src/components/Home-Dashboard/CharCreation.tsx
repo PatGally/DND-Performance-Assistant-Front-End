@@ -4,7 +4,8 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import { Form, Button, Row, Col } from "react-bootstrap";
 import calculateHP from "../../utils/calculateHP.ts";
 import { SpellsGet } from "../../api/SpellsGet.ts";
-import { WeaponsGet, type Weapon} from "../../api/WeaponsGet.ts";
+import {WeaponsGet } from "../../api/WeaponsGet.ts";
+import {type WeaponAction} from "../../types/action.ts";
 import {createCharacter} from "../../api/CharactersPost.ts";
 import calcAttributes from "../../utils/calcAttributes.ts";
 import calcSpellSlots from "../../utils/calcSpellSlots.ts";
@@ -51,7 +52,7 @@ const CharCreation: React.FC = () => {
     const [spells, setSpells] = useState<any[]>([]); //specify type
     const [loadingSpells, setLoadingSpells] = useState<boolean>(false);
 
-    const [allWeapons, setAllWeapons] = useState<Weapon[]>([]); // specify type
+    const [allWeapons, setAllWeapons] = useState<WeaponAction[]>([]); // specify type
     const [loadingWeapons, setLoadingWeapons] = useState(false);
 
     const [loadingCid, loadingSetCid] = useState<boolean>(false);
@@ -143,7 +144,7 @@ const CharCreation: React.FC = () => {
                 position: [[0, 0]],
 
                 characterClass: data.characterClass.toLowerCase(),
-                conImmunities: [],
+                conImmunes: [],
                 activeStatusEffects: [],
                 activeConditions: [],
 

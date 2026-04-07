@@ -97,14 +97,44 @@
     z-index: 1000;
 }
 
-html, body, #root {
-    overflow: hidden;
-    height: 100%;
-    overscroll-behavior: none;
-    position: fixed;
-    width: 100%;
+/*html, body, #root {*/
+/*    overflow: hidden;*/
+/*    height: 100%;*/
+/*    overscroll-behavior: none;*/
+/*    position: fixed;*/
+/*    width: 100%;*/
+/*}*/
+
+/* ── Design tokens ──────────────────────────────────────── */
+:root {
+    --clr-bg-base:        hsl(228, 18%, 9%);
+    --clr-bg-surface:     hsl(228, 20%, 13%);
+    --clr-bg-disabled:    hsl(228, 18%, 8%);
+
+    --clr-border-subtle:  hsl(228, 15%, 19%);
+    --clr-border-dim:     hsl(228, 16%, 14%);
+
+    --clr-text-muted:     hsl(220, 9%, 80%);
+    --clr-text-dim:       hsl(220, 13%, 100%);
+    /*38*/
+    --clr-gold:           hsl(350, 65%, 47%);
+    --clr-gold-light:     hsl(350, 72%, 62%);
+    --clr-gold-bg:        hsl(350, 65%, 47%, 0.15);
+    --clr-gold-hover-bg:  hsl(350, 65%, 47%, 0.1);
+    --clr-gold-border:    hsl(350, 65%, 47%, 0.4);
+
+    --clr-green:          hsl(142, 71%, 45%);
+    --clr-green-bg:       hsl(142, 71%, 45%, 0.1);
+    --clr-green-hover-bg: hsl(142, 71%, 45%, 0.2);
+    --clr-green-border:   hsl(142, 71%, 45%, 0.4);
 }
+
+
 
 /*#root {*/
 /*    font-family: Papyrus, fantasy;*/
+/*}*/
+
+/*#root {*/
+/*    font-family: 'Mantinia', serif;*/
 /*}*/
