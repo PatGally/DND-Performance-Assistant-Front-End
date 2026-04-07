@@ -1,4 +1,4 @@
-import BASE_URL from "./BASE_URL.ts";
+import BASE_URL from "./BASE_URL";
 
 interface GoogleAuthPayload {
     id_token: string;

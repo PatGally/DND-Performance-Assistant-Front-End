@@ -1,4 +1,4 @@
-import axiosTokenInstance from "./AxiosTokenInstance.ts";
+import axiosTokenInstance from "./AxiosTokenInstance";
 
 export async function deletePlayer(cid: string) {
     try {

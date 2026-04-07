@@ -1,5 +1,5 @@
-import axiosTokenInstance from "./AxiosTokenInstance.ts";
-import type {EncounterFull} from "../types/encounter.ts";
+import axiosTokenInstance from "./AxiosTokenInstance";
+import type {EncounterFull} from "../types/encounter";
 
 export const getEncounter = async (eid: string): Promise<EncounterFull | null> => {
     try {

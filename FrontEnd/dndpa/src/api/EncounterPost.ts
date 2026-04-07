@@ -1,6 +1,6 @@
-import axiosTokenInstance from "./AxiosTokenInstance.ts";
+import axiosTokenInstance from "./AxiosTokenInstance";
 import axios from "axios";
-import type {EncounterFull} from "../types/encounter.ts";
+import type {EncounterFull} from "../types/encounter";
 
 export const EncounterPost = async (encounter: EncounterFull) => {
     try {
