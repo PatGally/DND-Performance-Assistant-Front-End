@@ -6,7 +6,7 @@ import type {
   MonsterAction,
 } from "../../types/action.ts";
 import { actionsGet } from "../../api/ActionsGet.ts";
-import {isSpellAction, isWeaponAction, isMonsterAction} from "../../utils/ActionTypeChecker.ts"
+import {isSpellAction, isWeaponAction, isMonsterAction} from "../../utils/ActionTypeChecker.ts";
 
 type ActionListProps = {
   eid: string;
@@ -154,34 +154,25 @@ export default function ActionList({
       </div>
     );
   }
-    if(!sessionStorage.getItem(`encounter-${eid}-${cid}-actions`)) {
-        sessionStorage.setItem(`encounter-${eid}-${cid}-actions`, JSON.stringify(actions));
-    }
   return (
     <div style={{ width: "100%" }}>
       {actions.map((action, index) => {
         const isExpanded = expandedIndex === index;
 
         return (
-          <div
-            key={`${getActionName(action)}-${index}`}
-            style={{
+          <div key={`${getActionName(action)}-${index}`} style={{
               border: "1px solid #ccc",
               borderRadius: "6px",
               padding: "10px 12px",
               marginBottom: "10px",
               transition: "all 0.2s ease",
-            }}
-          >
-            <div
-              style={{
+            }}>
+            <div style={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
                 cursor: "pointer",
-              }}
-              onClick={() => toggleExpand(index)}
-            >
+              }} onClick={() => toggleExpand(index)}>
               <span>{getActionName(action)}</span>
               <button
                 type="button"
