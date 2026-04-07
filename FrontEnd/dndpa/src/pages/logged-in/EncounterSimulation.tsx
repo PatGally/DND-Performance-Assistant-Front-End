@@ -25,8 +25,10 @@ import {isPlayerCreature} from "../../api/CreatureGet.ts";
 import type {Creature} from "../../types/creature.ts";
 import type {CreatureAction, SpellAction} from "../../types/action.ts";
 
-import type {Encounter, PreTurnEffect, NormalizedAction, ActionRequestDraft,
-    ActionExecutionSession, RollMode} from "../../types/SimulationTypes.ts";
+import type {
+    Encounter, PreTurnEffect, NormalizedAction, ActionRequestDraft,
+    ActionExecutionSession, RollMode, InitiativeEntry
+} from "../../types/SimulationTypes.ts";
 const WEAPON_DEFAULTS = {
   targetMode: "single" as const,
   targetCount: 1,
@@ -41,6 +43,7 @@ const WEAPON_DEFAULTS = {
 import ExitSimulation from "../../components/ActiveEncounter/ExitSimulation.tsx";
 import { Card } from "react-bootstrap";
 import Orb from '../../css/Orb.tsx';
+import {actionsGet} from "../../api/ActionsGet.ts";
 
 function parseCount(value?: string | number): number | null {
   if (value === undefined || value === null || value === "") return null;
@@ -155,11 +158,38 @@ function normalizeAction(action: CreatureAction): NormalizedAction {
   weaponStat: action.properties.weaponStat,
 };
 }
+function extractActionEffects(action: CreatureAction): {
+  conditions: string[];
+  statusEffects: Record<string, unknown>[];
+} {
+  if (isSpellAction(action)) {
+    const target = action.targeting?.[0];
+    return {
+      conditions: Array.isArray(target?.conditions) ? target.conditions : [],
+      statusEffects: Array.isArray(target?.statusEffect)
+        ? (target.statusEffect as Record<string, unknown>[])
+        : [],
+    };
+  }
+
+  if (isMonsterAction(action)) {
+    return {
+      conditions: Array.isArray(action.conditions) ? action.conditions : [],
+      statusEffects: Array.isArray(action.statusEffect)
+        ? (action.statusEffect as Record<string, unknown>[])
+        : [],
+    };
+  }
+
+  return {
+    conditions: [],
+    statusEffects: [],
+  };
+}
 
 function EncounterSimulation() {
     const location = useLocation();
     const eid = location.state?.eid;
-    const SESSION_KEY = `encounter-${eid}`;
 
     //Side components
     const [initiativeOpen, setInitiativeOpen] = useState(false);
@@ -178,6 +208,7 @@ function EncounterSimulation() {
 
     //selectedCID used for token selection
     const [selectedCID, setSelectedCID] = useState<string | null>(null);
+    const [currentTurnActions, setCurrentTurnActions] = useState<CreatureAction[]>();
     //Locks the top three buttons
     const [actionExecutionSession, setActionExecutionSession] = useState<ActionExecutionSession>();
     const [handlingNextTurn, setHandlingNextTurn] = useState(false);
@@ -197,29 +228,20 @@ function EncounterSimulation() {
     const MAX_ZOOM = 4;
 
     //ONLOAD EFFECTS
-    function readStoredJson<T>(key: string): T | null {
-        const raw = sessionStorage.getItem(key);
-        if (!raw || raw === "null") return null;
-        try {
-            return JSON.parse(raw) as T;
-        } catch (error) {
-            console.error(`Failed to parse sessionStorage key: ${key}`, error);
-            return null;
+    const loadActions = async (): Promise<void> => {
+        if (currentTurnCreature) {
+            const currentActions = await actionsGet(eid, getCreatureCid(currentTurnCreature))
+            setCurrentTurnActions(currentActions);
+            return;
         }
     }
 
     useEffect(() => {
-        //Loads the encounter from the DB/SessionStorage
+        //Loads the encounter from the DB
         const loadEncounter = async (): Promise<void> => {
             try {
                 setLoadingEncounter(true);
                 setEncounterError(null);
-
-                const storedEncounter = readStoredJson<Encounter>(SESSION_KEY);
-                if (storedEncounter) {
-                    setEncounterData(storedEncounter);
-                    return;
-                }
 
                 const data = await getEncounter(eid);
                 if (!data) {
@@ -229,7 +251,6 @@ function EncounterSimulation() {
                 }
 
                 setEncounterData(data);
-                sessionStorage.setItem(SESSION_KEY, JSON.stringify(data));
             } catch (error) {
                 console.error("Failed to load encounter:", error);
                 setEncounterError("Failed to load encounter data.");
@@ -240,7 +261,7 @@ function EncounterSimulation() {
         };
 
     loadEncounter();
-}, [SESSION_KEY, eid]);
+}, []);
     useEffect(() => {
         //Checks startup logic -> if not startup, then grab currentTurnCreature.
         if (!encounterData || loadingEncounter || encounterError) return;
@@ -263,20 +284,23 @@ function EncounterSimulation() {
         const noCollisionAtZero = zeroOccupants.length <= 1;
 
         if (!noCollisionAtZero) {
-            console.log("Encounter start!");
             setEncStart(true);
             setActiveEncounter(false);
         } else {
-            const storedTurn = readStoredJson<Creature>(`encounter-current-turn-${eid}`);
-            if (storedTurn) {
-                setCurrentTurnCreature(storedTurn);
-                return;
-            } else if (activeEncounter) {
+            const storedTurn = getCurrentTurnCreatureFromEncounter(encounterData);
+            if (storedTurn && storedTurn.name === encounterData.initiative[0].name) {
                 simStart();
             }
+            if (storedTurn) {
+                setCurrentTurnCreature(storedTurn);
+            }
         }
-    }, [encounterData, loadingEncounter, encounterError, eid, activeEncounter]);
-
+    }, [encounterData]);
+    useEffect(() => {
+        if (currentTurnCreature) {
+            loadActions();
+        }
+    }, [currentTurnCreature, encounterData])
     useEffect(() => {
         const el = mapViewportRef.current;
         if (!el) return;
@@ -307,12 +331,12 @@ function EncounterSimulation() {
         if (!matchingCreature) {
             console.warn("Could not find initiative starting creature.");
             setCurrentTurnCreature(undefined);
-            sessionStorage.removeItem(`encounter-current-turn-${eid}`);
+            // sessionStorage.removeItem(`encounter-current-turn-${eid}`);
             return;
         }
 
     setCurrentTurnCreature(matchingCreature);
-    sessionStorage.setItem(`encounter-current-turn-${eid}`, JSON.stringify(matchingCreature));
+    // sessionStorage.setItem(`encounter-current-turn-${eid}`, JSON.stringify(matchingCreature));
 }
     async function basicActionGet(name : string) {
         if (["dodge", "shove", "grapple", "hide"].includes(name.toLowerCase())) {
@@ -340,28 +364,19 @@ function EncounterSimulation() {
                 console.error("Failed to reload encounter after advancing turn.");
                 return;
             }
-
             setEncounterData(updatedEncounter);
-            sessionStorage.setItem(SESSION_KEY, JSON.stringify(updatedEncounter));
 
             const newCurrentTurnCreature = getCurrentTurnCreatureFromEncounter(updatedEncounter);
             if (!newCurrentTurnCreature) {
                 console.error("Could not determine current turn creature from updated encounter.");
                 setCurrentTurnCreature(undefined);
-                sessionStorage.removeItem(`encounter-current-turn-${eid}`);
             } else {
                 setCurrentTurnCreature(newCurrentTurnCreature);
-                sessionStorage.setItem(
-                    `encounter-current-turn-${eid}`,
-                    JSON.stringify(newCurrentTurnCreature)
-                );
             }
             if (Array.isArray(preEffects) && preEffects.length !== 0) {
                 setPreTurnEffects(preEffects);
             }
-            if(sessionStorage.getItem(`encounter-${eid}-${getCreatureCid(currentTurnCreature)}-actions`)) {
-                sessionStorage.removeItem(`encounter-${eid}-${getCreatureCid(currentTurnCreature)}-actions`);
-            }
+
         } catch (error) {
             console.error("Failed to advance turn:", error);
         } finally {
@@ -414,16 +429,14 @@ function EncounterSimulation() {
             }
 
         setEncounterData(updatedEncounter);
-        sessionStorage.setItem(SESSION_KEY, JSON.stringify(updatedEncounter));
         setSelectedCID(null);
     } catch (error) {
         console.error("Movement simulation failed:", error);
     }
 }
     async function handleActionSubmission(action : CreatureAction) {
-        console.log("ACTION SUBMISSION");
-        console.log(action);
         setManualLock(true);
+        const { conditions, statusEffects } = extractActionEffects(action);
         const normalized = normalizeAction(action);
         const requiredInputs = buildRequiredInputs(normalized);
         let resultID;
@@ -443,8 +456,8 @@ function EncounterSimulation() {
             actionEDam : 0,
             actionImpact : 0,
             targets : [],
-            conditions : [],
-            statusEffects : [],
+            conditions : conditions,
+            statusEffects : statusEffects,
             outcome : {
                 rollResults : [],
                 diceResults : []
@@ -453,11 +466,9 @@ function EncounterSimulation() {
                 extraRollResults : [],
                 extraDiceResults : []
             },
-            timestamp : "" //TODO: Fill timestamp on submit
+            timestamp : ""
         };
 
-        console.log("normalized", normalized);
-        console.log("requiredInputs", requiredInputs);
         const actionSession = {
             action : normalized,
             requiredInputs : requiredInputs,
@@ -469,14 +480,11 @@ function EncounterSimulation() {
     }
     async function handlePASubmission(name: string, prob: number,
                        eDam: number, impact: number, targets: string[]) {
-        if (!currentTurnCreature || !encounterData) return;
-        const rawActionList = sessionStorage.getItem(
-          `encounter-${eid}-${getCreatureCid(currentTurnCreature)}-actions`
-        );
-        if (!rawActionList) return;
-        const actionList : CreatureAction[] = JSON.parse(rawActionList);
+        if (!currentTurnCreature || !encounterData || !currentTurnActions) return;
         let action;
-        action = actionList.find(a => isSpellAction(a) ? a.spellname === name : a.name === name);
+        action = currentTurnActions.find(a => isSpellAction(a) ?
+            a.spellname.toLowerCase() === name.toLowerCase()
+            : a.name.toLowerCase() === name.toLowerCase());
         if (!action) {
             action = await basicActionGet(name);
         }
@@ -484,12 +492,14 @@ function EncounterSimulation() {
             console.error("Action does not exist in statblock!");
             return;
         }
-        console.log("ACTION SUBMISSION");
-        console.log(action);
         setManualLock(true);
-        const resolvedTargets = targets
+        let resolvedTargets: string[] = []
+        if(targets) {
+            resolvedTargets = targets
           .map((target) => resolveTargetToCid(target, encounterData))
           .filter((target): target is string => target !== null);
+        }
+        const { conditions, statusEffects } = extractActionEffects(action);
         const normalized = normalizeAction(action);
         const requiredInputs = buildRequiredInputs(normalized);
         let resultID;
@@ -509,8 +519,8 @@ function EncounterSimulation() {
             actionEDam : eDam,
             actionImpact : impact,
             targets : resolvedTargets,
-            conditions : [],
-            statusEffects : [],
+            conditions : conditions,
+            statusEffects : statusEffects,
             outcome : {
                 rollResults : [],
                 diceResults : []
@@ -519,11 +529,8 @@ function EncounterSimulation() {
                 extraRollResults : [],
                 extraDiceResults : []
             },
-            timestamp : "" //TODO: Fill timestamp on submit
+            timestamp : ""
         };
-        console.log("normalized", normalized);
-        console.log("requiredInputs", requiredInputs);
-        console.log("draft", draft);
         const actionSession = {
             action : normalized,
             requiredInputs : requiredInputs,
@@ -535,13 +542,11 @@ function EncounterSimulation() {
 }
     async function handleActionExecution(finalDraft: ActionRequestDraft) {
           if (!eid || !currentTurnCreature || !encounterData || !actionExecutionSession) return;
-            console.log("In handleActionExecution");
           try {
             const missingTargets =
               finalDraft.targets.length === 0 &&
               (actionExecutionSession?.action.targetCount ?? 0) > 0;
 
-            console.log(`Missing targets: ${missingTargets}`)
             if (missingTargets) {
               setActionExecutionSession((prev) =>
                 prev ? { ...prev, error: "Targets are required." } : prev
@@ -549,7 +554,6 @@ function EncounterSimulation() {
               return;
             }
 
-            console.log(`Final draft pre-sim:`, finalDraft);
             await axiosTokenInstance.post(
               `/encounter/${eid}/simulate/ruleset`,
               finalDraft
@@ -562,7 +566,6 @@ function EncounterSimulation() {
             }
 
             setEncounterData(updatedEncounter);
-            sessionStorage.setItem(SESSION_KEY, JSON.stringify(updatedEncounter));
 
             const newCurrentTurnCreature = getCurrentTurnCreatureFromEncounter(updatedEncounter);
             setCurrentTurnCreature(newCurrentTurnCreature);
@@ -589,7 +592,6 @@ function EncounterSimulation() {
     async function handleManualSimulate() {
         //Manual mode logic goes here
         if (manualLock || !manualMode) return;
-        console.log("IN MANUAL SIMULATE");
         await handleNextTurn();
     }
 
@@ -860,6 +862,7 @@ function EncounterSimulation() {
                                         encounter={encounterData}
                                         actionSession={actionExecutionSession}
                                         setActionExecutionSession={setActionExecutionSession}
+                                        setManualLock={setManualLock}
                                         handleActionExecution={handleActionExecution}
                                     />
                                 ) : (

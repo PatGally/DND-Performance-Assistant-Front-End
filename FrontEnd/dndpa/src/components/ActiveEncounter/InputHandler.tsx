@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import {useMemo, useState} from "react";
 import type { Encounter, ActionExecutionSession, ActionRequestDraft } from "../../types/SimulationTypes.ts";
 import type { Creature} from "../../types/creature.ts";
 import {getCreatureName, getCreatureCid} from "../../utils/CreatureHelpers.ts";
@@ -14,6 +14,7 @@ type InputHandlerProps = {
   actionSession: ActionExecutionSession;
   setActionExecutionSession: React.Dispatch<React.SetStateAction<ActionExecutionSession | undefined>>;
   handleActionExecution: (draft: ActionRequestDraft) => void;
+  setManualLock : React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 function getCurrentTimeString(): string {
@@ -29,6 +30,7 @@ export default function InputHandler({
   encounter,
   actionSession,
   setActionExecutionSession,
+    setManualLock,
   handleActionExecution,
 }: InputHandlerProps) {
   const [localError, setLocalError] = useState<string>("");
@@ -146,10 +148,12 @@ export default function InputHandler({
       return;
     }
 
-    if (actionSession.action.rollMode === "toHit" || actionSession.action.rollMode === "onHit") {
+    if (actionSession.action.rollMode.toLowerCase() === "toHit" || actionSession.action.rollMode === "onHit") {
       rollValue = entry.attackRoll.trim();
-    } else if (actionSession.action.rollMode === "save") {
+    } else if (actionSession.action.rollMode.toLowerCase() === "save") {
       rollValue = entry.saveRoll.trim();
+    } else if (actionSession.action.rollMode.toLowerCase() == "autohit") {
+      rollValue = "y"
     }
 
     if (rollValue !== "") {
@@ -195,10 +199,15 @@ export default function InputHandler({
   setLocalError("");
   handleActionExecution(finalDraft);
 }
+  function handleExit() {
+    setActionExecutionSession(undefined);
+    setManualLock(false);
+  }
 
   return (
     <div className="bg-dark border rounded p-3" style={{ minWidth: "420px", maxWidth: "700px" }}>
       <h5 className="mb-3">{actionSession.draft.action}</h5>
+      <button className="btn btn-dark btn-outline-light" onClick={handleExit}>Back</button>
 
       {needsTargetSelection ? (
         <>
@@ -299,7 +308,7 @@ export default function InputHandler({
 
           {localError && <div className="text-danger mb-2">{localError}</div>}
 
-          <button className="btn btn-primary" onClick={handleSubmit}>
+          <button className="btn btn-danger" onClick={handleSubmit}>
             Submit
           </button>
         </>
