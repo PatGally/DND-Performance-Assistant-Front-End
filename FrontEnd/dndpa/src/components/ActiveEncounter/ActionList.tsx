@@ -97,7 +97,6 @@ export default function ActionList({
 
   function renderActionDetails(action: CreatureAction) {
     let actionElement;
-    console.log(action);
     if (isSpellAction(action)) actionElement = renderSpellDetails(action);
     else if (isWeaponAction(action)) actionElement = renderWeaponDetails(action);
     else if (isMonsterAction(action)) actionElement = renderMonsterDetails(action);

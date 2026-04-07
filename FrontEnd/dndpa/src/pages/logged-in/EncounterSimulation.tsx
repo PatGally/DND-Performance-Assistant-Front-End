@@ -27,7 +27,7 @@ import type {CreatureAction, SpellAction} from "../../types/action.ts";
 
 import type {
     Encounter, PreTurnEffect, NormalizedAction, ActionRequestDraft,
-    ActionExecutionSession, RollMode, InitiativeEntry
+    ActionExecutionSession, RollMode, ManualDraftState, ManualAffectedCreature
 } from "../../types/SimulationTypes.ts";
 const WEAPON_DEFAULTS = {
   targetMode: "single" as const,
@@ -194,8 +194,8 @@ function EncounterSimulation() {
     //Side components
     const [initiativeOpen, setInitiativeOpen] = useState(false);
     const [initiativeRefreshKey, setInitiativeRefreshKey] = useState(0);
+    const [recommendRefreshKey, setRecommendRefreshKey] = useState(0);
     const [actionOpen, setActionOpen] = useState(false);
-    const [manualMode, setManualMode] = useState(false);
 
     //Pre/post enc logic
     const [encStart, setEncStart] = useState(false);
@@ -214,6 +214,11 @@ function EncounterSimulation() {
     const [handlingNextTurn, setHandlingNextTurn] = useState(false);
     const [preTurnEffects, setPreTurnEffects] = useState<PreTurnEffect[]>();
     const [manualLock, setManualLock] = useState(false);
+    const [manualMode, setManualMode] = useState(false);
+    const [manualDraft, setManualDraft] = useState<ManualDraftState>({
+      affectedCreatures: [],
+    });
+    const [initiativeExpandedCid, setInitiativeExpandedCid] = useState<string | null>(null);
 
     //Pan/zoom state
     const mapViewportRef = useRef<HTMLDivElement>(null);
@@ -347,9 +352,16 @@ function EncounterSimulation() {
         return;
     }
     function handleTokenSelect(cid: string) {
-        if (!encounterData || actionExecutionSession || preTurnEffects) return;
-        setSelectedCID((prev) => (prev === cid ? null : cid));
-    }
+  if (!encounterData || actionExecutionSession || preTurnEffects) return;
+
+  if (manualMode) {
+    setInitiativeOpen(true);
+    setInitiativeExpandedCid((prev) => (prev === cid ? null : cid));
+    return;
+  }
+
+  setSelectedCID((prev) => (prev === cid ? null : cid));
+}
     async function handleNextTurn() {
         if (handlingNextTurn || actionExecutionSession || !encounterData || !currentTurnCreature ||
             encStart || !activeEncounter || !eid || preTurnEffects) return;
@@ -386,53 +398,55 @@ function EncounterSimulation() {
         }
     }
     async function handleGridCellClick(cellX: number, cellY: number) {
-    if (!selectedCID || !encounterData || actionExecutionSession || preTurnEffects) return;
+  if (manualMode) return;
+  if (!selectedCID || !encounterData || actionExecutionSession || preTurnEffects) return;
 
-        try {
-            const allCreatures: Creature[] = [
-                ...(encounterData.players ?? []),
-                ...(encounterData.monsters ?? []),
-            ];
+  try {
+    const allCreatures: Creature[] = [
+      ...(encounterData.players ?? []),
+      ...(encounterData.monsters ?? []),
+    ];
 
-            const movedCreature = allCreatures.find(
-                (creature) => getCreatureCid(creature) === selectedCID
-            );
+    const movedCreature = allCreatures.find(
+      (creature) => getCreatureCid(creature) === selectedCID
+    );
 
-            if (!movedCreature) {
-                console.error("Could not find selected creature.");
-                return;
-            }
-
-            const sizeRaw = getCreatureSize(movedCreature);
-
-            let footprint = 1;
-            if (sizeRaw === "large") footprint = 2;
-            else if (sizeRaw === "huge") footprint = 3;
-            else if (sizeRaw === "gargantuan") footprint = 4;
-
-            const newPos: number[][] = [];
-            for (let dy = 0; dy < footprint; dy++) {
-                for (let dx = 0; dx < footprint; dx++) {
-                    newPos.push([cellX + dx, cellY + dy]);
-                }
-            }
-
-            await axiosTokenInstance.post(
-                `/encounter/${eid}/creature/${selectedCID}/simulate/movement`,
-                newPos
-            );
-
-            const updatedEncounter = await getEncounter(eid);
-            if (!updatedEncounter) {
-                console.error("Encounter reload failed after movement.");
-                return;
-            }
-
-        setEncounterData(updatedEncounter);
-        setSelectedCID(null);
-    } catch (error) {
-        console.error("Movement simulation failed:", error);
+    if (!movedCreature) {
+      console.error("Could not find selected creature.");
+      return;
     }
+
+    const sizeRaw = getCreatureSize(movedCreature);
+
+    let footprint = 1;
+    if (sizeRaw === "large") footprint = 2;
+    else if (sizeRaw === "huge") footprint = 3;
+    else if (sizeRaw === "gargantuan") footprint = 4;
+
+    const newPos: number[][] = [];
+    for (let dy = 0; dy < footprint; dy++) {
+      for (let dx = 0; dx < footprint; dx++) {
+        newPos.push([cellX + dx, cellY + dy]);
+      }
+    }
+
+    await axiosTokenInstance.post(
+      `/encounter/${eid}/creature/${selectedCID}/simulate/movement`,
+      newPos
+    );
+
+    const updatedEncounter = await getEncounter(eid);
+    if (!updatedEncounter) {
+      console.error("Encounter reload failed after movement.");
+      return;
+    }
+
+    setEncounterData(updatedEncounter);
+    setSelectedCID(null);
+    setRecommendRefreshKey((prev) => prev + 1);
+  } catch (error) {
+    console.error("Movement simulation failed:", error);
+  }
 }
     async function handleActionSubmission(action : CreatureAction) {
         setManualLock(true);
@@ -590,10 +604,57 @@ function EncounterSimulation() {
           }
 }
     async function handleManualSimulate() {
-        //Manual mode logic goes here
-        if (manualLock || !manualMode) return;
-        await handleNextTurn();
+          if (manualLock || !manualMode || !eid) return;
+
+          try {
+            setManualLock(true);
+            console.log("In Manual Simulate");
+            if (manualDraft.affectedCreatures.length > 0) {
+              await axiosTokenInstance.post(
+                `/encounter/${eid}/simulate/manual`,
+                manualDraft
+              );
+
+              const updatedEncounter = await getEncounter(eid);
+              if (updatedEncounter) {
+                setEncounterData(updatedEncounter);
+                const newCurrentTurnCreature = getCurrentTurnCreatureFromEncounter(updatedEncounter);
+                setCurrentTurnCreature(newCurrentTurnCreature);
+              }
+            }
+
+            setManualDraft({ affectedCreatures: [] });
+            setInitiativeExpandedCid(null);
+            // await handleNextTurn();
+          } catch (error) {
+            console.error("Manual simulation failed:", error);
+          } finally {
+            setManualLock(false);
+            setManualMode(false);
+            setInitiativeRefreshKey(initiativeRefreshKey + 1);
+          }
+        }
+    function clearManualState() {
+      setManualDraft({ affectedCreatures: [] });
+      setInitiativeExpandedCid(null);
     }
+    function handleManualCreatureChange(nextCreature: ManualAffectedCreature) {
+  setManualDraft((prev) => {
+    const others = prev.affectedCreatures.filter(
+      (creature) => creature.cid !== nextCreature.cid
+    );
+
+    const changedKeys = Object.keys(nextCreature).filter((key) => key !== "cid");
+
+    if (changedKeys.length === 0) {
+      return { affectedCreatures: others };
+    }
+
+    return {
+      affectedCreatures: [...others, nextCreature],
+    };
+  });
+}
 
     //PAN/ZOOM FUNCTIONS
     function onPanStart(e: React.MouseEvent) {
@@ -648,9 +709,26 @@ function EncounterSimulation() {
                                 ? currentTurnCreature.stats.name
                                 : currentTurnCreature.name}
                             </p>
-                            <button onClick={() => setManualMode(false)}>Ruleset</button>
-                            <button disabled={actionExecutionSession !== undefined || handlingNextTurn || manualLock}
-                                    onClick={() => setManualMode(true)}>Manual</button>
+                            <button
+                                onClick={() => {
+                                    setManualMode(false);
+                                    clearManualState();
+                                }}
+                            >
+                                Ruleset
+                            </button>
+
+                            <button
+                                disabled={actionExecutionSession !== undefined || handlingNextTurn || manualLock}
+                                onClick={() => {
+                                    setManualMode(true);
+                                    setInitiativeOpen(true);
+                                    setActionOpen(false);
+                                    clearManualState();
+                                }}
+                            >
+                                Manual
+                            </button>
                             {manualMode && (
                                 <button onClick={handleManualSimulate}>Submit</button>
                             )}
@@ -744,7 +822,15 @@ function EncounterSimulation() {
                                 overflowY: "auto",
                                 padding: "12px",
                             }}>
-                                <InitiativeList key={`${eid}-${initiativeRefreshKey}`} eid={eid} />
+                                <InitiativeList
+                                  key={`${eid}-${initiativeRefreshKey}`}
+                                  eid={eid}
+                                  manualMode={manualMode}
+                                  expandedCid={initiativeExpandedCid}
+                                  onExpandedCidChange={setInitiativeExpandedCid}
+                                  manualDraft={manualDraft}
+                                  onManualCreatureChange={handleManualCreatureChange}
+                                />
                             </div>
                             <button
                                 onClick={() => setInitiativeOpen(false)}
@@ -870,6 +956,7 @@ function EncounterSimulation() {
                                         eid={eid}
                                         cid={getCreatureCid(currentTurnCreature)}
                                         handlePASubmission={handlePASubmission}
+                                        key={`${eid}-${recommendRefreshKey}`}
                                     />
                                 )}
                                     </Col>

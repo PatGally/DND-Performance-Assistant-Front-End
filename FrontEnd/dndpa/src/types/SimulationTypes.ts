@@ -90,3 +90,29 @@ export type ActionExecutionSession = {
   draft: ActionRequestDraft;
   error: string | null;
 };
+
+type StatKey = "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA";
+type ManualStatBlock = Partial<Record<StatKey, number>>;
+
+export type ManualAffectedCreature = {
+  cid: string;
+  statArray?: ManualStatBlock;
+  saveProfs?: ManualStatBlock;
+  modifiers?: ManualStatBlock;
+  damResists?: string[];
+  damImmunes?: string[];
+  damVulns?: string[];
+  conImmunes?: string[];
+  activeConditions?: string[];
+  activeStatusEffects?: Record<string, unknown>[];
+  hp?: number;
+  position?: number[][];
+  ac?: number;
+  lResists?: number;
+  enemy?: boolean;
+  spellSlots?: number[][];
+};
+
+export type ManualDraftState = {
+  affectedCreatures: ManualAffectedCreature[];
+};
