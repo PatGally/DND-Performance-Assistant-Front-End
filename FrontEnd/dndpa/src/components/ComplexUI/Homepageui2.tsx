@@ -1,4 +1,4 @@
-import "./HomePageUI2.css";
+import "./Homepageui2.css";
 import {useState} from "react";
 
 const SLIDES = [
