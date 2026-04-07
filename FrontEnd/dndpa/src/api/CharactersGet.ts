@@ -1,5 +1,5 @@
-import axiosTokenInstance from "./AxiosTokenInstance.ts";
-import {type CharacterPayload} from "../types/creature.ts";
+import axiosTokenInstance from "./AxiosTokenInstance";
+import {type CharacterPayload} from "../types/creature";
 
 export const getCharacters = async (): Promise<CharacterPayload[]> => {
     try {

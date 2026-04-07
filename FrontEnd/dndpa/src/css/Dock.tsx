@@ -79,7 +79,7 @@ function DockItem({
                 alignItems: 'center',
                 justifyContent: 'center',
                 borderRadius: '10px',
-                backgroundColor: '#999999',
+                backgroundColor: 'lavender',
                 // backgroundColor: "rgba(15, 24, 40, 0.85)",
                 // border: '1px solid #222',
                 boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)',

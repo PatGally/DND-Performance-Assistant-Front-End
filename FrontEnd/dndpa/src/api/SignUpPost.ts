@@ -1,5 +1,5 @@
-import BASE_URL from "./BASE_URL.ts";
-import {login} from "./Login.ts";
+import BASE_URL from "./BASE_URL";
+import {login} from "./Login";
 
 interface UserCreate {
     username: string;

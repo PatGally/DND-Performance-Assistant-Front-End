@@ -1,5 +1,5 @@
-import type {InitiativeEntry} from "./SimulationTypes.ts";
-import type {MonsterCreature, PlayerCreature} from "./creature.ts";
+import type {InitiativeEntry} from "./SimulationTypes";
+import type {MonsterCreature, PlayerCreature} from "./creature";
 
 interface PacketPlayer {
     name: string;

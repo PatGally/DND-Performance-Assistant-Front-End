@@ -1,4 +1,4 @@
-import BASE_URL from "./BASE_URL.ts";
+import BASE_URL from "./BASE_URL";
 
 export const logout = async (): Promise<void> => {
     await fetch(`${BASE_URL}/auth/logout`, {

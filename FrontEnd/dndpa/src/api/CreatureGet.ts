@@ -1,7 +1,6 @@
-// CreatureGet.ts
 
 import axiosTokenInstance from "./AxiosTokenInstance";
-import type {Creature, PlayerCreature} from "../types/creature.ts";
+import type {Creature, PlayerCreature} from "../types/creature";
 
 export function isPlayerCreature(creature: Creature): creature is PlayerCreature {
   return "stats" in creature;

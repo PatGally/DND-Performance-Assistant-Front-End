@@ -1,5 +1,5 @@
-import axiosTokenInstance from "./AxiosTokenInstance.ts";
-import {type CreatureAction} from "../types/action.ts";
+import axiosTokenInstance from "./AxiosTokenInstance";
+import {type CreatureAction} from "../types/action";
 
 export async function actionsGet(
   eid: string,
@@ -9,6 +9,7 @@ export async function actionsGet(
          const response = await axiosTokenInstance.get(`/encounter/${eid}/creature/${cid}/actions`);
     if( !response.data ) {
         console.error("Data not found in call", response.data);
+        return [];
     }
     return response.data as CreatureAction[];
     }
