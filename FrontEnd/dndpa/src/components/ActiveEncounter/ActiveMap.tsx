@@ -138,8 +138,7 @@ function resolveTokenImage(tokenImage: string): string {
     if (
         tokenImage.startsWith("http://") ||
         tokenImage.startsWith("https://") ||
-        tokenImage.startsWith("data:") ||
-        tokenImage.startsWith("/src/")
+        tokenImage.startsWith("data:")
     ) {
         return tokenImage;
     }
