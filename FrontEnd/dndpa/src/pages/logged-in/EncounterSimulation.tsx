@@ -222,9 +222,11 @@ function EncounterSimulation() {
 
     //Pan/zoom state
     const mapViewportRef = useRef<HTMLDivElement>(null);
-    const [zoom, setZoom] = useState(1);
-    const [pan, setPan] = useState({ x: 0, y: 0 });
-    const [isPanning, setIsPanning] = useState(false);
+    const mapContentRef = useRef<HTMLDivElement>(null);
+
+    const zoom = useRef(1);
+    const pan = useRef({ x: 0, y: 0 });
+    const isPanning = useRef(false);
     const lastPanPos = useRef({ x: 0, y: 0 });
     const [mapNaturalWidth, setMapNaturalWidth] = useState(800);
     const [mapNaturalHeight, setMapNaturalHeight] = useState(600);
@@ -232,6 +234,12 @@ function EncounterSimulation() {
     const MIN_ZOOM = 0.25;
     const MAX_ZOOM = 4;
 
+    const applyTransform = () => {
+        if (mapContentRef.current) {
+            mapContentRef.current.style.transform =
+                `translate(${pan.current.x}px, ${pan.current.y}px) scale(${zoom.current})`;
+        }
+    };
     //ONLOAD EFFECTS
     const loadActions = async (): Promise<void> => {
         if (currentTurnCreature) {
@@ -336,7 +344,6 @@ function EncounterSimulation() {
         if (!matchingCreature) {
             console.warn("Could not find initiative starting creature.");
             setCurrentTurnCreature(undefined);
-            // sessionStorage.removeItem(`encounter-current-turn-${eid}`);
             return;
         }
 
@@ -490,7 +497,6 @@ function EncounterSimulation() {
             error : ""
         }
         setActionExecutionSession(actionSession);
-        //TODO: Save this into sessionStorage, and check on second useEffect.
     }
     async function handlePASubmission(name: string, prob: number,
                        eDam: number, impact: number, targets: string[]) {
@@ -659,38 +665,33 @@ function EncounterSimulation() {
     //PAN/ZOOM FUNCTIONS
     function onPanStart(e: React.MouseEvent) {
         if ((e.target as HTMLElement).tagName === "IMG") return;
-        setIsPanning(true);
+        isPanning.current = true;
+        if (mapViewportRef.current) mapViewportRef.current.style.cursor = "grabbing";
         lastPanPos.current = { x: e.clientX, y: e.clientY };
     }
     function onPanMove(e: React.MouseEvent) {
-        if (!isPanning) return;
+        if (!isPanning.current) return;
         const rect = mapViewportRef.current!.getBoundingClientRect();
         const dx = e.clientX - lastPanPos.current.x;
         const dy = e.clientY - lastPanPos.current.y;
         lastPanPos.current = { x: e.clientX, y: e.clientY };
-        setPan(prev => clampPan(prev.x + dx, prev.y + dy, zoom, rect, mapNaturalWidth, mapNaturalHeight));
+        pan.current = clampPan(pan.current.x + dx, pan.current.y + dy, zoom.current, rect, mapNaturalWidth, mapNaturalHeight);
+        applyTransform();
     }
-    function onPanEnd() { setIsPanning(false); }
+    function onPanEnd() { isPanning.current = false;
+        if (mapViewportRef.current) mapViewportRef.current.style.cursor = "grab";}
     function onWheel(e: React.WheelEvent) {
-        // e.preventDefault();
         const rect = mapViewportRef.current!.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
-
-        // 1.01 is slow, 1.05 is moderate, 1.1 is fast
-        //Zoom in : Zoom out.
-        const factor = e.deltaY < 0 ? 1.01 : 0.990;
-
-        setZoom(prevZoom => {
-            const nextZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, prevZoom * factor));
-            setPan(prevPan => {
-                const ratio = nextZoom / prevZoom;
-                const nextX = mouseX - ratio * (mouseX - prevPan.x);
-                const nextY = mouseY - ratio * (mouseY - prevPan.y);
-                return clampPan(nextX, nextY, nextZoom, rect, mapNaturalWidth, mapNaturalHeight);
-            });
-            return nextZoom;
-        });
+        const factor = e.deltaY < 0 ? 1.06 : 0.95;
+        const nextZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom.current * factor));
+        const ratio = nextZoom / zoom.current;
+        const nextX = mouseX - ratio * (mouseX - pan.current.x);
+        const nextY = mouseY - ratio * (mouseY - pan.current.y);
+        zoom.current = nextZoom;
+        pan.current = clampPan(nextX, nextY, nextZoom, rect, mapNaturalWidth, mapNaturalHeight);
+        applyTransform();
     }
 
     return (
@@ -755,7 +756,7 @@ function EncounterSimulation() {
                             position: "absolute",
                             inset: 0,
                             overflow: "hidden",
-                            cursor: isPanning ? "grabbing" : "grab",
+                            cursor: "grab",
                         }}
                         onMouseDown={onPanStart}
                         onMouseMove={onPanMove}
@@ -763,8 +764,8 @@ function EncounterSimulation() {
                         onMouseLeave={onPanEnd}
                         onWheel={onWheel}
                     >
-                        <div style={{
-                            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                        <div ref={mapContentRef} style={{
+                            transform: `translate(${pan.current.x}px, ${pan.current.y}px) scale(${zoom})`,
                             transformOrigin: "0 0",
                             willChange: "transform",
                             display: "inline-block",
@@ -961,11 +962,8 @@ function EncounterSimulation() {
                                 )}
                                     </Col>
                                 </Row>
-
                             </Card.Body>
-
                         </Card>
-
                     )}
                 </Col>
             </Row>
