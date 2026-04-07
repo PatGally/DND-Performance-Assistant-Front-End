@@ -1,5 +1,5 @@
-import type { CharacterPayload } from "../types/creature.ts";
-import axiosTokenInstance from "./AxiosTokenInstance.ts";
+import type { CharacterPayload } from "../types/creature";
+import axiosTokenInstance from "./AxiosTokenInstance";
 import axios from "axios";
 
 export const createCharacter = async (character: CharacterPayload) => {

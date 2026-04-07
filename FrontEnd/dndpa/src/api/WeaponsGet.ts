@@ -1,15 +1,7 @@
-import axiosTokenInstance from "./AxiosTokenInstance.ts";
-import type {WeaponAction} from "../types/action.ts";
+import axiosTokenInstance from "./AxiosTokenInstance";
+import type {WeaponAction} from "../types/action";
 
-// export interface Weapon {
-//     name: string;
-//     properties: {
-//         damage: string;
-//         damageType: string;
-//         weaponStat: string;
-//     };
-//     [key: string]: any;
-// }
+
 
 export const WeaponsGet = async (): Promise<WeaponAction[]> => {
     try {

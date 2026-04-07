@@ -1,5 +1,5 @@
 import axios from "axios";
-import BASE_URL from "./BASE_URL.ts";
+import BASE_URL from "./BASE_URL";
 
 const axiosTokenInstance = axios.create({ baseURL: BASE_URL, withCredentials: true });
 

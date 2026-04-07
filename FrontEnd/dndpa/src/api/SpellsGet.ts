@@ -1,4 +1,4 @@
-import axiosTokenInstance from "./AxiosTokenInstance.ts";
+import axiosTokenInstance from "./AxiosTokenInstance";
 import axios from "axios";
 
 export interface Spell {

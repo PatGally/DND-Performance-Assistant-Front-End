@@ -1,4 +1,4 @@
-import BASE_URL from "./BASE_URL.ts";
+import BASE_URL from "./BASE_URL";
 
 export const refreshToken = async (): Promise<boolean> => {
     try {

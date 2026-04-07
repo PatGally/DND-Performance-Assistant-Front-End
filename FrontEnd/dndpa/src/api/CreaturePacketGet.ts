@@ -1,5 +1,5 @@
-import axiosTokenInstance from "./AxiosTokenInstance.ts";
-import type { EncounterPacket } from "../types/encounter.ts";
+import axiosTokenInstance from "./AxiosTokenInstance";
+import type { EncounterPacket } from "../types/encounter";
 
 
 async function creaturePacketGet(eid: string): Promise<EncounterPacket> {
