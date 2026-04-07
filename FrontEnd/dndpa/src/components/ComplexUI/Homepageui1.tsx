@@ -41,7 +41,7 @@
 //     );
 // }
 
-import "./HomePageUI1.css";
+import "./Homepageui1.css";
 import bg_UI1 from '../../assets/bg_UI1.png';
 
 export default function HomePageUI1() {
