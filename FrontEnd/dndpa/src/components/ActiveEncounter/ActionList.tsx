@@ -6,7 +6,7 @@ import type {
   MonsterAction,
 } from "../../types/action.ts";
 import { actionsGet } from "../../api/ActionsGet.ts";
-import {isSpellAction, isWeaponAction, isMonsterAction} from "../../utils/ActionTypeChecker.ts"
+import {isSpellAction, isWeaponAction, isMonsterAction} from "../../utils/ActionTypeChecker.ts";
 
 type ActionListProps = {
   eid: string;
@@ -97,6 +97,7 @@ export default function ActionList({
 
   function renderActionDetails(action: CreatureAction) {
     let actionElement;
+    console.log(action);
     if (isSpellAction(action)) actionElement = renderSpellDetails(action);
     else if (isWeaponAction(action)) actionElement = renderWeaponDetails(action);
     else if (isMonsterAction(action)) actionElement = renderMonsterDetails(action);
@@ -154,9 +155,6 @@ export default function ActionList({
       </div>
     );
   }
-    if(!sessionStorage.getItem(`encounter-${eid}-${cid}-actions`)) {
-        sessionStorage.setItem(`encounter-${eid}-${cid}-actions`, JSON.stringify(actions));
-    }
   return (
     <div style={{ width: "100%" }}>
       {actions.map((action, index) => {
