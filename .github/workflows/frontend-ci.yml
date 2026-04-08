@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: DND-Performance-Assistant-Front-End/FrontEnd/dndpa
+        working-directory: FrontEnd/dndpa
 
     steps:
       - name: Checkout code
@@ -22,7 +22,7 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: DND-Performance-Assistant-Front-End/FrontEnd/dndpa/package-lock.json
+          cache-dependency-path: FrontEnd/dndpa/package-lock.json
 
       - name: Install dependencies
         run: npm ci
