@@ -348,7 +348,6 @@ function EncounterSimulation() {
         }
 
     setCurrentTurnCreature(matchingCreature);
-    // sessionStorage.setItem(`encounter-current-turn-${eid}`, JSON.stringify(matchingCreature));
 }
     async function basicActionGet(name : string) {
         if (["dodge", "shove", "grapple", "hide"].includes(name.toLowerCase())) {
@@ -558,7 +557,6 @@ function EncounterSimulation() {
             error : ""
         }
         setActionExecutionSession(actionSession);
-        //TODO: Save this into sessionStorage, and check on second useEffect.
 }
     async function handleActionExecution(finalDraft: ActionRequestDraft) {
           if (!eid || !currentTurnCreature || !encounterData || !actionExecutionSession) return;
@@ -589,15 +587,6 @@ function EncounterSimulation() {
 
             const newCurrentTurnCreature = getCurrentTurnCreatureFromEncounter(updatedEncounter);
             setCurrentTurnCreature(newCurrentTurnCreature);
-
-            if (newCurrentTurnCreature) {
-              sessionStorage.setItem(
-                `encounter-current-turn-${eid}`,
-                JSON.stringify(newCurrentTurnCreature)
-              );
-            } else {
-              sessionStorage.removeItem(`encounter-current-turn-${eid}`);
-            }
 
             setActionExecutionSession(undefined);
             setManualLock(false);
@@ -643,23 +632,29 @@ function EncounterSimulation() {
       setManualDraft({ affectedCreatures: [] });
       setInitiativeExpandedCid(null);
     }
-    function handleManualCreatureChange(nextCreature: ManualAffectedCreature) {
-  setManualDraft((prev) => {
-    const others = prev.affectedCreatures.filter(
-      (creature) => creature.cid !== nextCreature.cid
-    );
-
-    const changedKeys = Object.keys(nextCreature).filter((key) => key !== "cid");
-
-    if (changedKeys.length === 0) {
-      return { affectedCreatures: others };
+    function setManualState() {
+        setManualMode(true);
+        setInitiativeOpen(true);
+        setActionOpen(false);
+        clearManualState();
     }
+    function handleManualCreatureChange(nextCreature: ManualAffectedCreature) {
+          setManualDraft((prev) => {
+            const others = prev.affectedCreatures.filter(
+              (creature) => creature.cid !== nextCreature.cid
+            );
 
-    return {
-      affectedCreatures: [...others, nextCreature],
-    };
-  });
-}
+            const changedKeys = Object.keys(nextCreature).filter((key) => key !== "cid");
+
+            if (changedKeys.length === 0) {
+              return { affectedCreatures: others };
+            }
+
+            return {
+              affectedCreatures: [...others, nextCreature],
+            };
+          });
+        }
 
     //PAN/ZOOM FUNCTIONS
     function onPanStart(e: React.MouseEvent) {
@@ -694,7 +689,8 @@ function EncounterSimulation() {
     }
 
     return (
-        <Container fluid className="p-0 bg-dark" style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+        <Container fluid className="p-0 bg-dark"
+                   style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
             <Row className="bg-dark text-white px-3 mx-0" style={{ height: "56px", flexShrink: 0 }}>
                 <Col className="d-flex align-items-center">
                     {encounterData
@@ -721,10 +717,7 @@ function EncounterSimulation() {
                             <button
                                 disabled={actionExecutionSession !== undefined || handlingNextTurn || manualLock}
                                 onClick={() => {
-                                    setManualMode(true);
-                                    setInitiativeOpen(true);
-                                    setActionOpen(false);
-                                    clearManualState();
+                                    setManualState()
                                 }}
                             >
                                 Manual
@@ -739,7 +732,7 @@ function EncounterSimulation() {
                         </>
                         )
                     }
-                    {encStart && (<button onClick={simStart}>Start!</button>)}
+                    {encStart && !activeEncounter && (<button onClick={simStart}>Start!</button>)}
                 </Col>
                 <Col className="d-flex justify-content-end align-items-center">
                     <ExitSimulation />
@@ -882,7 +875,7 @@ function EncounterSimulation() {
                                 overflowY: "auto",
                                 padding: "12px",
                             }}>
-                                <ActionList cid={getCreatureCid(currentTurnCreature)} eid={eid} handleActionSubmission={handleActionSubmission} handleManualSimulate={handleManualSimulate}/>
+                                <ActionList cid={getCreatureCid(currentTurnCreature)} eid={eid} handleActionSubmission={handleActionSubmission} setManualState={setManualState}/>
                             </div>
                             <button
                                 onClick={() => setActionOpen(false)}
