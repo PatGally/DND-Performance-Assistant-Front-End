@@ -10,10 +10,10 @@ import type {MonsterCreature} from "../../types/creature.ts";
 import { getEncounters } from "../../api/EncountersGet";
 import creaturePacketGet from "../../api/CreaturePacketGet";
 import type { EncounterWithPacket, EncounterDash } from "../../types/encounter.ts";
-import {warmDriveImageCache} from "../../utils/driveImageCache.ts";
 import {deleteEncounter} from "../../api/DeleteEncounter.ts"
 import {deletePlayer} from "../../api/DeletePlayer.ts";
-
+//TODO remove creaturePacket - since you most likely will not display how many creatures are in an encounter
+// for encounter view component - it's unnecessary and may be slowing down loading time for image on encounter
 function HomeDashboard() {
     const [activePage, setActivePage] = useState('SAVED_ENCOUNTERS');
     const [monsters, setMonsters] = useState<MonsterCreature[]>([]);
@@ -54,12 +54,12 @@ function HomeDashboard() {
                 ...enc,
                 packet: undefined,
             }));
-            await Promise.all(
-                encountersWithPackets
-                    .map(e => e.mapdata?.map?.mapLink)
-                    .filter(Boolean)
-                    .map(link => warmDriveImageCache(link))
-            );
+            // await Promise.all(
+            //     encountersWithPackets
+            //         .map(e => e.mapdata?.map?.mapLink)
+            //         .filter(Boolean)
+            //         .map(link => warmDriveImageCache(link))
+            // );
             setEncounters(encountersWithPackets);
 
             for (const encounterItem of encountersWithPackets) {
