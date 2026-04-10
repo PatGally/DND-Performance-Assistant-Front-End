@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import creatureGet, { isPlayerCreature } from "../../api/CreatureGet";
+import { fetchUUID } from "../../api/UUIDGet";
 import { getConditions } from "../../api/ConditionGet";
 import { getStatusEffects } from "../../api/StatusEffectsGet";
 
@@ -34,8 +35,108 @@ const DAMAGE_TYPES = [
     "slashing",
 ];
 
+const ATTRS_BY_EFFECT = {
+    advantage: [
+        "attack rolls for",
+        "attack rolls against",
+        "STR save",
+        "DEX save",
+        "CON save",
+        "INT save",
+        "WIS save",
+        "CHA save",
+        "ALL save",
+    ],
+    disadvantage: [
+        "attack rolls for",
+        "attack rolls against",
+        "STR save",
+        "DEX save",
+        "CON save",
+        "INT save",
+        "WIS save",
+        "CHA save",
+        "ALL save",
+    ],
+    buff: [
+        "attack rolls for",
+        "attack rolls against",
+        "STR save",
+        "DEX save",
+        "CON save",
+        "INT save",
+        "WIS save",
+        "CHA save",
+        "AC",
+        "ALL save",
+    ],
+    debuff: [
+        "attack rolls for",
+        "attack rolls against",
+        "AC",
+        "STR save",
+        "DEX save",
+        "CON save",
+        "INT save",
+        "WIS save",
+        "CHA save",
+        "ALL save",
+    ],
+    autocrit: ["attack rolls against"],
+    autofail: [
+        "STR save",
+        "DEX save",
+        "CON save",
+        "INT save",
+        "WIS save",
+        "CHA save",
+        "ALL save",
+    ],
+} as const;
+
+type EffectKey = keyof typeof ATTRS_BY_EFFECT;
+
+type StatusEffectRecord = {
+    name: string;
+    effect: {
+        roll: string;
+        attribute: string[];
+        resultID: string[];
+    };
+};
+
+const BLOCKED_CONDITIONS = new Set([
+    "stabilized",
+    "downed",
+    "dead",
+]);
+
+const BLOCKED_STATUS_EFFECTS = new Set([
+    "resistance",
+    "immunity",
+    "vulnerability",
+    "concentration",
+    "lingeffect",
+    "lingsave",
+    "summon",
+    "switchsides",
+    "time stop",
+]);
+
 function deepEqual(a: unknown, b: unknown): boolean {
     return JSON.stringify(a) === JSON.stringify(b);
+}
+
+function normalizeValue(value: string): string {
+    return value.trim().toLowerCase();
+}
+
+function toDisplayName(value: string): string {
+    return value
+        .split(/[\s_-]+/)
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join(" ");
 }
 
 function normalizeStatBlock(
@@ -50,6 +151,7 @@ function normalizeStatBlock(
             out[key] = value[key] as number;
         }
     }
+
     return out;
 }
 
@@ -62,9 +164,9 @@ function creatureToBaseline(
 
         return {
             cid,
-            statArray: normalizeStatBlock(s.statArray as any),
-            saveProfs: normalizeStatBlock(s.saveProfs as any),
-            modifiers: normalizeStatBlock(s.modifiers as any),
+            statArray: normalizeStatBlock(s.statArray as Record<string, unknown> | undefined),
+            saveProfs: normalizeStatBlock(s.saveProfs as Record<string, unknown> | undefined),
+            modifiers: normalizeStatBlock(s.modifiers as Record<string, unknown> | undefined),
 
             damResists: s.damResists ?? [],
             damImmunes: s.damImmunes ?? [],
@@ -91,9 +193,9 @@ function creatureToBaseline(
 
     return {
         cid,
-        statArray: normalizeStatBlock(m.statArray as any),
-        saveProfs: normalizeStatBlock(m.saveProfs as any),
-        modifiers: normalizeStatBlock(m.modifiers as any),
+        statArray: normalizeStatBlock(m.statArray as Record<string, unknown> | undefined),
+        saveProfs: normalizeStatBlock(m.saveProfs as Record<string, unknown> | undefined),
+        modifiers: normalizeStatBlock(m.modifiers as Record<string, unknown> | undefined),
 
         damResists: m.damResists ?? [],
         damImmunes: m.damImmunes ?? [],
@@ -115,6 +217,47 @@ function creatureToBaseline(
         lResists: typeof m.lResists === "number" ? m.lResists : undefined,
         enemy: m.enemy,
     };
+}
+
+function isStatusEffectRecord(value: unknown): value is StatusEffectRecord {
+    if (typeof value !== "object" || value === null) return false;
+    if (!("name" in value)) return false;
+
+    const candidate = value as { name?: unknown; effect?: unknown };
+    if (typeof candidate.name !== "string") return false;
+
+    if (candidate.effect === undefined) return true;
+    if (typeof candidate.effect !== "object" || candidate.effect === null) return false;
+
+    return true;
+}
+
+function getStatusEffectAttributes(record: Record<string, unknown>): string[] {
+    const effect = record.effect;
+    if (typeof effect !== "object" || effect === null) return [];
+
+    const attrs = (effect as { attribute?: unknown }).attribute;
+    return Array.isArray(attrs)
+        ? attrs.filter((x): x is string => typeof x === "string")
+        : [];
+}
+
+function getStatusEffectRoll(record: Record<string, unknown>): string {
+    const effect = record.effect;
+    if (typeof effect !== "object" || effect === null) return "";
+
+    const roll = (effect as { roll?: unknown }).roll;
+    return typeof roll === "string" ? roll : "";
+}
+
+function getStatusEffectResultIDs(record: Record<string, unknown>): string[] {
+    const effect = record.effect;
+    if (typeof effect !== "object" || effect === null) return [];
+
+    const resultID = (effect as { resultID?: unknown }).resultID;
+    return Array.isArray(resultID)
+        ? resultID.filter((x): x is string => typeof x === "string")
+        : [];
 }
 
 function MultiSelectSearch({
@@ -159,8 +302,8 @@ function MultiSelectSearch({
                             onClick={() => toggle(item)}
                             style={{ marginLeft: 6, cursor: "pointer" }}
                         >
-              ✕
-            </span>
+                            ✕
+                        </span>
                     </div>
                 ))}
             </div>
@@ -198,6 +341,192 @@ function MultiSelectSearch({
     );
 }
 
+function StatusEffectEditor({
+                                options,
+                                value,
+                                onChange,
+                            }: {
+    options: string[];
+    value: StatusEffectRecord[];
+    onChange: (next: StatusEffectRecord[]) => void;
+}) {
+    const [selectedStatusEffect, setSelectedStatusEffect] = useState("");
+    const [selectedAttributes, setSelectedAttributes] = useState<string[]>([]);
+    const [rollValue, setRollValue] = useState("");
+    const [error, setError] = useState("");
+    const [isCreating, setIsCreating] = useState(false);
+
+    const normalizedEffect = normalizeValue(selectedStatusEffect);
+    const effectKey = normalizedEffect as EffectKey;
+    const attributeOptions = ATTRS_BY_EFFECT[effectKey] ?? [];
+    const needsAttributePrompt = attributeOptions.length > 0;
+    const needsRollPrompt = normalizedEffect === "buff" || normalizedEffect === "debuff";
+
+    function resetBuilderFields() {
+        setSelectedAttributes([]);
+        setRollValue("");
+        setError("");
+    }
+
+    async function addStatusEffect() {
+        setError("");
+
+        if (!selectedStatusEffect) {
+            setError("Choose a status effect first.");
+            return;
+        }
+
+        if (needsAttributePrompt && selectedAttributes.length === 0) {
+            setError("Choose at least one attribute.");
+            return;
+        }
+
+        if (needsRollPrompt && !rollValue.trim()) {
+            setError("Buff and debuff require a roll value.");
+            return;
+        }
+
+        try {
+            setIsCreating(true);
+
+            const uuid = await fetchUUID();
+
+            const nextRecord: StatusEffectRecord = {
+                name: toDisplayName(selectedStatusEffect),
+                effect: {
+                    roll: needsRollPrompt ? rollValue.trim() : "",
+                    attribute: needsAttributePrompt ? selectedAttributes : [],
+                    resultID: [uuid],
+                },
+            };
+
+            onChange([...value, nextRecord]);
+
+            setSelectedStatusEffect("");
+            setSelectedAttributes([]);
+            setRollValue("");
+        } catch (err) {
+            console.error(err);
+            setError(
+                err instanceof Error ? err.message : "Failed to create status effect."
+            );
+        } finally {
+            setIsCreating(false);
+        }
+    }
+
+    function removeStatusEffect(indexToRemove: number) {
+        onChange(value.filter((_, index) => index !== indexToRemove));
+    }
+
+    return (
+        <div style={{ marginBottom: 12 }}>
+            <div style={{ marginBottom: 6 }}>Active Status Effects</div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
+                {value.map((record, index) => {
+                    const attrs = record.effect.attribute ?? [];
+                    const roll = record.effect.roll ?? "";
+
+                    return (
+                        <div
+                            key={`${record.name}-${index}`}
+                            style={{
+                                border: "1px solid #555",
+                                borderRadius: 6,
+                                padding: 8,
+                                background: "#2b2b2b",
+                            }}
+                        >
+                            <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                                <strong>{record.name}</strong>
+                                <button
+                                    type="button"
+                                    onClick={() => removeStatusEffect(index)}
+                                    style={{ cursor: "pointer" }}
+                                >
+                                    Remove
+                                </button>
+                            </div>
+
+                            {attrs.length > 0 && (
+                                <div style={{ marginTop: 4 }}>
+                                    <strong>Attributes:</strong> {attrs.join(", ")}
+                                </div>
+                            )}
+
+                            {roll && (
+                                <div style={{ marginTop: 4 }}>
+                                    <strong>Roll:</strong> {roll}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+
+            <div style={{ border: "1px solid #555", borderRadius: 6, padding: 10 }}>
+                <div style={{ marginBottom: 6 }}>
+                    <strong>Add Status Effect</strong>
+                </div>
+
+                <select
+                    value={selectedStatusEffect}
+                    onChange={(e) => {
+                        setSelectedStatusEffect(e.target.value);
+                        resetBuilderFields();
+                    }}
+                    style={{ width: "100%", marginBottom: 10 }}
+                >
+                    <option value="">Select status effect</option>
+                    {options.map((effect) => (
+                        <option key={effect} value={effect}>
+                            {effect}
+                        </option>
+                    ))}
+                </select>
+
+                {needsAttributePrompt && (
+                    <MultiSelectSearch
+                        label="Attributes"
+                        options={[...attributeOptions]}
+                        value={selectedAttributes}
+                        onChange={setSelectedAttributes}
+                    />
+                )}
+
+                {needsRollPrompt && (
+                    <div style={{ marginBottom: 12 }}>
+                        <div>Roll</div>
+                        <input
+                            type="text"
+                            value={rollValue}
+                            onChange={(e) => setRollValue(e.target.value)}
+                            placeholder="Enter roll value"
+                            style={{ width: "100%" }}
+                        />
+                    </div>
+                )}
+
+                {error && (
+                    <div style={{ color: "#ff6b6b", marginBottom: 8 }}>
+                        {error}
+                    </div>
+                )}
+
+                <button
+                    type="button"
+                    onClick={addStatusEffect}
+                    disabled={isCreating}
+                    style={{ cursor: isCreating ? "not-allowed" : "pointer" }}
+                >
+                    {isCreating ? "Creating..." : "Add Status Effect"}
+                </button>
+            </div>
+        </div>
+    );
+}
+
 export default function ComplexManualEntry({
                                                eid,
                                                cid,
@@ -208,7 +537,7 @@ export default function ComplexManualEntry({
     eid: string;
     cid: string;
     initiativeEntry: InitiativeEntry;
-    onToggle: () => void;
+    onToggle?: () => void;
     draftValue?: ManualAffectedCreature;
     onDraftChange: (next: ManualAffectedCreature) => void;
 }) {
@@ -232,6 +561,18 @@ export default function ComplexManualEntry({
         loadData();
     }, [eid, cid]);
 
+    const filteredConditions = useMemo(() => {
+        return conditions.filter(
+            (condition) => !BLOCKED_CONDITIONS.has(normalizeValue(condition))
+        );
+    }, [conditions]);
+
+    const filteredStatusEffects = useMemo(() => {
+        return statusEffects.filter(
+            (effect) => !BLOCKED_STATUS_EFFECTS.has(normalizeValue(effect))
+        );
+    }, [statusEffects]);
+
     const baseline = useMemo(
         () => (creature ? creatureToBaseline(creature, cid) : undefined),
         [creature, cid]
@@ -239,13 +580,13 @@ export default function ComplexManualEntry({
 
     function update(
         key: keyof ManualAffectedCreature,
-        val: any,
-        base: any
+        val: unknown,
+        base: unknown
     ) {
         const next = {
             ...(draftValue ?? { cid }),
             cid,
-        } as Record<string, any>;
+        } as Record<string, unknown>;
 
         if (deepEqual(val, base)) {
             delete next[key];
@@ -260,7 +601,26 @@ export default function ComplexManualEntry({
         return draftValue?.[key] ?? baseline?.[key];
     }
 
-    if (!creature || !baseline) return <div>Loading...</div>;
+    if (!creature || !baseline) {
+        return <div>Loading...</div>;
+    }
+
+    const currentStatusEffects = Array.isArray(val("activeStatusEffects"))
+        ? (val("activeStatusEffects") as unknown[]).filter(isStatusEffectRecord)
+        : [];
+
+    const normalizedCurrentStatusEffects: StatusEffectRecord[] = currentStatusEffects.map((record) => {
+        const recordObj = record as unknown as Record<string, unknown>;
+
+        return {
+            name: String((record as { name: unknown }).name),
+            effect: {
+                roll: getStatusEffectRoll(recordObj),
+                attribute: getStatusEffectAttributes(recordObj),
+                resultID: getStatusEffectResultIDs(recordObj),
+            },
+        };
+    });
 
     return (
         <div style={{ border: "1px solid #ccc", padding: 10 }}>
@@ -285,32 +645,23 @@ export default function ComplexManualEntry({
 
             <MultiSelectSearch
                 label="Condition Immunities"
-                options={conditions}
+                options={filteredConditions}
                 value={val("conImmunes") as string[]}
-                onChange={(v) =>
-                    update("conImmunes", v, baseline.conImmunes)
-                }
+                onChange={(v) => update("conImmunes", v, baseline.conImmunes)}
             />
 
             <MultiSelectSearch
                 label="Active Conditions"
-                options={conditions}
+                options={filteredConditions}
                 value={val("activeConditions") as string[]}
-                onChange={(v) =>
-                    update("activeConditions", v, baseline.activeConditions)
-                }
+                onChange={(v) => update("activeConditions", v, baseline.activeConditions)}
             />
 
-            <MultiSelectSearch
-                label="Active Status Effects"
-                options={statusEffects}
-                value={(val("activeStatusEffects") as Array<{ name: string }>)?.map((e) => e.name)}
-                onChange={(v) =>
-                    update(
-                        "activeStatusEffects",
-                        v.map((name) => ({ name })),
-                        baseline.activeStatusEffects
-                    )
+            <StatusEffectEditor
+                options={filteredStatusEffects}
+                value={normalizedCurrentStatusEffects}
+                onChange={(next) =>
+                    update("activeStatusEffects", next, baseline.activeStatusEffects)
                 }
             />
 
@@ -318,27 +669,21 @@ export default function ComplexManualEntry({
                 label="Damage Resistances"
                 options={DAMAGE_TYPES}
                 value={val("damResists") as string[]}
-                onChange={(v) =>
-                    update("damResists", v, baseline.damResists)
-                }
+                onChange={(v) => update("damResists", v, baseline.damResists)}
             />
 
             <MultiSelectSearch
                 label="Damage Immunities"
                 options={DAMAGE_TYPES}
                 value={val("damImmunes") as string[]}
-                onChange={(v) =>
-                    update("damImmunes", v, baseline.damImmunes)
-                }
+                onChange={(v) => update("damImmunes", v, baseline.damImmunes)}
             />
 
             <MultiSelectSearch
                 label="Damage Vulnerabilities"
                 options={DAMAGE_TYPES}
                 value={val("damVulns") as string[]}
-                onChange={(v) =>
-                    update("damVulns", v, baseline.damVulns)
-                }
+                onChange={(v) => update("damVulns", v, baseline.damVulns)}
             />
         </div>
     );
