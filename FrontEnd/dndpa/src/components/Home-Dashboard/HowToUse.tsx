@@ -1,5 +1,5 @@
 function HowToUse() {
-    return (<></>)
+    return (<> how To Use </>)
 }
 
 export default HowToUse;
