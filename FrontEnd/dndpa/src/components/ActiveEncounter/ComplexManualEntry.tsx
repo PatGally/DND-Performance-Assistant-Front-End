@@ -1,527 +1,345 @@
 import { useEffect, useMemo, useState } from "react";
-import creatureGet, { isPlayerCreature } from "../../api/CreatureGet.ts";
-import type {
-  Creature,
-  MonsterCreature,
-  PlayerCreature,
-} from "../../types/creature.ts";
-import type { InitiativeEntry, ManualAffectedCreature, ManualStatBlock, StatKey } from "../../types/SimulationTypes.ts";
+import creatureGet, { isPlayerCreature } from "../../api/CreatureGet";
+import { getConditions } from "../../api/ConditionGet";
+import { getStatusEffects } from "../../api/StatusEffectsGet";
 
-type ComplexManualEntryProps = {
-  eid: string;
-  cid: string;
-  initiativeEntry: InitiativeEntry;
-  onToggle: () => void;
-  draftValue?: ManualAffectedCreature;
-  onDraftChange: (next: ManualAffectedCreature) => void;
-};
+import type {
+    Creature,
+    MonsterCreature,
+    PlayerCreature,
+} from "../../types/creature";
+
+import type {
+    InitiativeEntry,
+    ManualAffectedCreature,
+    ManualStatBlock,
+    StatKey,
+} from "../../types/SimulationTypes";
 
 const STAT_KEYS: StatKey[] = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
 
+const DAMAGE_TYPES = [
+    "fire",
+    "cold",
+    "lightning",
+    "acid",
+    "poison",
+    "psychic",
+    "necrotic",
+    "radiant",
+    "force",
+    "thunder",
+    "bludgeoning",
+    "piercing",
+    "slashing",
+];
+
 function deepEqual(a: unknown, b: unknown): boolean {
-  return JSON.stringify(a) === JSON.stringify(b);
+    return JSON.stringify(a) === JSON.stringify(b);
 }
-function toNumberOrUndefined(value: string): number | undefined {
-  if (value.trim() === "") return undefined;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
-function parseCommaList(value: string): string[] {
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-function safeJsonStringify(value: unknown): string {
-  return JSON.stringify(value ?? [], null, 2);
-}
+
 function normalizeStatBlock(
-  value: Record<string, unknown> | undefined
+    value: Record<string, unknown> | undefined
 ): ManualStatBlock | undefined {
-  if (!value) return undefined;
+    if (!value) return undefined;
 
-  const out: ManualStatBlock = {};
-  for (const key of STAT_KEYS) {
-    const raw = value[key];
-    if (typeof raw === "number") {
-      out[key] = raw;
+    const out: ManualStatBlock = {};
+
+    for (const key of STAT_KEYS) {
+        if (typeof value[key] === "number") {
+            out[key] = value[key] as number;
+        }
     }
-  }
-  return out;
+    return out;
 }
 
-function creatureToBaseline(creature: Creature, cid: string): ManualAffectedCreature {
-  if (isPlayerCreature(creature)) {
-    const stats = creature.stats;
+function creatureToBaseline(
+    creature: Creature,
+    cid: string
+): ManualAffectedCreature {
+    if (isPlayerCreature(creature)) {
+        const s = creature.stats;
+
+        return {
+            cid,
+            statArray: normalizeStatBlock(s.statArray as any),
+            saveProfs: normalizeStatBlock(s.saveProfs as any),
+            modifiers: normalizeStatBlock(s.modifiers as any),
+
+            damResists: s.damResists ?? [],
+            damImmunes: s.damImmunes ?? [],
+            damVulns: s.damVulns ?? [],
+
+            conImmunes: s.conImmunes ?? [],
+            activeConditions: s.activeConditions ?? [],
+
+            activeStatusEffects: Array.isArray(s.activeStatusEffects)
+                ? s.activeStatusEffects.filter(
+                    (item): item is Record<string, unknown> =>
+                        typeof item === "object" && item !== null && "name" in item
+                )
+                : [],
+
+            hp: typeof s.hp === "number" ? s.hp : undefined,
+            position: Array.isArray(s.position) ? s.position : [],
+            ac: typeof s.ac === "number" ? s.ac : undefined,
+            spellSlots: Array.isArray(s.spellSlots) ? s.spellSlots : [],
+        };
+    }
+
+    const m = creature as MonsterCreature;
 
     return {
-      cid,
-      statArray: normalizeStatBlock(stats.statArray as Record<string, unknown> | undefined),
-      saveProfs: normalizeStatBlock(stats.saveProfs as Record<string, unknown> | undefined),
-      modifiers: normalizeStatBlock(stats.modifiers as Record<string, unknown> | undefined),
-      damResists: stats.damResists ?? [],
-      damImmunes: stats.damImmunes ?? [],
-      damVulns: stats.damVulns ?? [],
-      conImmunes: stats.conImmunes ?? [],
-      activeConditions: stats.activeConditions ?? [],
-      activeStatusEffects: Array.isArray(stats.activeStatusEffects)
-        ? (stats.activeStatusEffects as Record<string, unknown>[])
-        : [],
-      hp: typeof stats.hp === "number" ? stats.hp : undefined,
-      position: Array.isArray(stats.position) ? stats.position : [],
-      ac: typeof stats.ac === "number" ? stats.ac : undefined,
-      spellSlots: Array.isArray(stats.spellSlots)
-        ? (stats.spellSlots as number[][])
-        : [],
+        cid,
+        statArray: normalizeStatBlock(m.statArray as any),
+        saveProfs: normalizeStatBlock(m.saveProfs as any),
+        modifiers: normalizeStatBlock(m.modifiers as any),
+
+        damResists: m.damResists ?? [],
+        damImmunes: m.damImmunes ?? [],
+        damVulns: m.damVulns ?? [],
+
+        conImmunes: m.conImmunes ?? [],
+        activeConditions: m.activeConditions ?? [],
+
+        activeStatusEffects: Array.isArray(m.activeStatusEffects)
+            ? m.activeStatusEffects.filter(
+                (item): item is Record<string, unknown> =>
+                    typeof item === "object" && item !== null && "name" in item
+            )
+            : [],
+
+        hp: typeof m.hp === "number" ? m.hp : undefined,
+        position: Array.isArray(m.position) ? m.position : [],
+        ac: typeof m.ac === "number" ? m.ac : undefined,
+        lResists: typeof m.lResists === "number" ? m.lResists : undefined,
+        enemy: m.enemy,
     };
-  }
-
-  const monster = creature as MonsterCreature;
-
-  return {
-    cid,
-    statArray: normalizeStatBlock(monster.statArray as Record<string, unknown> | undefined),
-    saveProfs: normalizeStatBlock(monster.saveProfs as Record<string, unknown> | undefined),
-    modifiers: normalizeStatBlock(monster.modifiers as Record<string, unknown> | undefined),
-    damResists: monster.damResists ?? [],
-    damImmunes: monster.damImmunes ?? [],
-    damVulns: monster.damVulns ?? [],
-    conImmunes: monster.conImmunes ?? [],
-    activeConditions: (monster.activeConditions ?? monster.activeCons ?? []) as string[],
-    activeStatusEffects: Array.isArray(monster.activeStatusEffects)
-      ? (monster.activeStatusEffects as Record<string, unknown>[])
-      : [],
-    hp: typeof monster.hp === "number" ? monster.hp : undefined,
-    position: Array.isArray(monster.position) ? monster.position : [],
-    ac: typeof monster.ac === "number" ? monster.ac : undefined,
-    lResists: typeof monster.lResists === "number" ? monster.lResists : undefined,
-    enemy: typeof monster.enemy === "boolean" ? monster.enemy : undefined,
-  };
 }
 
-function SectionHeader({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ marginTop: "12px", marginBottom: "8px" }}>
-      <strong>{children}</strong>
-    </div>
-  );
-}
-
-function NumberField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: number | undefined;
-  onChange: (next: number | undefined) => void;
+function MultiSelectSearch({
+                               label,
+                               options,
+                               value,
+                               onChange,
+                           }: {
+    label: string;
+    options: string[];
+    value: string[] | undefined;
+    onChange: (next: string[]) => void;
 }) {
-  return (
-    <div style={{ marginBottom: "10px" }}>
-      <div style={{ marginBottom: "4px" }}>{label}</div>
-      <input
-        type="number"
-        value={value ?? ""}
-        onChange={(e) => onChange(toNumberOrUndefined(e.target.value))}
-        style={{ width: "100%" }}
-      />
-    </div>
-  );
-}
+    const [query, setQuery] = useState("");
 
-function CheckboxField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: boolean | undefined;
-  onChange: (next: boolean) => void;
-}) {
-  return (
-    <label
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        marginBottom: "10px",
-      }}
-    >
-      <input
-        type="checkbox"
-        checked={!!value}
-        onChange={(e) => onChange(e.target.checked)}
-      />
-      <span>{label}</span>
-    </label>
-  );
-}
+    const current = value ?? [];
 
-function ListField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string[] | undefined;
-  onChange: (next: string[]) => void;
-}) {
-  return (
-    <div style={{ marginBottom: "10px" }}>
-      <div style={{ marginBottom: "4px" }}>{label}</div>
-      <textarea
-        rows={2}
-        value={(value ?? []).join(", ")}
-        onChange={(e) => onChange(parseCommaList(e.target.value))}
-        style={{ width: "100%" }}
-      />
-      <div style={{ fontSize: "12px", opacity: 0.8 }}>Comma-separated</div>
-    </div>
-  );
-}
+    const filtered = options.filter((opt) =>
+        opt.toLowerCase().includes(query.toLowerCase())
+    );
 
-function JsonField<T>({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: T | undefined;
-  onChange: (next: T) => void;
-}) {
-  const [raw, setRaw] = useState<string>(safeJsonStringify(value));
-  const [error, setError] = useState<string>("");
+    function toggle(opt: string) {
+        if (current.includes(opt)) {
+            onChange(current.filter((x) => x !== opt));
+        } else {
+            onChange([...current, opt]);
+        }
+    }
 
-  useEffect(() => {
-    setRaw(safeJsonStringify(value));
-    setError("");
-  }, [value]);
+    return (
+        <div style={{ marginBottom: 12 }}>
+            <div>{label}</div>
 
-  return (
-    <div style={{ marginBottom: "10px" }}>
-      <div style={{ marginBottom: "4px" }}>{label}</div>
-      <textarea
-        rows={5}
-        value={raw}
-        onChange={(e) => setRaw(e.target.value)}
-        onBlur={() => {
-          try {
-            const parsed = JSON.parse(raw) as T;
-            onChange(parsed);
-            setError("");
-          } catch {
-            setError("Invalid JSON");
-          }
-        }}
-        style={{ width: "100%" }}
-      />
-      {error ? (
-        <div style={{ fontSize: "12px", color: "#ff8080" }}>{error}</div>
-      ) : null}
-    </div>
-  );
-}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {current.map((item) => (
+                    <div
+                        key={item}
+                        style={{ background: "#444", padding: "4px 8px", borderRadius: 4 }}
+                    >
+                        {item}
+                        <span
+                            onClick={() => toggle(item)}
+                            style={{ marginLeft: 6, cursor: "pointer" }}
+                        >
+              ✕
+            </span>
+                    </div>
+                ))}
+            </div>
 
-function StatBlockEditor({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: ManualStatBlock | undefined;
-  onChange: (next: ManualStatBlock) => void;
-}) {
-  const current = value ?? {};
+            <input
+                placeholder="Search..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                style={{ width: "100%", margin: "6px 0" }}
+            />
 
-  return (
-    <div style={{ marginBottom: "10px" }}>
-      <SectionHeader>{label}</SectionHeader>
-      {STAT_KEYS.map((key) => (
-        <NumberField
-          key={key}
-          label={key}
-          value={current[key]}
-          onChange={(nextValue) =>
-            onChange({
-              ...current,
-              [key]: nextValue,
-            })
-          }
-        />
-      ))}
-    </div>
-  );
+            <div
+                style={{
+                    maxHeight: 120,
+                    overflowY: "auto",
+                    border: "1px solid #ccc",
+                    minHeight: 0,
+                }}
+            >
+                {filtered.map((opt) => (
+                    <div
+                        key={opt}
+                        onClick={() => toggle(opt)}
+                        style={{
+                            padding: 6,
+                            cursor: "pointer",
+                            background: current.includes(opt) ? "#666" : "transparent",
+                        }}
+                    >
+                        {opt}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
 }
 
 export default function ComplexManualEntry({
-  eid,
-  cid,
-  initiativeEntry,
-  onToggle,
-  draftValue,
-  onDraftChange,
-}: ComplexManualEntryProps) {
-  const [creature, setCreature] = useState<Creature | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>("");
+                                               eid,
+                                               cid,
+                                               initiativeEntry,
+                                               draftValue,
+                                               onDraftChange,
+                                           }: {
+    eid: string;
+    cid: string;
+    initiativeEntry: InitiativeEntry;
+    onToggle: () => void;
+    draftValue?: ManualAffectedCreature;
+    onDraftChange: (next: ManualAffectedCreature) => void;
+}) {
+    const [creature, setCreature] = useState<Creature | null>(null);
+    const [conditions, setConditions] = useState<string[]>([]);
+    const [statusEffects, setStatusEffects] = useState<string[]>([]);
 
-  useEffect(() => {
-    async function loadCreature() {
-      try {
-        setLoading(true);
-        setError("");
-        const data = await creatureGet(eid, cid);
+    useEffect(() => {
+        async function loadData() {
+            const [c, conds, stats] = await Promise.all([
+                creatureGet(eid, cid),
+                getConditions(),
+                getStatusEffects(),
+            ]);
 
-        if (!data) {
-          setError("Creature not found.");
-          setCreature(null);
-          return;
+            setCreature(c);
+            setConditions(conds);
+            setStatusEffects(stats);
         }
 
-        setCreature(data);
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
+        loadData();
+    }, [eid, cid]);
+
+    const baseline = useMemo(
+        () => (creature ? creatureToBaseline(creature, cid) : undefined),
+        [creature, cid]
+    );
+
+    function update(
+        key: keyof ManualAffectedCreature,
+        val: any,
+        base: any
+    ) {
+        const next = {
+            ...(draftValue ?? { cid }),
+            cid,
+        } as Record<string, any>;
+
+        if (deepEqual(val, base)) {
+            delete next[key];
         } else {
-          setError("Failed to load creature.");
+            next[key] = val;
         }
-      } finally {
-        setLoading(false);
-      }
+
+        onDraftChange(next as ManualAffectedCreature);
     }
 
-    loadCreature();
-  }, [eid, cid]);
-
-  const baseline = useMemo(() => {
-    if (!creature) return undefined;
-    return creatureToBaseline(creature, cid);
-  }, [creature, cid]);
-
-  function updatePatchField<K extends keyof ManualAffectedCreature>(
-    key: K,
-    nextValue: ManualAffectedCreature[K],
-    baselineValue: ManualAffectedCreature[K]
-  ) {
-    const nextPatch: ManualAffectedCreature = {
-      ...(draftValue ?? { cid }),
-      cid,
-    };
-
-    if (deepEqual(nextValue, baselineValue)) {
-      delete nextPatch[key];
-    } else {
-      nextPatch[key] = nextValue;
+    function val(key: keyof ManualAffectedCreature) {
+        return draftValue?.[key] ?? baseline?.[key];
     }
 
-    const changedKeys = Object.keys(nextPatch).filter((field) => field !== "cid");
+    if (!creature || !baseline) return <div>Loading...</div>;
 
-    if (changedKeys.length === 0) {
-      onDraftChange({ cid });
-      return;
-    }
+    return (
+        <div style={{ border: "1px solid #ccc", padding: 10 }}>
+            <strong>{initiativeEntry.name}</strong>
 
-    onDraftChange(nextPatch);
-  }
+            {isPlayerCreature(creature) ? (
+                <>
+                    <div><strong>Type:</strong> Player</div>
+                    <div><strong>Name:</strong> {(creature as PlayerCreature).stats.name}</div>
+                    <div><strong>Class:</strong> {(creature as PlayerCreature).stats.characterClass}</div>
+                    <div><strong>Level:</strong> {(creature as PlayerCreature).stats.level}</div>
+                </>
+            ) : (
+                <>
+                    <div><strong>Type:</strong> Monster</div>
+                    <div><strong>Name:</strong> {(creature as MonsterCreature).name}</div>
+                    <div><strong>CR:</strong> {(creature as MonsterCreature).cr}</div>
+                    <div><strong>Creature Type:</strong> {(creature as MonsterCreature).creatureType}</div>
+                    <div><strong>Size:</strong> {(creature as MonsterCreature).size}</div>
+                </>
+            )}
 
-  function getDisplayValue<K extends keyof ManualAffectedCreature>(
-    key: K
-  ): ManualAffectedCreature[K] | undefined {
-    if (draftValue && draftValue[key] !== undefined) {
-      return draftValue[key];
-    }
-    return baseline?.[key];
-  }
-
-  return (
-    <div
-      style={{
-        border: "1px solid #ccc",
-        borderRadius: "6px",
-        padding: "10px 12px",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "12px",
-        }}
-      >
-        <div>
-          <strong>{initiativeEntry.name}</strong>
-        </div>
-
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-label="Collapse creature details"
-          style={{
-            border: "none",
-            background: "transparent",
-            cursor: "pointer",
-            fontSize: "14px",
-            transform: "rotate(90deg)",
-          }}
-        >
-          ▶
-        </button>
-      </div>
-
-      {loading && <div style={{ marginTop: "10px" }}>Loading creature.</div>}
-      {error && <div style={{ marginTop: "10px" }}>Error: {error}</div>}
-
-      {!loading && !error && creature && baseline && (
-        <div style={{ marginTop: "10px", paddingLeft: "8px" }}>
-          {isPlayerCreature(creature) ? (
-            <>
-              <div><strong>Type:</strong> Player</div>
-              <div><strong>Name:</strong> {(creature as PlayerCreature).stats.name}</div>
-              <div><strong>Class:</strong> {(creature as PlayerCreature).stats.characterClass}</div>
-              <div><strong>Level:</strong> {(creature as PlayerCreature).stats.level}</div>
-            </>
-          ) : (
-            <>
-              <div><strong>Type:</strong> Monster</div>
-              <div><strong>Name:</strong> {(creature as MonsterCreature).name}</div>
-              <div><strong>CR:</strong> {(creature as MonsterCreature).cr}</div>
-              <div><strong>Creature Type:</strong> {(creature as MonsterCreature).creatureType}</div>
-              <div><strong>Size:</strong> {(creature as MonsterCreature).size}</div>
-            </>
-          )}
-
-          <SectionHeader>Core</SectionHeader>
-
-          <NumberField
-            label="HP"
-            value={getDisplayValue("hp") as number | undefined}
-            onChange={(next) => updatePatchField("hp", next, baseline.hp)}
-          />
-
-          <NumberField
-            label="AC"
-            value={getDisplayValue("ac") as number | undefined}
-            onChange={(next) => updatePatchField("ac", next, baseline.ac)}
-          />
-
-          {!isPlayerCreature(creature) && (
-            <>
-              <NumberField
-                label="Legendary Resists"
-                value={getDisplayValue("lResists") as number | undefined}
-                onChange={(next) =>
-                  updatePatchField("lResists", next, baseline.lResists)
+            <MultiSelectSearch
+                label="Condition Immunities"
+                options={conditions}
+                value={val("conImmunes") as string[]}
+                onChange={(v) =>
+                    update("conImmunes", v, baseline.conImmunes)
                 }
-              />
-
-              <CheckboxField
-                label="Enemy"
-                value={getDisplayValue("enemy") as boolean | undefined}
-                onChange={(next) => updatePatchField("enemy", next, baseline.enemy)}
-              />
-            </>
-          )}
-
-          {/*<JsonField<number[][]>*/}
-          {/*  label="Position"*/}
-          {/*  value={getDisplayValue("position") as number[][] | undefined}*/}
-          {/*  onChange={(next) => updatePatchField("position", next, baseline.position)}*/}
-          {/*/>*/}
-
-          <StatBlockEditor
-            label="Stat Array"
-            value={getDisplayValue("statArray") as ManualStatBlock | undefined}
-            onChange={(next) =>
-              updatePatchField("statArray", next, baseline.statArray)
-            }
-          />
-
-          <StatBlockEditor
-            label="Save Proficiencies"
-            value={getDisplayValue("saveProfs") as ManualStatBlock | undefined}
-            onChange={(next) =>
-              updatePatchField("saveProfs", next, baseline.saveProfs)
-            }
-          />
-
-          {/*<StatBlockEditor*/}
-          {/*  label="Modifiers"*/}
-          {/*  value={getDisplayValue("modifiers") as ManualStatBlock | undefined}*/}
-          {/*  onChange={(next) =>*/}
-          {/*    updatePatchField("modifiers", next, baseline.modifiers)*/}
-          {/*  }*/}
-          {/*/>*/}
-
-          <SectionHeader>Lists</SectionHeader>
-
-          <ListField
-            label="Damage Resistances"
-            value={getDisplayValue("damResists") as string[] | undefined}
-            onChange={(next) =>
-              updatePatchField("damResists", next, baseline.damResists)
-            }
-          />
-
-          <ListField
-            label="Damage Immunities"
-            value={getDisplayValue("damImmunes") as string[] | undefined}
-            onChange={(next) =>
-              updatePatchField("damImmunes", next, baseline.damImmunes)
-            }
-          />
-
-          <ListField
-            label="Damage Vulnerabilities"
-            value={getDisplayValue("damVulns") as string[] | undefined}
-            onChange={(next) =>
-              updatePatchField("damVulns", next, baseline.damVulns)
-            }
-          />
-
-          <ListField
-            label="Condition Immunities"
-            value={getDisplayValue("conImmunes") as string[] | undefined}
-            onChange={(next) =>
-              updatePatchField("conImmunes", next, baseline.conImmunes)
-            }
-          />
-
-          <ListField
-            label="Active Conditions"
-            value={getDisplayValue("activeConditions") as string[] | undefined}
-            onChange={(next) =>
-              updatePatchField("activeConditions", next, baseline.activeConditions)
-            }
-          />
-
-          <JsonField<Record<string, unknown>[]>
-            label="Active Status Effects"
-            value={
-              getDisplayValue("activeStatusEffects") as
-                | Record<string, unknown>[]
-                | undefined
-            }
-            onChange={(next) =>
-              updatePatchField(
-                "activeStatusEffects",
-                next,
-                baseline.activeStatusEffects
-              )
-            }
-          />
-
-          {isPlayerCreature(creature) && (
-            <JsonField<number[][]>
-              label="Spell Slots"
-              value={getDisplayValue("spellSlots") as number[][] | undefined}
-              onChange={(next) =>
-                updatePatchField("spellSlots", next, baseline.spellSlots)
-              }
             />
-          )}
+
+            <MultiSelectSearch
+                label="Active Conditions"
+                options={conditions}
+                value={val("activeConditions") as string[]}
+                onChange={(v) =>
+                    update("activeConditions", v, baseline.activeConditions)
+                }
+            />
+
+            <MultiSelectSearch
+                label="Active Status Effects"
+                options={statusEffects}
+                value={(val("activeStatusEffects") as Array<{ name: string }>)?.map((e) => e.name)}
+                onChange={(v) =>
+                    update(
+                        "activeStatusEffects",
+                        v.map((name) => ({ name })),
+                        baseline.activeStatusEffects
+                    )
+                }
+            />
+
+            <MultiSelectSearch
+                label="Damage Resistances"
+                options={DAMAGE_TYPES}
+                value={val("damResists") as string[]}
+                onChange={(v) =>
+                    update("damResists", v, baseline.damResists)
+                }
+            />
+
+            <MultiSelectSearch
+                label="Damage Immunities"
+                options={DAMAGE_TYPES}
+                value={val("damImmunes") as string[]}
+                onChange={(v) =>
+                    update("damImmunes", v, baseline.damImmunes)
+                }
+            />
+
+            <MultiSelectSearch
+                label="Damage Vulnerabilities"
+                options={DAMAGE_TYPES}
+                value={val("damVulns") as string[]}
+                onChange={(v) =>
+                    update("damVulns", v, baseline.damVulns)
+                }
+            />
         </div>
-      )}
-    </div>
-  );
+    );
 }
