@@ -1,4 +1,4 @@
-import { CloudArrowDown, PersonGear, QuestionSquare, Archive, Journals } from 'react-bootstrap-icons';
+import { CloudArrowDown, PersonGear, QuestionSquare, Archive, Journals, BarChart } from 'react-bootstrap-icons';
 import Dock from '../../css/Dock';
 
 type ActivePanel =
@@ -6,7 +6,8 @@ type ActivePanel =
     | 'LOAD_CHARACTERS'
     | 'CREATE_CHARACTER'
     | 'CREATE_ENCOUNTER'
-    | 'HOW_TO_USE';
+    | 'HOW_TO_USE'
+    | 'SURVEY';
 
 type NavigationSignedInProps = {
     setActivePage: (page: ActivePanel) => void;
@@ -21,6 +22,7 @@ function HomeDashNav({ setActivePage }: NavigationSignedInProps) {
         { icon: <CloudArrowDown size={18} />, label: 'Load Players', onClick: () => setActivePage('LOAD_CHARACTERS') },
         { icon: <PersonGear size={18} />, label: 'Create Player', onClick: () => setActivePage('CREATE_CHARACTER') },
         { icon: <QuestionSquare size={18} />, label: 'How To', onClick: () => setActivePage('HOW_TO_USE')},
+        { icon: <BarChart size={18} />, label: 'Survey', onClick: () => setActivePage('SURVEY') },
     ];
 
     return(
