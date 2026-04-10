@@ -143,6 +143,10 @@ function resolveTokenImage(tokenImage: string): string {
         return tokenImage;
     }
 
+    if (/^[A-Za-z0-9_-]{20,}$/.test(tokenImage)) {
+        return `https://drive.google.com/uc?export=view&id=${tokenImage}`;
+    }
+
     // Convert /src/assets/.../Humanoid.png -> Humanoid.png
     const filename = tokenImage.split("/").pop() ?? "";
     return tokenAssetMap[filename] ?? tokenImage;
@@ -204,7 +208,8 @@ export default function ActiveMap({
     const rows = grid.cellBounds.rows ?? 0;
 
     const mapRoot = mapdata.map;
-    const mapLink = mapRoot.mapLink ?? "";
+    const rawMapLink = mapRoot.mapLink ?? "";
+    const mapLink = resolveTokenImage(rawMapLink);
 
     const [mapSize, setMapSize] = useState<{ width: number; height: number } | null>(null);
 
@@ -212,7 +217,6 @@ export default function ActiveMap({
         if (!mapLink) return;
         setMapSize(null);
         const img = new Image();
-        // img.onload = () => {setMapSize({ width: img.naturalWidth, height: img.naturalHeight });};
         img.onload = () => {
             setMapSize({ width: img.naturalWidth, height: img.naturalHeight });
             onMapSizeLoaded(img.naturalWidth, img.naturalHeight); // added this line
@@ -222,7 +226,7 @@ export default function ActiveMap({
             setMapSize({ width: cols * 64, height: rows * 64 });
         };
         img.src = mapLink;
-    }, [mapLink, cols, rows]);
+    }, [mapLink, cols, rows, onMapSizeLoaded]);
 
     const creaturesByCid = useMemo(() => normalizeCreatures(encounter), [encounter]);
 
