@@ -240,6 +240,7 @@ function EncounterSimulation() {
                 `translate(${pan.current.x}px, ${pan.current.y}px) scale(${zoom.current})`;
         }
     };
+    
     //ONLOAD EFFECTS
     const loadActions = async (): Promise<void> => {
         if (currentTurnCreature) {
