@@ -52,7 +52,7 @@ const CharCreation: React.FC = () => {
     const [spells, setSpells] = useState<any[]>([]); //specify type
     const [loadingSpells, setLoadingSpells] = useState<boolean>(false);
 
-    const [allWeapons, setAllWeapons] = useState<WeaponAction[]>([]); // specify type
+    const [allWeapons, setAllWeapons] = useState<WeaponAction[]>([]);
     const [loadingWeapons, setLoadingWeapons] = useState(false);
 
     const [loadingCid, loadingSetCid] = useState<boolean>(false);

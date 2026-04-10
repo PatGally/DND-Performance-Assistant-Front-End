@@ -143,7 +143,10 @@ function HomeDashboard() {
         // </div>
 
         <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100vh',
-            overflow: 'hidden', background: "#1A0703" }}>
+            overflow: 'hidden',
+            // background: "#1A0703"
+            background: "black"
+        }}>
 
             <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
                 <PixelBlast
