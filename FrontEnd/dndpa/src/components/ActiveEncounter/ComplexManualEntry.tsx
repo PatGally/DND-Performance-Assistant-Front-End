@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import creatureGet, { isPlayerCreature } from "../../api/CreatureGet";
 import { fetchUUID } from "../../api/UUIDGet";
 import { getConditions } from "../../api/ConditionGet";
@@ -140,19 +140,27 @@ function toDisplayName(value: string): string {
         .join(" ");
 }
 
-function toNonNegativeInt(value: unknown): number {
+function toInteger(value: unknown, fallback = 0): number {
     if (typeof value === "number" && Number.isFinite(value)) {
-        return Math.max(0, Math.trunc(value));
+        return Math.trunc(value);
     }
 
     if (typeof value === "string" && value.trim() !== "") {
         const parsed = Number(value);
         if (Number.isFinite(parsed)) {
-            return Math.max(0, Math.trunc(parsed));
+            return Math.trunc(parsed);
         }
     }
 
-    return 0;
+    return fallback;
+}
+
+function getNumberValue(value: unknown, fallback = 0): number {
+    return toInteger(value, fallback);
+}
+
+function getBooleanValue(value: unknown, fallback = false): boolean {
+    return typeof value === "boolean" ? value : fallback;
 }
 
 function normalizeStatBlock(
@@ -171,6 +179,23 @@ function normalizeStatBlock(
     return out;
 }
 
+function expandStatBlock(value: ManualStatBlock | undefined): ManualStatBlock {
+    const normalized = normalizeStatBlock(
+        value as Record<string, unknown> | undefined
+    );
+
+    const out: ManualStatBlock = {};
+
+    for (const key of STAT_KEYS) {
+        out[key] =
+            typeof normalized?.[key] === "number"
+                ? (normalized[key] as number)
+                : 0;
+    }
+
+    return out;
+}
+
 function normalizeSpellSlots(value: unknown): SpellSlotRow[] {
     if (!Array.isArray(value)) return [];
 
@@ -178,12 +203,8 @@ function normalizeSpellSlots(value: unknown): SpellSlotRow[] {
         .map((row): SpellSlotRow | null => {
             if (!Array.isArray(row)) return null;
 
-            const current = toNonNegativeInt(row[0]);
-            const max = toNonNegativeInt(row[1]);
-
-            if (max < current) {
-                return [max, max];
-            }
+            const current = toInteger(row[0], 0);
+            const max = toInteger(row[1], 0);
 
             return [current, max];
         })
@@ -210,6 +231,7 @@ function creatureToBaseline(
 ): ManualAffectedCreature {
     if (isPlayerCreature(creature)) {
         const s = creature.stats;
+        const sRecord = s as unknown as Record<string, unknown>;
 
         return {
             cid,
@@ -231,9 +253,17 @@ function creatureToBaseline(
                 )
                 : [],
 
-            hp: typeof s.hp === "number" ? s.hp : undefined,
+            hp: typeof s.hp === "number" ? s.hp : 0,
             position: Array.isArray(s.position) ? s.position : [],
-            ac: typeof s.ac === "number" ? s.ac : undefined,
+            ac: typeof s.ac === "number" ? s.ac : 0,
+            lResists:
+                typeof sRecord.lResists === "number"
+                    ? (sRecord.lResists as number)
+                    : 0,
+            enemy:
+                typeof sRecord.enemy === "boolean"
+                    ? (sRecord.enemy as boolean)
+                    : false,
             spellSlots: normalizeSpellSlots(s.spellSlots),
         };
     }
@@ -260,11 +290,11 @@ function creatureToBaseline(
             )
             : [],
 
-        hp: typeof m.hp === "number" ? m.hp : undefined,
+        hp: typeof m.hp === "number" ? m.hp : 0,
         position: Array.isArray(m.position) ? m.position : [],
-        ac: typeof m.ac === "number" ? m.ac : undefined,
-        lResists: typeof m.lResists === "number" ? m.lResists : undefined,
-        enemy: m.enemy,
+        ac: typeof m.ac === "number" ? m.ac : 0,
+        lResists: typeof m.lResists === "number" ? m.lResists : 0,
+        enemy: typeof m.enemy === "boolean" ? m.enemy : false,
     };
 }
 
@@ -307,6 +337,128 @@ function getStatusEffectResultIDs(record: Record<string, unknown>): string[] {
     return Array.isArray(resultID)
         ? resultID.filter((x): x is string => typeof x === "string")
         : [];
+}
+
+function Section({
+                     title,
+                     children,
+                 }: {
+    title: string;
+    children: ReactNode;
+}) {
+    return (
+        <div
+            style={{
+                marginBottom: 14,
+                border: "1px solid #555",
+                borderRadius: 6,
+                padding: 10,
+            }}
+        >
+            <div style={{ fontWeight: 700, marginBottom: 8 }}>{title}</div>
+            {children}
+        </div>
+    );
+}
+
+function NumberInputField({
+                              label,
+                              value,
+                              onChange,
+                          }: {
+    label: string;
+    value: number;
+    onChange: (next: number) => void;
+}) {
+    return (
+        <div
+            style={{
+                display: "grid",
+                gridTemplateColumns: "140px 1fr",
+                gap: 8,
+                alignItems: "center",
+                marginBottom: 8,
+            }}
+        >
+            <div>{label}</div>
+
+            <input
+                type="number"
+                value={value}
+                onChange={(e) => onChange(toInteger(e.target.value, 0))}
+                style={{ width: "100%" }}
+            />
+        </div>
+    );
+}
+
+function CheckboxField({
+                           label,
+                           checked,
+                           onChange,
+                       }: {
+    label: string;
+    checked: boolean;
+    onChange: (next: boolean) => void;
+}) {
+    return (
+        <label
+            style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginTop: 4,
+            }}
+        >
+            <input
+                type="checkbox"
+                checked={checked}
+                onChange={(e) => onChange(e.target.checked)}
+            />
+            <span>{label}</span>
+        </label>
+    );
+}
+
+function StatBlockEditor({
+                             title,
+                             value,
+                             onChange,
+                         }: {
+    title: string;
+    value: ManualStatBlock;
+    onChange: (next: ManualStatBlock) => void;
+}) {
+    function updateStat(key: StatKey, rawValue: string) {
+        onChange({
+            ...value,
+            [key]: toInteger(rawValue, 0),
+        });
+    }
+
+    return (
+        <Section title={title}>
+            <div
+                style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                    gap: 10,
+                }}
+            >
+                {STAT_KEYS.map((key) => (
+                    <div key={key}>
+                        <div style={{ marginBottom: 4 }}>{key}</div>
+                        <input
+                            type="number"
+                            value={getNumberValue(value[key], 0)}
+                            onChange={(e) => updateStat(key, e.target.value)}
+                            style={{ width: "100%" }}
+                        />
+                    </div>
+                ))}
+            </div>
+        </Section>
+    );
 }
 
 function MultiSelectSearch({
@@ -596,22 +748,20 @@ function SpellSlotsEditor({
     }, [LEVEL_COUNT, value, maxSlots]);
 
     function updateRow(index: number, rawValue: string) {
-        const parsedValue = rawValue === "" ? 0 : toNonNegativeInt(rawValue);
+        const parsedValue = toInteger(rawValue, 0);
 
         const nextRows = rows.map(
             (row): SpellSlotRow => [row.current, row.max]
         );
 
         const hiddenMax = rows[index]?.max ?? 0;
-        nextRows[index] = [Math.min(parsedValue, hiddenMax), hiddenMax];
+        nextRows[index] = [parsedValue, hiddenMax];
 
         onChange(serializeSpellSlots(nextRows));
     }
 
     return (
-        <div style={{ marginBottom: 12 }}>
-            <div style={{ marginBottom: 6 }}>Spell Slots</div>
-
+        <Section title="Spell Slots">
             <div
                 style={{
                     display: "grid",
@@ -626,23 +776,19 @@ function SpellSlotsEditor({
                 {rows.map((row, index) => (
                     <div
                         key={`spell-slot-${index}`}
-                        style={{
-                            display: "contents",
-                        }}
+                        style={{ display: "contents" }}
                     >
                         <div>{index + 1}</div>
 
                         <input
                             type="number"
-                            min={0}
-                            max={row.max}
                             value={row.current}
                             onChange={(e) => updateRow(index, e.target.value)}
                         />
                     </div>
                 ))}
             </div>
-        </div>
+        </Section>
     );
 }
 
@@ -652,6 +798,7 @@ export default function ComplexManualEntry({
                                                initiativeEntry,
                                                draftValue,
                                                onDraftChange,
+                                               onToggle,
                                            }: {
     eid: string;
     cid: string;
@@ -753,12 +900,52 @@ export default function ComplexManualEntry({
         };
     });
 
+    const baselineHp = getNumberValue(baseline.hp, 0);
+    const baselineAc = getNumberValue(baseline.ac, 0);
+    const baselineLResists = getNumberValue(baseline.lResists, 0);
+    const baselineEnemy = getBooleanValue(baseline.enemy, false);
+
+    const currentHp = getNumberValue(val("hp"), baselineHp);
+    const currentAc = getNumberValue(val("ac"), baselineAc);
+    const currentLResists = getNumberValue(val("lResists"), baselineLResists);
+    const currentEnemy = getBooleanValue(val("enemy"), baselineEnemy);
+
+    const baselineStatArray = expandStatBlock(baseline.statArray);
+    const currentStatArray = expandStatBlock(
+        val("statArray") as ManualStatBlock | undefined
+    );
+
+    const baselineSaveProfs = expandStatBlock(baseline.saveProfs);
+    const currentSaveProfs = expandStatBlock(
+        val("saveProfs") as ManualStatBlock | undefined
+    );
+
     const currentSpellSlots = normalizeSpellSlots(val("spellSlots"));
     const baselineSpellSlots = normalizeSpellSlots(baseline.spellSlots);
 
     return (
         <div style={{ border: "1px solid #ccc", padding: 10 }}>
-            <strong>{initiativeEntry.name}</strong>
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 10,
+                    gap: 12,
+                }}
+            >
+                <strong>{initiativeEntry.name}</strong>
+
+                {onToggle && (
+                    <button
+                        type="button"
+                        onClick={onToggle}
+                        style={{ cursor: "pointer" }}
+                    >
+                        Close
+                    </button>
+                )}
+            </div>
 
             {isPlayerCreature(creature) ? (
                 <>
@@ -766,18 +953,6 @@ export default function ComplexManualEntry({
                     <div><strong>Name:</strong> {(creature as PlayerCreature).stats.name}</div>
                     <div><strong>Class:</strong> {(creature as PlayerCreature).stats.characterClass}</div>
                     <div><strong>Level:</strong> {(creature as PlayerCreature).stats.level}</div>
-
-                    <SpellSlotsEditor
-                        value={currentSpellSlots}
-                        maxSlots={baselineSpellSlots}
-                        onChange={(next) =>
-                            update(
-                                "spellSlots",
-                                next as ManualAffectedCreature["spellSlots"],
-                                baselineSpellSlots
-                            )
-                        }
-                    />
                 </>
             ) : (
                 <>
@@ -787,6 +962,58 @@ export default function ComplexManualEntry({
                     <div><strong>Creature Type:</strong> {(creature as MonsterCreature).creatureType}</div>
                     <div><strong>Size:</strong> {(creature as MonsterCreature).size}</div>
                 </>
+            )}
+
+            <Section title="Core">
+                <NumberInputField
+                    label="HP"
+                    value={currentHp}
+                    onChange={(next) => update("hp", next, baselineHp)}
+                />
+
+                <NumberInputField
+                    label="AC"
+                    value={currentAc}
+                    onChange={(next) => update("ac", next, baselineAc)}
+                />
+
+                <NumberInputField
+                    label="Legendary Resists"
+                    value={currentLResists}
+                    onChange={(next) => update("lResists", next, baselineLResists)}
+                />
+
+                <CheckboxField
+                    label="Enemy"
+                    checked={currentEnemy}
+                    onChange={(next) => update("enemy", next, baselineEnemy)}
+                />
+            </Section>
+
+            <StatBlockEditor
+                title="Stat Array"
+                value={currentStatArray}
+                onChange={(next) => update("statArray", next, baselineStatArray)}
+            />
+
+            <StatBlockEditor
+                title="Save Proficiencies"
+                value={currentSaveProfs}
+                onChange={(next) => update("saveProfs", next, baselineSaveProfs)}
+            />
+
+            {isPlayerCreature(creature) && (
+                <SpellSlotsEditor
+                    value={currentSpellSlots}
+                    maxSlots={baselineSpellSlots}
+                    onChange={(next) =>
+                        update(
+                            "spellSlots",
+                            next as ManualAffectedCreature["spellSlots"],
+                            baselineSpellSlots
+                        )
+                    }
+                />
             )}
 
             <MultiSelectSearch
