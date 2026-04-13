@@ -33,7 +33,7 @@ const DAMAGE_TYPES = [
     "bludgeoning",
     "piercing",
     "slashing",
-];
+] as const;
 
 const ATTRS_BY_EFFECT = {
     advantage: [
@@ -95,6 +95,7 @@ const ATTRS_BY_EFFECT = {
 } as const;
 
 type EffectKey = keyof typeof ATTRS_BY_EFFECT;
+type SpellSlotRow = [number, number];
 
 type StatusEffectRecord = {
     name: string;
@@ -139,6 +140,21 @@ function toDisplayName(value: string): string {
         .join(" ");
 }
 
+function toNonNegativeInt(value: unknown): number {
+    if (typeof value === "number" && Number.isFinite(value)) {
+        return Math.max(0, Math.trunc(value));
+    }
+
+    if (typeof value === "string" && value.trim() !== "") {
+        const parsed = Number(value);
+        if (Number.isFinite(parsed)) {
+            return Math.max(0, Math.trunc(parsed));
+        }
+    }
+
+    return 0;
+}
+
 function normalizeStatBlock(
     value: Record<string, unknown> | undefined
 ): ManualStatBlock | undefined {
@@ -153,6 +169,39 @@ function normalizeStatBlock(
     }
 
     return out;
+}
+
+function normalizeSpellSlots(value: unknown): SpellSlotRow[] {
+    if (!Array.isArray(value)) return [];
+
+    return value
+        .map((row): SpellSlotRow | null => {
+            if (!Array.isArray(row)) return null;
+
+            const current = toNonNegativeInt(row[0]);
+            const max = toNonNegativeInt(row[1]);
+
+            if (max < current) {
+                return [max, max];
+            }
+
+            return [current, max];
+        })
+        .filter((row): row is SpellSlotRow => row !== null);
+}
+
+function serializeSpellSlots(value: SpellSlotRow[]): SpellSlotRow[] {
+    const trimmed = [...value];
+
+    while (
+        trimmed.length > 0 &&
+        trimmed[trimmed.length - 1][0] === 0 &&
+        trimmed[trimmed.length - 1][1] === 0
+        ) {
+        trimmed.pop();
+    }
+
+    return trimmed;
 }
 
 function creatureToBaseline(
@@ -185,7 +234,7 @@ function creatureToBaseline(
             hp: typeof s.hp === "number" ? s.hp : undefined,
             position: Array.isArray(s.position) ? s.position : [],
             ac: typeof s.ac === "number" ? s.ac : undefined,
-            spellSlots: Array.isArray(s.spellSlots) ? s.spellSlots : [],
+            spellSlots: normalizeSpellSlots(s.spellSlots),
         };
     }
 
@@ -527,6 +576,76 @@ function StatusEffectEditor({
     );
 }
 
+function SpellSlotsEditor({
+                              value,
+                              maxSlots,
+                              onChange,
+                          }: {
+    value: SpellSlotRow[];
+    maxSlots: SpellSlotRow[];
+    onChange: (next: SpellSlotRow[]) => void;
+}) {
+    const LEVEL_COUNT = Math.max(9, value.length, maxSlots.length);
+
+    const rows = useMemo(() => {
+        return Array.from({ length: LEVEL_COUNT }, (_, index) => {
+            const current = value[index]?.[0] ?? 0;
+            const max = maxSlots[index]?.[1] ?? value[index]?.[1] ?? 0;
+            return { current, max };
+        });
+    }, [LEVEL_COUNT, value, maxSlots]);
+
+    function updateRow(index: number, rawValue: string) {
+        const parsedValue = rawValue === "" ? 0 : toNonNegativeInt(rawValue);
+
+        const nextRows = rows.map(
+            (row): SpellSlotRow => [row.current, row.max]
+        );
+
+        const hiddenMax = rows[index]?.max ?? 0;
+        nextRows[index] = [Math.min(parsedValue, hiddenMax), hiddenMax];
+
+        onChange(serializeSpellSlots(nextRows));
+    }
+
+    return (
+        <div style={{ marginBottom: 12 }}>
+            <div style={{ marginBottom: 6 }}>Spell Slots</div>
+
+            <div
+                style={{
+                    display: "grid",
+                    gridTemplateColumns: "80px 1fr",
+                    gap: 8,
+                    alignItems: "center",
+                }}
+            >
+                <strong>Level</strong>
+                <strong>Slots</strong>
+
+                {rows.map((row, index) => (
+                    <div
+                        key={`spell-slot-${index}`}
+                        style={{
+                            display: "contents",
+                        }}
+                    >
+                        <div>{index + 1}</div>
+
+                        <input
+                            type="number"
+                            min={0}
+                            max={row.max}
+                            value={row.current}
+                            onChange={(e) => updateRow(index, e.target.value)}
+                        />
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 export default function ComplexManualEntry({
                                                eid,
                                                cid,
@@ -546,19 +665,31 @@ export default function ComplexManualEntry({
     const [statusEffects, setStatusEffects] = useState<string[]>([]);
 
     useEffect(() => {
-        async function loadData() {
-            const [c, conds, stats] = await Promise.all([
-                creatureGet(eid, cid),
-                getConditions(),
-                getStatusEffects(),
-            ]);
+        let isMounted = true;
 
-            setCreature(c);
-            setConditions(conds);
-            setStatusEffects(stats);
+        async function loadData() {
+            try {
+                const [c, conds, stats] = await Promise.all([
+                    creatureGet(eid, cid),
+                    getConditions(),
+                    getStatusEffects(),
+                ]);
+
+                if (!isMounted) return;
+
+                setCreature(c);
+                setConditions(conds);
+                setStatusEffects(stats);
+            } catch (err) {
+                console.error(err);
+            }
         }
 
         loadData();
+
+        return () => {
+            isMounted = false;
+        };
     }, [eid, cid]);
 
     const filteredConditions = useMemo(() => {
@@ -610,7 +741,7 @@ export default function ComplexManualEntry({
         : [];
 
     const normalizedCurrentStatusEffects: StatusEffectRecord[] = currentStatusEffects.map((record) => {
-        const recordObj = record as unknown as Record<string, unknown>;
+        const recordObj = record as Record<string, unknown>;
 
         return {
             name: String((record as { name: unknown }).name),
@@ -622,6 +753,9 @@ export default function ComplexManualEntry({
         };
     });
 
+    const currentSpellSlots = normalizeSpellSlots(val("spellSlots"));
+    const baselineSpellSlots = normalizeSpellSlots(baseline.spellSlots);
+
     return (
         <div style={{ border: "1px solid #ccc", padding: 10 }}>
             <strong>{initiativeEntry.name}</strong>
@@ -632,6 +766,18 @@ export default function ComplexManualEntry({
                     <div><strong>Name:</strong> {(creature as PlayerCreature).stats.name}</div>
                     <div><strong>Class:</strong> {(creature as PlayerCreature).stats.characterClass}</div>
                     <div><strong>Level:</strong> {(creature as PlayerCreature).stats.level}</div>
+
+                    <SpellSlotsEditor
+                        value={currentSpellSlots}
+                        maxSlots={baselineSpellSlots}
+                        onChange={(next) =>
+                            update(
+                                "spellSlots",
+                                next as ManualAffectedCreature["spellSlots"],
+                                baselineSpellSlots
+                            )
+                        }
+                    />
                 </>
             ) : (
                 <>
@@ -667,21 +813,21 @@ export default function ComplexManualEntry({
 
             <MultiSelectSearch
                 label="Damage Resistances"
-                options={DAMAGE_TYPES}
+                options={[...DAMAGE_TYPES]}
                 value={val("damResists") as string[]}
                 onChange={(v) => update("damResists", v, baseline.damResists)}
             />
 
             <MultiSelectSearch
                 label="Damage Immunities"
-                options={DAMAGE_TYPES}
+                options={[...DAMAGE_TYPES]}
                 value={val("damImmunes") as string[]}
                 onChange={(v) => update("damImmunes", v, baseline.damImmunes)}
             />
 
             <MultiSelectSearch
                 label="Damage Vulnerabilities"
-                options={DAMAGE_TYPES}
+                options={[...DAMAGE_TYPES]}
                 value={val("damVulns") as string[]}
                 onChange={(v) => update("damVulns", v, baseline.damVulns)}
             />
