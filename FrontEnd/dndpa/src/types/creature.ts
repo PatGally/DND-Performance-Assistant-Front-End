@@ -131,7 +131,7 @@ export type MonsterCreature = {
   damVulns: string[];
   conImmunes: string[];
   activeConditions: string[];
-  activeStatusEffects: unknown[];
+  activeStatusEffects: any[];
   hp: number | string;
   maxhp: number | string;
   position: GridCoord[];

@@ -140,6 +140,12 @@ type EncounterLike = {
   monsters: MonsterLike[];
 };
 
+type ResolvedCreature = {
+  cid: string;
+  name: string;
+  position: GridCoord[];
+};
+
 type ActiveMapProps = {
   encounter: EncounterLike;
   aoeTokens: AoeToken[];
@@ -147,15 +153,11 @@ type ActiveMapProps = {
   encStart: boolean;
   activeEncounter: boolean;
   selectedCID: string | null;
+  isAoePlacementActive: boolean;
   onTokenSelect: (cid: string) => void;
   onGridCellClick: (x: number, y: number) => void;
+  onGridCellHover: (x: number, y: number) => void;
   onMapSizeLoaded: (width: number, height: number) => void;
-};
-
-type ResolvedCreature = {
-  cid: string;
-  name: string;
-  position: GridCoord[];
 };
 
 const creatureTokenAssetMap: Record<string, string> = {
@@ -187,7 +189,6 @@ const creatureTokenAssetMap: Record<string, string> = {
   "Plant.png": PlantToken,
   "Undead.png": UndeadToken,
 };
-
 const aoeTokenAssetMap: Record<string, string> = {
   "CircleAcid.png": circleAcid,
   "CircleBludgeoning.png": circleBludgeoning,
@@ -332,9 +333,6 @@ function normalizeCreatures(encounter: EncounterLike): Record<string, ResolvedCr
 
   return byCid;
 }
-// function clamp(n: number, min: number, max: number): number {
-//   return Math.max(min, Math.min(max, n));
-// }
 
 function getAoeFallbackFill(shape: string): string {
   switch ((shape ?? "").toLowerCase()) {
@@ -365,8 +363,10 @@ export default function ActiveMap({
   encounter,
   aoeTokens,
   selectedCID,
+    isAoePlacementActive,
   onTokenSelect,
   onGridCellClick,
+    onGridCellHover,
   onMapSizeLoaded,
 }: ActiveMapProps) {
   const mapdata = encounter.mapdata;
@@ -484,7 +484,7 @@ export default function ActiveMap({
           display: "grid",
           gridTemplateColumns: `repeat(${cols}, 1fr)`,
           gridTemplateRows: `repeat(${rows}, 1fr)`,
-          pointerEvents: selectedCID ? "auto" : "none",
+          pointerEvents: selectedCID || isAoePlacementActive ? "auto" : "none",
         }}
       >
         {Array.from({ length: cols * rows }).map((_, index) => {
@@ -494,14 +494,17 @@ export default function ActiveMap({
           return (
             <div
               key={index}
-              onClick={() => onGridCellClick(x, y)}
+              onDoubleClick={() => onGridCellClick(x, y)}
+              onMouseEnter={() => onGridCellHover(x, y)}
               style={{
                 border: "1px solid rgba(255,255,255,0.25)",
                 boxSizing: "border-box",
-                cursor: selectedCID ? "pointer" : "default",
-                background: selectedCID
-                  ? "rgba(0,180,255,0.04)"
-                  : "transparent",
+                cursor: selectedCID || isAoePlacementActive ? "pointer" : "default",
+                background: isAoePlacementActive
+                  ? "rgba(255,180,0,0.04)"
+                  : selectedCID
+                    ? "rgba(0,180,255,0.04)"
+                    : "transparent",
               }}
             />
           );
@@ -682,8 +685,8 @@ export default function ActiveMap({
               objectFit: "contain",
               zIndex: 3,
               userSelect: "none",
-              pointerEvents: "auto",
-              cursor: "pointer",
+              pointerEvents: isAoePlacementActive ? "none" : "auto",
+              cursor: isAoePlacementActive ? "default" : "pointer",
               filter:
                 selectedCID === token.cid
                   ? "drop-shadow(0 0 8px rgba(0,255,255,0.95))"

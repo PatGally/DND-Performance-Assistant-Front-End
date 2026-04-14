@@ -1,4 +1,3 @@
-//adding the party size and enemies are here, create character, then create map will be here
 import {useCallback, useEffect, useRef, useState} from "react";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
@@ -22,17 +21,20 @@ import {
 import {getEncounter} from "../../api/EncounterGet.ts";
 import {fetchUUID} from "../../api/UUIDGet.ts";
 import {isPlayerCreature} from "../../api/CreatureGet.ts";
-import type {Creature} from "../../types/creature.ts";
+import type {Creature, GridCoord} from "../../types/creature.ts";
 import type {CreatureAction, SpellAction} from "../../types/action.ts";
 
 import type {
     Encounter, PreTurnEffect, NormalizedAction, ActionRequestDraft,
     ActionExecutionSession, RollMode, ManualDraftState, ManualAffectedCreature,
-    RecommendationTarget, AoeToken
+    RecommendationTarget, AoeToken, ManualAoePlacement
 } from "../../types/SimulationTypes.ts";
-import {normalizeGridCoords, isRecommendationAoeTarget, normalizeAoeShape,
+import {
+    normalizeGridCoords, isRecommendationAoeTarget, normalizeAoeShape,
     findActionByName, resolveAoeTokenImageName, extractActionTiming,
-    getClosestAnchorToCaster} from "../../utils/aoeHelpers.ts";
+    getClosestAnchorToCaster, isDirectionalShape, feetToCells,
+    resolveAoeTokenImageNameFromStats, buildAoeTokenFromStats, getAoeTargetsFromPositioning, buildManualAoePositioning
+} from "../../utils/aoeHelpers.ts";
 
 const WEAPON_DEFAULTS = {
   targetMode: "single" as const,
@@ -211,6 +213,7 @@ function EncounterSimulation() {
     const [encounterError, setEncounterError] = useState<string | null>(null);
     const [currentTurnCreature, setCurrentTurnCreature] = useState<Creature>();
     const [aoeTokens, setAoeTokens] = useState<AoeToken[]>([]);
+    const [manualAoePlacement, setManualAoePlacement] = useState<ManualAoePlacement | null>(null);
 
     //selectedCID used for token selection
     const [selectedCID, setSelectedCID] = useState<string | null>(null);
@@ -236,9 +239,10 @@ function EncounterSimulation() {
     const lastPanPos = useRef({ x: 0, y: 0 });
     const [mapNaturalWidth, setMapNaturalWidth] = useState(800);
     const [mapNaturalHeight, setMapNaturalHeight] = useState(600);
-
     const MIN_ZOOM = 0.25;
     const MAX_ZOOM = 4;
+
+    const latestHoverRequestRef = useRef(0);
 
     const applyTransform = () => {
         if (mapContentRef.current) {
@@ -412,7 +416,11 @@ function EncounterSimulation() {
             setHandlingNextTurn(true);
 
             const response = await axiosTokenInstance.get(`/encounter/${eid}/initiative/nextturn`);
+            console.log("Next turn response:", response.data);
             const preEffects = Array.isArray(response.data.preEffects) ? response.data.preEffects : [];
+            if(preEffects) {
+                console.log("Pre effects found!");
+            }
             const updatedEncounter = await getEncounter(eid);
             if (!updatedEncounter) {
                 console.error("Failed to reload encounter after advancing turn.");
@@ -440,56 +448,131 @@ function EncounterSimulation() {
         }
     }
     async function handleGridCellClick(cellX: number, cellY: number) {
-  if (manualMode) return;
-  if (!selectedCID || !encounterData || actionExecutionSession || preTurnEffects) return;
+        const clickedCell: GridCoord = [cellX, cellY];
 
-  try {
-    const allCreatures: Creature[] = [
-      ...(encounterData.players ?? []),
-      ...(encounterData.monsters ?? []),
-    ];
+      if (manualAoePlacement && actionExecutionSession && encounterData) {
+        console.log("handleGridCellClick for AOEs");
 
-    const movedCreature = allCreatures.find(
-      (creature) => getCreatureCid(creature) === selectedCID
-    );
+        if (manualAoePlacement.stage === "pick_anchor" && !manualAoePlacement.selfOrigin) {
+          if (isDirectionalShape(manualAoePlacement.shape)) {
+            setManualAoePlacement((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    anchor: clickedCell,
+                    stage: "pick_direction",
+                  }
+                : prev
+            );
+            return;
+          }
 
-    if (!movedCreature) {
-      console.error("Could not find selected creature.");
-      return;
-    }
+          await commitManualAoePlacement(clickedCell, clickedCell);
+          return;
+        }
 
-    const sizeRaw = getCreatureSize(movedCreature);
+        if (manualAoePlacement.stage === "pick_direction" && manualAoePlacement.anchor) {
+          await commitManualAoePlacement(manualAoePlacement.anchor, clickedCell);
+          return;
+        }
 
-    let footprint = 1;
-    if (sizeRaw === "large") footprint = 2;
-    else if (sizeRaw === "huge") footprint = 3;
-    else if (sizeRaw === "gargantuan") footprint = 4;
-
-    const newPos: number[][] = [];
-    for (let dy = 0; dy < footprint; dy++) {
-      for (let dx = 0; dx < footprint; dx++) {
-        newPos.push([cellX + dx, cellY + dy]);
+        if (manualAoePlacement.stage === "pick_anchor" && manualAoePlacement.selfOrigin && manualAoePlacement.anchor) {
+          await commitManualAoePlacement(manualAoePlacement.anchor, clickedCell);
+          return;
+        }
       }
-    }
 
-    await axiosTokenInstance.post(
-      `/encounter/${eid}/creature/${selectedCID}/simulate/movement`,
-      newPos
-    );
+      if (manualMode) return;
+      if (!selectedCID || !encounterData || actionExecutionSession || preTurnEffects) return;
 
-    const updatedEncounter = await getEncounter(eid);
-    if (!updatedEncounter) {
-      console.error("Encounter reload failed after movement.");
-      return;
-    }
+      try {
+        const allCreatures: Creature[] = [
+          ...(encounterData.players ?? []),
+          ...(encounterData.monsters ?? []),
+        ];
 
-    setEncounterData(updatedEncounter);
-    setSelectedCID(null);
-    setRecommendRefreshKey((prev) => prev + 1);
-  } catch (error) {
-    console.error("Movement simulation failed:", error);
-  }
+        const movedCreature = allCreatures.find(
+          (creature) => getCreatureCid(creature) === selectedCID
+        );
+
+        if (!movedCreature) {
+          console.error("Could not find selected creature.");
+          return;
+        }
+
+        const sizeRaw = getCreatureSize(movedCreature);
+
+        let footprint = 1;
+        if (sizeRaw === "large") footprint = 2;
+        else if (sizeRaw === "huge") footprint = 3;
+        else if (sizeRaw === "gargantuan") footprint = 4;
+
+        const newPos: number[][] = [];
+        for (let dy = 0; dy < footprint; dy++) {
+          for (let dx = 0; dx < footprint; dx++) {
+            newPos.push([cellX + dx, cellY + dy]);
+          }
+        }
+
+        await axiosTokenInstance.post(
+          `/encounter/${eid}/creature/${selectedCID}/simulate/movement`,
+          newPos
+        );
+
+        const updatedEncounter = await getEncounter(eid);
+        if (!updatedEncounter) {
+          console.error("Encounter reload failed after movement.");
+          return;
+        }
+
+        setEncounterData(updatedEncounter);
+        setSelectedCID(null);
+        setRecommendRefreshKey((prev) => prev + 1);
+      }
+      catch (error) {
+        console.error("Movement simulation failed:", error);
+      }
 }
+    async function handleGridCellHover(cellX: number, cellY: number) {
+      if (!manualAoePlacement) return;
+
+      console.log("In handleGridCellHover");
+      const requestId = ++latestHoverRequestRef.current;
+      const placementResultID = manualAoePlacement.resultID;
+
+      const hoverCell: GridCoord = [cellX, cellY];
+
+      let anchor = manualAoePlacement.anchor;
+
+      if (manualAoePlacement.stage === "pick_anchor" && !manualAoePlacement.selfOrigin) {
+        anchor = hoverCell;
+      }
+
+      if (!anchor) return;
+
+      const positioning = await buildManualAoePositioning({
+        shape: manualAoePlacement.shape,
+        radiusCells: manualAoePlacement.radiusCells,
+        anchor,
+        cursor: hoverCell
+      });
+
+      if (requestId !== latestHoverRequestRef.current) return;
+      if (!manualAoePlacement || manualAoePlacement.resultID !== placementResultID) return;
+
+      const previewToken = buildAoeTokenFromStats({
+        name: manualAoePlacement.name,
+        cid: manualAoePlacement.cid,
+        shape: manualAoePlacement.shape,
+        timing: manualAoePlacement.timing,
+        token_image: manualAoePlacement.token_image,
+        resultID: manualAoePlacement.resultID,
+        anchor,
+        positioning,
+      });
+
+      upsertAoePreviewToken(previewToken);
+    }
     const buildRecommendationAoeToken = useCallback((
           recommendation: { name: string; target: RecommendationTarget },
           previewResultID: string
@@ -520,6 +603,13 @@ function EncounterSimulation() {
               shape: normalizedShape,
             };
         }, [currentTurnCreature, currentTurnActions]);
+    function upsertAoePreviewToken(token: AoeToken) {
+        console.log("Upsert AOE token");
+        setAoeTokens((prev) => {
+        const withoutOld = prev.filter((existing) => existing.resultID !== token.resultID);
+        return [...withoutOld, token];
+      });
+    }
     async function handleActionSubmission(action : CreatureAction) {
         setManualLock(true);
         const { conditions, statusEffects } = extractActionEffects(action);
@@ -562,6 +652,47 @@ function EncounterSimulation() {
             error : ""
         }
         setActionExecutionSession(actionSession);
+
+        if (normalized.targetCount === -1 || normalized.targetCount === -2) {
+            console.log("AOE logic for handleActionSubmission");
+            //Manual placement logic to get targets
+          const actorCid = currentTurnCreature ? getCreatureCid(currentTurnCreature) : "";
+          const shape = normalizeAoeShape(normalized.shape);
+          const selfOrigin = normalized.targetCount === -2;
+          const actorPosition = normalizeGridCoords(
+            currentTurnCreature ? (getCreaturePosition(currentTurnCreature) as unknown) : []
+          );
+
+          let timing = "instantaneous";
+
+          if (
+              ("lingEffect" in action && action.lingEffect) ||
+              ("lingSave" in action && action.lingSave)
+            ) {
+              timing = "lingering";
+            }
+
+          const autoAnchor = selfOrigin ? actorPosition[0] ?? null : null;
+
+          const placement: ManualAoePlacement = {
+            resultID: draft.resultID,
+            name: normalized.name,
+            cid: actorCid,
+            shape,
+            radiusCells: feetToCells(normalized.radius),
+            rangeCells: feetToCells(normalized.range),
+            timing, // or derive from original action if you want lingering support here too
+            token_image: resolveAoeTokenImageNameFromStats(shape, normalized.damageType),
+            selfOrigin,
+            anchor: autoAnchor,
+            stage: selfOrigin && isDirectionalShape(shape) ? "pick_direction" : "pick_anchor",
+          };
+
+          console.log("manualAoePlacement", placement);
+
+          setManualAoePlacement(placement);
+        }
+
     }
     async function handlePASubmission(
       name: string,
@@ -738,13 +869,57 @@ function EncounterSimulation() {
       setInitiativeExpandedCid(null);
     }
     function setManualState() {
-      setAoeTokens((prev) =>
-        prev.filter((token) => !token.resultID.startsWith("preview:recommendation:"))
-      );
+      clearManualAoePreview(actionExecutionSession?.draft.resultID)
       setManualMode(true);
       setInitiativeOpen(true);
       setActionOpen(false);
       clearManualState();
+    }
+    async function commitManualAoePlacement(
+      anchor: GridCoord,
+      cursor: GridCoord
+    ) {
+      if (!manualAoePlacement || !encounterData) return;
+
+      const positioning = await buildManualAoePositioning({
+        shape: manualAoePlacement.shape,
+        radiusCells: manualAoePlacement.radiusCells,
+        anchor,
+        cursor
+      });
+
+      const targetCids = getAoeTargetsFromPositioning(
+        positioning,
+        encounterData,
+        manualAoePlacement.cid
+      );
+
+      const token = buildAoeTokenFromStats({
+        name: manualAoePlacement.name,
+        cid: manualAoePlacement.cid,
+        shape: manualAoePlacement.shape,
+        timing: manualAoePlacement.timing,
+        token_image: manualAoePlacement.token_image,
+        resultID: manualAoePlacement.resultID,
+        anchor,
+        positioning,
+      });
+
+      upsertAoePreviewToken(token);
+
+      setActionExecutionSession((prev) =>
+        prev
+          ? {
+              ...prev,
+              draft: {
+                ...prev.draft,
+                targets: targetCids,
+              },
+            }
+          : prev
+      );
+
+      setManualAoePlacement(null);
     }
     function handleManualCreatureChange(nextCreature: ManualAffectedCreature) {
           setManualDraft((prev) => {
@@ -762,6 +937,17 @@ function EncounterSimulation() {
               affectedCreatures: [...others, nextCreature],
             };
           });
+    }
+    function clearManualAoePreview(resultID?: string) {
+        latestHoverRequestRef.current += 1;
+
+          if (resultID) {
+            setAoeTokens((prev) =>
+              prev.filter((token) => token.resultID !== resultID)
+            );
+          }
+
+          setManualAoePlacement(null);
         }
 
     //PAN/ZOOM FUNCTIONS
@@ -876,16 +1062,18 @@ function EncounterSimulation() {
                         }}>
                             {!encounterError && !loadingEncounter && encounterData && (
                                 <ActiveMap
-                                      encounter={encounterData}
-                                      aoeTokens={aoeTokens}
-                                      manualMode={manualMode}
-                                      encStart={encStart}
-                                      activeEncounter={activeEncounter}
-                                      selectedCID={selectedCID}
-                                      onTokenSelect={handleTokenSelect}
-                                      onGridCellClick={handleGridCellClick}
-                                      onMapSizeLoaded={handleMapSizeLoaded}
-                                    />
+                                  encounter={encounterData}
+                                  aoeTokens={aoeTokens}
+                                  manualMode={manualMode}
+                                  encStart={encStart}
+                                  activeEncounter={activeEncounter}
+                                  selectedCID={selectedCID}
+                                  isAoePlacementActive={manualAoePlacement !== null}
+                                  onTokenSelect={handleTokenSelect}
+                                  onGridCellClick={handleGridCellClick}
+                                  onGridCellHover={handleGridCellHover}
+                                  onMapSizeLoaded={handleMapSizeLoaded}
+                                />
                             )}
                         </div>
                     </div>
@@ -910,23 +1098,21 @@ function EncounterSimulation() {
                             top: 0,
                             left: 0,
                             height: "100%",
-                            // width: "20%",
+                            width: "20%",
                             minWidth: "220px",
-                            maxWidth: "330px",
+                            maxWidth: "320px",
                             zIndex: 20,
                             display: "flex",
                             flexDirection: "column",
                         }}>
-                            <div
-                                style={{
+                            <div style={{
                                 flex: 1,
                                 background: "#222222",
                                 color: "white",
                                 borderRight: "1px solid #ccc",
                                 overflowY: "auto",
                                 padding: "12px",
-                            }}
-                            >
+                            }}>
                                 <InitiativeList
                                   key={`${eid}-${initiativeRefreshKey}`}
                                   eid={eid}
@@ -972,7 +1158,7 @@ function EncounterSimulation() {
                             top: 0,
                             right: 0,
                             height: "100%",
-                            width: "15%",
+                            width: "20%",
                             minWidth: "220px",
                             maxWidth: "320px",
                             zIndex: 20,
@@ -1049,13 +1235,15 @@ function EncounterSimulation() {
                                         ) : manualMode ? (
                                             <Card.Text>Manual Mode</Card.Text>
                                         ) : encounterData && actionExecutionSession ? (
-                                    <InputHandler
-                                        encounter={encounterData}
-                                        actionSession={actionExecutionSession}
-                                        setActionExecutionSession={setActionExecutionSession}
-                                        setManualLock={setManualLock}
-                                        handleActionExecution={handleActionExecution}
-                                    />
+                                            <InputHandler
+                                              encounter={encounterData}
+                                              actionSession={actionExecutionSession}
+                                              setActionExecutionSession={setActionExecutionSession}
+                                              setManualLock={setManualLock}
+                                              clearManualAoePreview={clearManualAoePreview}
+                                              handleActionExecution={handleActionExecution}
+                                              aoePlacementStage={manualAoePlacement?.stage ?? "ready"}
+                                            />
                                 ) : (
                                     <Recommendation
                                           eid={eid}

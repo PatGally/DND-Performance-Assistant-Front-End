@@ -195,7 +195,7 @@ export default function Recommendation({
         }}
       >
         <div>
-          <strong>Pass Turn</strong>
+          <strong>No viable actions - Pass Turn</strong>
         </div>
       </div>
     );

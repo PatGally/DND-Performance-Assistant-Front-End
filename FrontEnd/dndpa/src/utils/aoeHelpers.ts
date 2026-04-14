@@ -1,8 +1,10 @@
-import type {GridCoord} from "../types/creature.ts";
+import type {Creature, GridCoord} from "../types/creature.ts";
 import type {CreatureAction} from "../types/action.ts";
-import type {RecommendationTarget, RecommendationAoeTarget} from "../types/SimulationTypes.ts";
+import type {RecommendationTarget, RecommendationAoeTarget, Encounter} from "../types/SimulationTypes.ts";
 import {isMonsterAction, isSpellAction} from "./ActionTypeChecker.ts";
 import {type AoeToken} from "../types/SimulationTypes.ts";
+import {getCreatureCid, getCreaturePosition} from "./CreatureHelpers.ts";
+import axiosTokenInstance from "../api/AxiosTokenInstance.ts";
 export const DAMAGE_TYPE_IMAGE_SUFFIX: Record<string, string> = {
   acid: "Acid",
   bludgeoning: "Bludgeoning",
@@ -33,90 +35,6 @@ export function getCellCenterPx(
     y: (coord[1] + 0.5) * cellHeight,
   };
 }
-
-export function getFarthestCellFromAnchor(anchor: GridCoord, cells: GridCoord[]): GridCoord {
-  let farthest = cells[0];
-  let bestDist = -1;
-
-  for (const cell of cells) {
-    const dx = cell[0] - anchor[0];
-    const dy = cell[1] - anchor[1];
-    const dist = dx * dx + dy * dy;
-
-    if (dist > bestDist) {
-      bestDist = dist;
-      farthest = cell;
-    }
-  }
-
-  return farthest;
-}
-
-export function getDirectionalImageStyle(
-  aoe: AoeToken,
-  cells: GridCoord[],
-  cellWidth: number,
-  cellHeight: number
-): React.CSSProperties | null {
-  const shape = (aoe.shape ?? "").toLowerCase();
-
-  if (shape !== "cone" && shape !== "line") {
-    return null;
-  }
-
-  if (cells.length === 0) {
-    return null;
-  }
-
-  const anchor = aoe.anchor;
-  const farthestCell = getFarthestCellFromAnchor(anchor, cells);
-
-  const anchorPx = getCellCenterPx(anchor, cellWidth, cellHeight);
-  const farthestPx = getCellCenterPx(farthestCell, cellWidth, cellHeight);
-
-  const dx = farthestPx.x - anchorPx.x;
-  const dy = farthestPx.y - anchorPx.y;
-
-  const length = Math.sqrt(dx * dx + dy * dy);
-  const angleRad = length === 0 ? 0 : Math.atan2(dy, dx);
-  const ux = Math.cos(angleRad);
-  const uy = Math.sin(angleRad);
-
-  let maxForward = Math.max(cellWidth, cellHeight) * 0.5;
-  let maxPerpendicular = Math.max(cellWidth, cellHeight) * 0.5;
-
-  for (const cell of cells) {
-    const center = getCellCenterPx(cell, cellWidth, cellHeight);
-    const relX = center.x - anchorPx.x;
-    const relY = center.y - anchorPx.y;
-
-    const forward = relX * ux + relY * uy;
-    const perpendicular = Math.abs(-relX * uy + relY * ux);
-
-    maxForward = Math.max(maxForward, forward + cellWidth * 0.5);
-    maxPerpendicular = Math.max(maxPerpendicular, perpendicular + cellHeight * 0.5);
-  }
-
-  const width = Math.max(cellWidth, maxForward);
-  const height =
-    shape === "line"
-      ? Math.max(cellHeight, maxPerpendicular * 2)
-      : Math.max(cellHeight, maxPerpendicular * 2);
-
-  return {
-    position: "absolute",
-    left: anchorPx.x,
-    top: anchorPx.y,
-    width,
-    height,
-    transform: `translateY(-50%) rotate(${(angleRad * 180) / Math.PI}deg)`,
-    transformOrigin: "0 50%",
-    overflow: "visible",
-    zIndex: 2,
-    pointerEvents: "none",
-  };
-}
-
 export function normalizeGridCoords(positioning: unknown): GridCoord[] {
   if (!Array.isArray(positioning)) return [];
 
@@ -128,7 +46,6 @@ export function normalizeGridCoords(positioning: unknown): GridCoord[] {
       typeof coord[1] === "number"
   );
 }
-
 export function isRecommendationAoeTarget(
   target: RecommendationTarget
 ): target is RecommendationAoeTarget {
@@ -140,7 +57,6 @@ export function isRecommendationAoeTarget(
     Array.isArray((target as RecommendationAoeTarget).positioning)
   );
 }
-
 export function normalizeAoeShape(shape?: string): "line" | "cone" | "circle" | "square" {
   const value = (shape ?? "").toLowerCase();
 
@@ -153,7 +69,6 @@ export function normalizeAoeShape(shape?: string): "line" | "cone" | "circle" | 
 
   return "square";
 }
-
 export function findActionByName(
   name: string,
   actions?: CreatureAction[]
@@ -163,7 +78,6 @@ export function findActionByName(
     name.toLowerCase()
   );
 }
-
 export function extractActionDamageTypes(action: CreatureAction): string[] {
   if (isSpellAction(action)) {
     return (
@@ -185,7 +99,6 @@ export function extractActionDamageTypes(action: CreatureAction): string[] {
     ? [String(action.properties.damageType).toLowerCase()]
     : [];
 }
-
 export function getAoeImageShapePrefix(shape: string): "Circle" | "Cone" | "Cube" {
   const normalized = (shape ?? "").toLowerCase();
 
@@ -195,7 +108,6 @@ export function getAoeImageShapePrefix(shape: string): "Circle" | "Cone" | "Cube
   // square and line both use the cube art family
   return "Cube";
 }
-
 export function resolveAoeTokenImageName(
   action: CreatureAction,
   shape: string
@@ -214,7 +126,6 @@ export function resolveAoeTokenImageName(
 
   return `${shapePrefix}${imageSuffix}.png`;
 }
-
 export function extractActionTiming(action: CreatureAction): "instantaneous" | "lingering" {
   if (isSpellAction(action)) {
     const hasLingering = action.targeting?.some((target) => {
@@ -240,11 +151,10 @@ export function extractActionTiming(action: CreatureAction): "instantaneous" | "
 
   return "instantaneous";
 }
-
 export function getClosestAnchorToCaster(
   positioning: GridCoord[],
   casterPosition: GridCoord[]
-): GridCoord {
+): GridCoord{
   if (positioning.length === 0) return [0, 0];
 
   const origin = casterPosition[0] ?? positioning[0];
@@ -264,42 +174,6 @@ export function getClosestAnchorToCaster(
 
   return best;
 }
-
-export function getAoeOverlayStyle(
-  aoe: AoeToken,
-  cells: GridCoord[],
-  cellWidth: number,
-  cellHeight: number
-) {
-  const { minX, maxX, minY, maxY } = getAoeBounds(cells);
-  const shape = aoe.shape.toLowerCase();
-
-  if (shape === "circle") {
-    const left = (minX + 0.5) * cellWidth;
-    const top = (minY + 0.5) * cellHeight;
-    const width = Math.max(cellWidth, (maxX - minX) * cellWidth);
-    const height = Math.max(cellHeight, (maxY - minY) * cellHeight);
-
-    return {
-      left,
-      top,
-      width,
-      height,
-      borderRadius: "50%",
-      overflow: "hidden" as const,
-    };
-  }
-
-  return {
-    left: minX * cellWidth,
-    top: minY * cellHeight,
-    width: (maxX - minX + 1) * cellWidth,
-    height: (maxY - minY + 1) * cellHeight,
-      borderRadius: shape === "square" ? "0" : undefined,
-      overflow: "hidden" as const,
-  };
-}
-
 export function getAoeBounds(cells: GridCoord[]) {
   const xs = cells.map(([x]) => x);
   const ys = cells.map(([, y]) => y);
@@ -318,7 +192,6 @@ export function getAoeBounds(cells: GridCoord[]) {
     heightCells: maxY - minY + 1,
   };
 }
-
 export function getAoeOverlayBox(
   aoe: AoeToken,
   cells: GridCoord[],
@@ -354,32 +227,6 @@ export function getAoeOverlayBox(
     borderRadius: shape === "square" ? "0" : undefined,
   };
 }
-
-export function getAverageConeDirection(anchor: GridCoord, cells: GridCoord[]) {
-  let sumDx = 0;
-  let sumDy = 0;
-
-  for (const [x, y] of cells) {
-    const dx = x - anchor[0];
-    const dy = y - anchor[1];
-
-    if (dx === 0 && dy === 0) continue;
-
-    sumDx += dx;
-    sumDy += dy;
-  }
-
-  if (sumDx === 0 && sumDy === 0) {
-    return { x: 1, y: 0 };
-  }
-
-  const mag = Math.sqrt(sumDx * sumDx + sumDy * sumDy);
-  return {
-    x: sumDx / mag,
-    y: sumDy / mag,
-  };
-}
-
 function getAverageDirection(anchor: GridCoord, cells: GridCoord[]) {
   let sumDx = 0;
   let sumDy = 0;
@@ -404,7 +251,6 @@ function getAverageDirection(anchor: GridCoord, cells: GridCoord[]) {
     y: sumDy / mag,
   };
 }
-
 export function getConeImageStyle(
   aoe: AoeToken,
   cells: GridCoord[],
@@ -452,7 +298,6 @@ export function getConeImageStyle(
     overflow: "visible",
   };
 }
-
 export function getLineImageStyle(
   aoe: AoeToken,
   cells: GridCoord[],
@@ -522,4 +367,168 @@ export function getLineImageStyle(
     pointerEvents: "none",
     overflow: "visible",
   };
+}
+export function feetToCells(value?: string | number): number {
+  const n = Number(value ?? 0);
+  if (!Number.isFinite(n) || n <= 0) return 1;
+  return Math.max(1, Math.ceil(n / 5));
+}
+export function resolveAoeTokenImageNameFromStats(
+  shape: string,
+  damageType?: string
+): string {
+  const normalizedShape = normalizeAoeShape(shape);
+
+  const shapePrefix =
+    normalizedShape === "circle"
+      ? "Circle"
+      : normalizedShape === "cone"
+        ? "Cone"
+        : "Cube"; // square + line both use Cube art family
+
+  const damageMap: Record<string, string> = {
+    acid: "Acid",
+    bludgeoning: "Bludgeoning",
+    cold: "Cold",
+    fire: "Fire",
+    force: "Force",
+    lightning: "Lightning",
+    necrotic: "Necrotic",
+    piercing: "Piercing",
+    poison: "Poison",
+    psychic: "Psychic",
+    radiant: "Radiant",
+    slashing: "Slashing",
+    thunder: "Thunder",
+  };
+
+  const suffix = damageType ? damageMap[damageType.toLowerCase()] ?? "Default" : "Default";
+  return `${shapePrefix}${suffix}.png`;
+}
+export function buildAoeTokenFromStats(input: {
+  name: string;
+  cid: string;
+  shape: string;
+  timing: string;
+  token_image: string;
+  resultID: string;
+  anchor: GridCoord;
+  positioning: GridCoord[];
+}): AoeToken {
+  return {
+    name: input.name,
+    cid: input.cid,
+    shape: normalizeAoeShape(input.shape),
+    timing: input.timing,
+    token_image: input.token_image,
+    resultID: input.resultID,
+    anchor: input.anchor,
+    positioning: input.positioning,
+  };
+}
+export function isDirectionalShape(shape: string): boolean {
+  const normalized = normalizeAoeShape(shape);
+  return normalized === "cone" || normalized === "line";
+}
+export function getAoeTargetsFromPositioning(
+  positioning: GridCoord[],
+  encounter: Encounter,
+  actorCid: string
+): string[] {
+  const occupied = new Set(positioning.map(([x, y]) => `${x},${y}`));
+  const allCreatures: Creature[] = [
+    ...(encounter.players ?? []),
+    ...(encounter.monsters ?? []),
+  ];
+
+  return allCreatures
+    .filter((creature) => getCreatureCid(creature) !== actorCid)
+    .filter((creature) =>
+      normalizeGridCoords(getCreaturePosition(creature) as unknown).some(
+        ([x, y]) => occupied.has(`${x},${y}`)
+      )
+    )
+    .map((creature) => getCreatureCid(creature));
+}
+function chooseOrientation(anchor: [number, number], cursor: [number, number]) {
+  const dx = cursor[0] - anchor[0];
+  const dy = cursor[1] - anchor[1];
+
+  if (dx === 0 && dy === 0) return "right";
+
+  const angle = Math.atan2(-dy, dx) * (180 / Math.PI);
+
+  const dirs = [
+    { name: "right", deg: 0 },
+    { name: "up_right", deg: 45 },
+    { name: "up", deg: 90 },
+    { name: "up_left", deg: 135 },
+    { name: "left", deg: 180 },
+    { name: "down_left", deg: -135 },
+    { name: "down", deg: -90 },
+    { name: "down_right", deg: -45 },
+  ];
+
+  let best = "right";
+  let bestDelta = Infinity;
+
+  for (const dir of dirs) {
+    let delta = Math.abs(angle - dir.deg);
+    if (delta > 180) delta = 360 - delta;
+
+    if (delta < bestDelta) {
+      bestDelta = delta;
+      best = dir.name;
+    }
+  }
+
+  return best;
+}
+function applyMaskAtAnchor(
+  anchor: [number, number],
+  offsets: [number, number][]
+): [number, number][] {
+  return offsets.map(([dx, dy]) => [anchor[0] + dx, anchor[1] + dy]);
+}
+
+export async function buildManualAoePositioning({
+  shape,
+  radiusCells,
+  anchor,
+  cursor = null,
+  lineWidthCells = 1,
+}: {
+  shape: string;
+  radiusCells: number;
+  anchor: [number, number];
+  cursor?: [number, number] | null;
+  lineWidthCells?: number;
+}): Promise<[number, number][]> {
+  console.log("Building manualAoePositioning...");
+  const response = await axiosTokenInstance.get("/aoe/template-masks", {
+    params: {
+      shape,
+      sizeCells: radiusCells,
+      lineWidthCells,
+    },
+  });
+  console.log("Masks", response.data);
+
+  const masks = response.data.masks as {
+    orientation: string;
+    offsets: [number, number][];
+  }[];
+
+  const normalizedShape = shape.toLowerCase();
+
+  if (normalizedShape === "circle" || normalizedShape === "square") {
+    const firstMask = masks[0]?.offsets ?? [];
+    return applyMaskAtAnchor(anchor, firstMask);
+  }
+
+  const orientation = chooseOrientation(anchor, cursor ?? anchor);
+  const selectedMask =
+    masks.find((m) => m.orientation === orientation)?.offsets ?? [];
+
+  return applyMaskAtAnchor(anchor, selectedMask);
 }

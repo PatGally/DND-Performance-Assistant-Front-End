@@ -146,3 +146,27 @@ export type AoeToken = {
   timing: string;
   shape: string;
 };
+
+type ManualAoePlacementStage = "pick_anchor" | "pick_direction" | "ready";
+
+export type ManualAoePlacement = {
+  resultID: string;
+  name: string;
+  cid: string;
+  shape: "circle" | "square" | "cone" | "line";
+  radiusCells: number;
+  rangeCells: number;
+  timing: string;
+  token_image: string;
+  selfOrigin: boolean;
+  anchor: GridCoord | null;
+  stage: ManualAoePlacementStage;
+};
+
+export type BuildManualAoePositioningArgs = {
+  shape: string;
+  radiusCells: number;
+  anchor: GridCoord;
+  cursor: GridCoord | null;
+  selfOrigin: boolean;
+};
