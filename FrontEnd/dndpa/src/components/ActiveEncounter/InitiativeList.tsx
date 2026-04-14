@@ -75,6 +75,7 @@ export default function InitiativeList({
 
   return (
     <div style={{ width: "100%" }}>
+        <span>Turn Order</span>
       {initiative.map((entry) => {
         const isExpanded = activeExpandedCid === entry.cid;
         const draftValue = manualDraft?.affectedCreatures.find(

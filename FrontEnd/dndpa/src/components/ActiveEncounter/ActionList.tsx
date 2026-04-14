@@ -22,6 +22,7 @@ function getActionName(action: CreatureAction): string {
 
 function renderSpellDetails(action: SpellAction) {
   const target = action.targeting?.[0];
+  console.log("Target: ", target);
 
   return (
     <div style={{ marginTop: "8px", paddingLeft: "8px" }}>
@@ -127,6 +128,7 @@ export default function ActionList({
         setError("");
         const data = await actionsGet(eid, cid);
         setActions(data);
+                console.log("Data: ", actions);
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message);
@@ -156,9 +158,10 @@ export default function ActionList({
   }
   return (
     <div style={{ width: "100%" }}>
+        <span> Action List</span>
       {actions.map((action, index) => {
         const isExpanded = expandedIndex === index;
-
+        console.log("These are the actions ",actions);
         return (
           <div key={`${getActionName(action)}-${index}`} style={{
               border: "1px solid #ccc",

@@ -910,21 +910,23 @@ function EncounterSimulation() {
                             top: 0,
                             left: 0,
                             height: "100%",
-                            width: "15%",
+                            // width: "20%",
                             minWidth: "220px",
-                            maxWidth: "320px",
+                            maxWidth: "330px",
                             zIndex: 20,
                             display: "flex",
                             flexDirection: "column",
                         }}>
-                            <div style={{
+                            <div
+                                style={{
                                 flex: 1,
                                 background: "#222222",
                                 color: "white",
                                 borderRight: "1px solid #ccc",
                                 overflowY: "auto",
                                 padding: "12px",
-                            }}>
+                            }}
+                            >
                                 <InitiativeList
                                   key={`${eid}-${initiativeRefreshKey}`}
                                   eid={eid}
