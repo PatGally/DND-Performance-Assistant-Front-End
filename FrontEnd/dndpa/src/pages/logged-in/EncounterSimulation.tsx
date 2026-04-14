@@ -1,5 +1,5 @@
 //adding the party size and enemies are here, create character, then create map will be here
-import {useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
@@ -27,8 +27,13 @@ import type {CreatureAction, SpellAction} from "../../types/action.ts";
 
 import type {
     Encounter, PreTurnEffect, NormalizedAction, ActionRequestDraft,
-    ActionExecutionSession, RollMode, ManualDraftState, ManualAffectedCreature
+    ActionExecutionSession, RollMode, ManualDraftState, ManualAffectedCreature,
+    RecommendationTarget, AoeToken
 } from "../../types/SimulationTypes.ts";
+import {normalizeGridCoords, isRecommendationAoeTarget, normalizeAoeShape,
+    findActionByName, resolveAoeTokenImageName, extractActionTiming,
+    getClosestAnchorToCaster} from "../../utils/aoeHelpers.ts";
+
 const WEAPON_DEFAULTS = {
   targetMode: "single" as const,
   targetCount: 1,
@@ -205,6 +210,7 @@ function EncounterSimulation() {
     const [loadingEncounter, setLoadingEncounter] = useState(true);
     const [encounterError, setEncounterError] = useState<string | null>(null);
     const [currentTurnCreature, setCurrentTurnCreature] = useState<Creature>();
+    const [aoeTokens, setAoeTokens] = useState<AoeToken[]>([]);
 
     //selectedCID used for token selection
     const [selectedCID, setSelectedCID] = useState<string | null>(null);
@@ -240,7 +246,7 @@ function EncounterSimulation() {
                 `translate(${pan.current.x}px, ${pan.current.y}px) scale(${zoom.current})`;
         }
     };
-    
+
     //ONLOAD EFFECTS
     const loadActions = async (): Promise<void> => {
         if (currentTurnCreature) {
@@ -258,6 +264,7 @@ function EncounterSimulation() {
                 setEncounterError(null);
 
                 const data = await getEncounter(eid);
+                console.log("Enc", data);
                 if (!data) {
                     setEncounterError("Encounter was not found.");
                     setEncounterData(undefined);
@@ -309,6 +316,34 @@ function EncounterSimulation() {
                 setCurrentTurnCreature(storedTurn);
             }
         }
+    }, [encounterData]);
+    useEffect(() => {
+      const storedAoeTokens = Array.isArray(
+        (
+          encounterData as
+            | { mapdata?: { layers?: { aoeTokens?: unknown[] } } }
+            | undefined
+        )?.mapdata?.layers?.aoeTokens
+      )
+        ? (((encounterData as { mapdata?: { layers?: { aoeTokens?: unknown[] } } })
+            ?.mapdata?.layers?.aoeTokens ?? []) as AoeToken[])
+        : [];
+
+      setAoeTokens((prev) => {
+        const previewTokens = prev.filter((token) =>
+          token.resultID.startsWith("preview:")
+        );
+
+        const merged = [...storedAoeTokens];
+
+        for (const preview of previewTokens) {
+          if (!merged.some((token) => token.resultID === preview.resultID)) {
+            merged.push(preview);
+          }
+        }
+
+        return merged;
+      });
     }, [encounterData]);
     useEffect(() => {
         if (currentTurnCreature) {
@@ -455,6 +490,36 @@ function EncounterSimulation() {
     console.error("Movement simulation failed:", error);
   }
 }
+    const buildRecommendationAoeToken = useCallback((
+          recommendation: { name: string; target: RecommendationTarget },
+          previewResultID: string
+    ): AoeToken | null => {
+          if (!currentTurnCreature || !currentTurnActions) return null;
+          if (!isRecommendationAoeTarget(recommendation.target)) return null;
+
+          const positioning = normalizeGridCoords(recommendation.target.positioning);
+          if (positioning.length === 0) return null;
+
+          const action = findActionByName(recommendation.name, currentTurnActions);
+          if (!action) return null;
+
+          const casterPosition = normalizeGridCoords(
+            getCreaturePosition(currentTurnCreature) as unknown
+          );
+
+          const normalizedShape = normalizeAoeShape(normalizeAction(action).shape);
+
+            return {
+              name: recommendation.name,
+              positioning,
+              token_image: resolveAoeTokenImageName(action, normalizedShape),
+              resultID: previewResultID,
+              cid: getCreatureCid(currentTurnCreature),
+              anchor: getClosestAnchorToCaster(positioning, casterPosition),
+              timing: extractActionTiming(action),
+              shape: normalizedShape,
+            };
+        }, [currentTurnCreature, currentTurnActions]);
     async function handleActionSubmission(action : CreatureAction) {
         setManualLock(true);
         const { conditions, statusEffects } = extractActionEffects(action);
@@ -498,69 +563,92 @@ function EncounterSimulation() {
         }
         setActionExecutionSession(actionSession);
     }
-    async function handlePASubmission(name: string, prob: number,
-                       eDam: number, impact: number, targets: string[]) {
-        if (!currentTurnCreature || !encounterData || !currentTurnActions) return;
-        let action;
-        action = currentTurnActions.find(a => isSpellAction(a) ?
-            a.spellname.toLowerCase() === name.toLowerCase()
-            : a.name.toLowerCase() === name.toLowerCase());
-        if (!action) {
-            action = await basicActionGet(name);
-        }
-        if (!action) {
-            console.error("Action does not exist in statblock!");
-            return;
-        }
-        setManualLock(true);
-        let resolvedTargets: string[] = []
-        if(targets) {
-            resolvedTargets = targets
-          .map((target) => resolveTargetToCid(target, encounterData))
-          .filter((target): target is string => target !== null);
-        }
-        const { conditions, statusEffects } = extractActionEffects(action);
-        const normalized = normalizeAction(action);
-        const requiredInputs = buildRequiredInputs(normalized);
-        let resultID;
-        try {
-            resultID = await fetchUUID();
-        } catch (err) {
-            resultID = "-1";
-            console.error("Failed to fetch CID", err);
-        }
-        const draft : ActionRequestDraft = {
-            resultID,
-            actor : (currentTurnCreature ? getCreatureName(currentTurnCreature) : ""),
-            action : (isSpellAction(action) ? action.spellname : action.name),
-            actionType : (isSpellAction(action) ? `Lvl ${action.level} Spell`
-                : isMonsterAction(action) ? "MonAction" : "Weapon"),
-            actionProb : prob,
-            actionEDam : eDam,
-            actionImpact : impact,
-            targets : resolvedTargets,
-            conditions : conditions,
-            statusEffects : statusEffects,
-            outcome : {
-                rollResults : [],
-                diceResults : []
-            },
-            extraOutcome : {
-                extraRollResults : [],
-                extraDiceResults : []
-            },
-            timestamp : ""
-        };
-        const actionSession = {
-            action : normalized,
-            requiredInputs : requiredInputs,
-            draft : draft,
-            error : ""
-        }
-        setActionExecutionSession(actionSession);
-}
+    async function handlePASubmission(
+      name: string,
+      prob: number,
+      eDam: number,
+      impact: number,
+      targets: RecommendationTarget,
+      previewResultID?: string) {
+      if (!currentTurnCreature || !encounterData || !currentTurnActions) return;
+
+      let action = findActionByName(name, currentTurnActions);
+      if (!action) {
+        action = await basicActionGet(name);
+      }
+      if (!action) {
+        console.error("Action does not exist in statblock!");
+        return;
+      }
+
+      setManualLock(true);
+
+      const targetNames = Array.isArray(targets) ? targets : targets.targetsHit;
+      const resolvedTargets = targetNames
+        .map((target) => resolveTargetToCid(target, encounterData))
+        .filter((target): target is string => target !== null);
+
+      const { conditions, statusEffects } = extractActionEffects(action);
+      const normalized = normalizeAction(action);
+      const requiredInputs = buildRequiredInputs(normalized);
+
+      let resultID = "-1";
+      try {
+        resultID = await fetchUUID();
+      } catch (err) {
+        console.error("Failed to fetch CID", err);
+      }
+
+      if (previewResultID) {
+        setAoeTokens((prev) =>
+          prev.map((token) =>
+            token.resultID === previewResultID ? { ...token, resultID } : token
+          )
+        );
+      }
+
+      const draft: ActionRequestDraft = {
+        resultID,
+        actor: currentTurnCreature ? getCreatureName(currentTurnCreature) : "",
+        action: isSpellAction(action) ? action.spellname : action.name,
+        actionType: isSpellAction(action)
+          ? `Lvl ${action.level} Spell`
+          : isMonsterAction(action)
+            ? "MonAction"
+            : "Weapon",
+        actionProb: prob,
+        actionEDam: eDam,
+        actionImpact: impact,
+        targets: resolvedTargets,
+        conditions,
+        statusEffects,
+        outcome: {
+          rollResults: [],
+          diceResults: [],
+        },
+        extraOutcome: {
+          extraRollResults: [],
+          extraDiceResults: [],
+        },
+        timestamp: "",
+      };
+
+      const actionSession = {
+        action: normalized,
+        requiredInputs,
+        draft,
+        error: "",
+      };
+
+      setActionExecutionSession(actionSession);
+    }
     async function handleActionExecution(finalDraft: ActionRequestDraft) {
           if (!eid || !currentTurnCreature || !encounterData || !actionExecutionSession) return;
+
+          const executedAoeToken = aoeTokens.find(
+            (token) => token.resultID === finalDraft.resultID
+          );
+
           try {
             const missingTargets =
               finalDraft.targets.length === 0 &&
@@ -573,10 +661,14 @@ function EncounterSimulation() {
               return;
             }
 
-            await axiosTokenInstance.post(
-              `/encounter/${eid}/simulate/ruleset`,
-              finalDraft
-            );
+            const payload = {
+              ...finalDraft,
+              token: executedAoeToken ?? null,
+            };
+
+            console.log("Final Draft payload", payload);
+
+            await axiosTokenInstance.post(`/encounter/${eid}/simulate/ruleset`, payload);
 
             const updatedEncounter = await getEncounter(eid);
             if (!updatedEncounter) {
@@ -585,6 +677,18 @@ function EncounterSimulation() {
             }
 
             setEncounterData(updatedEncounter);
+
+            setAoeTokens((prev) => {
+              const withoutExecuted = prev.filter(
+                (token) => token.resultID !== finalDraft.resultID
+              );
+
+              if (executedAoeToken?.timing === "lingering") {
+                return [...withoutExecuted, executedAoeToken];
+              }
+
+              return withoutExecuted;
+            });
 
             const newCurrentTurnCreature = getCurrentTurnCreatureFromEncounter(updatedEncounter);
             setCurrentTurnCreature(newCurrentTurnCreature);
@@ -598,7 +702,7 @@ function EncounterSimulation() {
               prev ? { ...prev, error: "Action execution failed." } : prev
             );
           }
-}
+    }
     async function handleManualSimulate() {
           if (manualLock || !manualMode || !eid) return;
 
@@ -634,10 +738,13 @@ function EncounterSimulation() {
       setInitiativeExpandedCid(null);
     }
     function setManualState() {
-        setManualMode(true);
-        setInitiativeOpen(true);
-        setActionOpen(false);
-        clearManualState();
+      setAoeTokens((prev) =>
+        prev.filter((token) => !token.resultID.startsWith("preview:recommendation:"))
+      );
+      setManualMode(true);
+      setInitiativeOpen(true);
+      setActionOpen(false);
+      clearManualState();
     }
     function handleManualCreatureChange(nextCreature: ManualAffectedCreature) {
           setManualDraft((prev) => {
@@ -688,6 +795,10 @@ function EncounterSimulation() {
         pan.current = clampPan(nextX, nextY, nextZoom, rect, mapNaturalWidth, mapNaturalHeight);
         applyTransform();
     }
+    const handleMapSizeLoaded = useCallback((w: number, h: number) => {
+    setMapNaturalWidth((prev) => (prev === w ? prev : w));
+    setMapNaturalHeight((prev) => (prev === h ? prev : h));
+}, []);
 
     return (
         <Container fluid className="p-0 bg-dark"
@@ -765,18 +876,16 @@ function EncounterSimulation() {
                         }}>
                             {!encounterError && !loadingEncounter && encounterData && (
                                 <ActiveMap
-                                    encounter={encounterData}
-                                    manualMode={manualMode}
-                                    encStart={encStart}
-                                    activeEncounter={activeEncounter}
-                                    selectedCID={selectedCID}
-                                    onTokenSelect={handleTokenSelect}
-                                    onGridCellClick={handleGridCellClick}
-                                    onMapSizeLoaded={(w, h) => {
-                                        setMapNaturalWidth(w);
-                                        setMapNaturalHeight(h);
-                                    }}
-                                />
+                                      encounter={encounterData}
+                                      aoeTokens={aoeTokens}
+                                      manualMode={manualMode}
+                                      encStart={encStart}
+                                      activeEncounter={activeEncounter}
+                                      selectedCID={selectedCID}
+                                      onTokenSelect={handleTokenSelect}
+                                      onGridCellClick={handleGridCellClick}
+                                      onMapSizeLoaded={handleMapSizeLoaded}
+                                    />
                             )}
                         </div>
                     </div>
@@ -947,11 +1056,13 @@ function EncounterSimulation() {
                                     />
                                 ) : (
                                     <Recommendation
-                                        eid={eid}
-                                        cid={getCreatureCid(currentTurnCreature)}
-                                        handlePASubmission={handlePASubmission}
-                                        key={`${eid}-${recommendRefreshKey}`}
-                                    />
+                                          eid={eid}
+                                          cid={getCreatureCid(currentTurnCreature)}
+                                          setAoeTokens={setAoeTokens}
+                                          buildRecommendationAoeToken={buildRecommendationAoeToken}
+                                          handlePASubmission={handlePASubmission}
+                                          key={`${eid}-${recommendRefreshKey}`}
+                                        />
                                 )}
                                     </Col>
                                 </Row>
