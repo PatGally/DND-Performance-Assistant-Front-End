@@ -161,7 +161,6 @@ export default function ActionList({
         <span> Action List</span>
       {actions.map((action, index) => {
         const isExpanded = expandedIndex === index;
-        console.log("These are the actions ",actions);
         return (
           <div key={`${getActionName(action)}-${index}`} style={{
               border: "1px solid #ccc",

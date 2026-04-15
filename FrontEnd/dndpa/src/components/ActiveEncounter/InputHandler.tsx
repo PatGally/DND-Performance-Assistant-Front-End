@@ -1,5 +1,9 @@
 import {useMemo, useState} from "react";
-import type { Encounter, ActionExecutionSession, ActionRequestDraft } from "../../types/SimulationTypes.ts";
+import type {
+  Encounter,
+  ActionExecutionSession,
+  ActionRequestDraft
+} from "../../types/SimulationTypes.ts";
 import type { Creature} from "../../types/creature.ts";
 import {getCreatureName, getCreatureCid} from "../../utils/CreatureHelpers.ts";
 
@@ -14,7 +18,9 @@ type InputHandlerProps = {
   actionSession: ActionExecutionSession;
   setActionExecutionSession: React.Dispatch<React.SetStateAction<ActionExecutionSession | undefined>>;
   handleActionExecution: (draft: ActionRequestDraft) => void;
-  setManualLock : React.Dispatch<React.SetStateAction<boolean>>;
+  setManualLock: React.Dispatch<React.SetStateAction<boolean>>;
+  clearManualAoePreview: (resultID?: string) => void;
+  aoePlacementStage: "pick_anchor" | "pick_direction" | "ready";
 };
 
 function getCurrentTimeString(): string {
@@ -31,7 +37,8 @@ export default function InputHandler({
   actionSession,
   setActionExecutionSession,
     setManualLock,
-  handleActionExecution,
+    clearManualAoePreview,
+  handleActionExecution, aoePlacementStage
 }: InputHandlerProps) {
   const [localError, setLocalError] = useState<string>("");
   const allCreatures: Creature[] = useMemo(
@@ -43,8 +50,17 @@ export default function InputHandler({
     [allCreatures]
   );
   const targetCount = actionSession.action.targetCount ?? 0;
+  console.log("targetCount", targetCount);
+  console.log("draft targets", actionSession.draft.targets);
+  console.log("len", actionSession.draft.targets.length);
   const needsTargetSelection =
     targetCount > 0 && actionSession.draft.targets.length === 0;
+
+  const needsAoeSelection =
+      (targetCount === -1 || targetCount === -2) && actionSession.draft.targets.length === 0;
+  console.log("needsAOE", needsAoeSelection);
+  console.log("needsTarget", needsTargetSelection);
+
   const [selectedTargets, setSelectedTargets] = useState<string[]>(actionSession.draft.targets);
   const [perTargetInputs, setPerTargetInputs] = useState<Record<string, PerTargetInput>>(() => {
     const initial: Record<string, PerTargetInput> = {};
@@ -203,10 +219,15 @@ export default function InputHandler({
   setLocalError("");
   handleActionExecution(finalDraft);
 }
-  function handleExit() {
-    setActionExecutionSession(undefined);
-    setManualLock(false);
-  }
+function handleExit() {
+  console.log("Handle Exit");
+  console.log(actionSession);
+  console.log(aoePlacementStage);
+
+  clearManualAoePreview(actionSession.draft.resultID);
+  setActionExecutionSession(undefined);
+  setManualLock(false);
+}
 
   return (
     <div className="bg-dark border rounded p-3" style={{ minWidth: "420px", maxWidth: "700px" }}>
@@ -249,6 +270,20 @@ export default function InputHandler({
             Next
           </button>
         </>
+      ) : needsAoeSelection ? (
+          <>
+            <p className="mb-2">
+              {aoePlacementStage === "pick_direction"
+                ? "Move the cursor to choose a direction, then click the map to confirm."
+                : "Move the cursor to preview the area, then click the map to confirm placement."}
+            </p>
+
+            <p className="mb-0 text-secondary">
+              Targets will be filled automatically from the creatures inside the placed AOE.
+            </p>
+
+            {localError && <div className="text-danger mt-2">{localError}</div>}
+          </>
       ) : (
         <>
           <p className="mb-3">Enter results for each target.</p>
