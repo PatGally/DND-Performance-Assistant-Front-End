@@ -452,63 +452,6 @@ function EncounterSimulation() {
             setManualLock(false);
         }
     }
-    function setManualState() {
-        setManualMode(true);
-        setInitiativeOpen(true);
-        setActionOpen(false);
-        clearManualState();
-    }
-    function clearManualState() {
-        setManualDraft({ affectedCreatures: [] });
-        setInitiativeExpandedCid(null);
-    }
-    function handleManualCreatureChange(nextCreature: ManualAffectedCreature) {
-        setManualDraft((prev) => {
-            const others = prev.affectedCreatures.filter(
-                (creature) => creature.cid !== nextCreature.cid
-            );
-
-            const changedKeys = Object.keys(nextCreature).filter((key) => key !== "cid");
-
-            if (changedKeys.length === 0) {
-                return { affectedCreatures: others };
-            }
-
-            return {
-                affectedCreatures: [...others, nextCreature],
-            };
-        });
-    }
-    async function handleManualSimulate() {
-        if (manualLock || !manualMode || !eid) return;
-
-        try {
-            setManualLock(true);
-            if (manualDraft.affectedCreatures.length > 0) {
-                await axiosTokenInstance.post(
-                    `/encounter/${eid}/simulate/manual`,
-                    manualDraft
-                );
-
-                const updatedEncounter = await getEncounter(eid);
-                if (updatedEncounter) {
-                    setEncounterData(updatedEncounter);
-                    const newCurrentTurnCreature = getCurrentTurnCreatureFromEncounter(updatedEncounter);
-                    setCurrentTurnCreature(newCurrentTurnCreature);
-                }
-            }
-
-            setManualDraft({ affectedCreatures: [] });
-            setInitiativeExpandedCid(null);
-            // await handleNextTurn();
-        } catch (error) {
-            console.error("Manual simulation failed:", error);
-        } finally {
-            setManualLock(false);
-            setManualMode(false);
-            setInitiativeRefreshKey(initiativeRefreshKey + 1);
-        }
-    }
 
     async function basicActionGet(name : string) {
         if (["dodge", "shove", "grapple", "hide"].includes(name.toLowerCase())) {
@@ -1069,8 +1012,8 @@ function EncounterSimulation() {
 }, []);
 
     return (
-        <Container fluid className="p-0 bg-dark"
-                   style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+        <Container fluid className="p-0"
+                   style={{ height: "100vh", display: "flex", flexDirection: "column", backgroundColor: "#000000" }}>
             <Row className="bg-dark text-white px-3 mx-0" style={{ height: "56px", flexShrink: 0 }}>
                 <Col className="d-flex align-items-center">
                     {encounterData
@@ -1295,7 +1238,7 @@ function EncounterSimulation() {
                                   transform: "translateX(-50%)",
                                   zIndex: 15,
                                   width: "30%",
-                                  backgroundColor: "rgba(15, 24, 40, 0.85)",
+                                  backgroundColor: "rgba(15, 24, 40, 0.75)",
                                   backdropFilter: "blur(6px)",
                                   WebkitBackdropFilter: "blur(6px)",
                                   border: "none",
