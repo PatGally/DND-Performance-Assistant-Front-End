@@ -58,7 +58,7 @@ function AddMonsters({ formData, updateFormData, monsters }: Props) {
     const uniqueTypes = [...new Set(monsters.map((m) => m.creatureType))].sort();
 
     return (
-        <div className="p-3">
+        <div className="p-3"  style={{backgroundColor: "rgba(15, 24, 40, 0.85)"}}>
             <Form>
                 <Row className="mb-3">
                     <Col>

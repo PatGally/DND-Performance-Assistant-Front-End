@@ -56,7 +56,7 @@ function AddCharacters({ formData, updateFormData, characters }: Props) {
     const uniqueLevel = [...new Set(characters.map((c) => String(c.stats.level)))].sort((a, b) => Number(a) - Number(b));
 
     return (
-        <div className="p-3">
+        <div className="p-3"  style={{backgroundColor: "rgba(15, 24, 40, 0.85)"}}>
             <Form>
                 <Row className="mb-3">
                     <Col>

@@ -220,6 +220,9 @@ function EncounterSimulation() {
     });
     const [initiativeExpandedCid, setInitiativeExpandedCid] = useState<string | null>(null);
 
+    // Lair Action state
+    const [isLairAction, setIsLairAction] = useState(false);
+
     //Pan/zoom state
     const mapViewportRef = useRef<HTMLDivElement>(null);
     const mapContentRef = useRef<HTMLDivElement>(null);
@@ -296,12 +299,16 @@ function EncounterSimulation() {
             );
         });
         const noCollisionAtZero = zeroOccupants.length <= 1;
-
+        //TODO most likely you adding lair actions will be set here
+        // you need add a variable if lair actions are true or not btw
+        // we will do them all at once and be forced into manual mode
+        // until we click next turn user will have to put in custom damage to players here
         if (!noCollisionAtZero) {
             setEncStart(true);
             setActiveEncounter(false);
         } else {
             const storedTurn = getCurrentTurnCreatureFromEncounter(encounterData);
+            // console.log(encounterData.initiative);
             if (storedTurn && storedTurn.name === encounterData.initiative[0].name) {
                 simStart();
             }
@@ -311,10 +318,24 @@ function EncounterSimulation() {
         }
     }, [encounterData]);
     useEffect(() => {
-        if (currentTurnCreature) {
-            loadActions();
+        console.log("currentTurnCreature changed:", currentTurnCreature);
+        console.log("_isLairAction flag:", (currentTurnCreature as any)?._isLairAction);
+
+        if (!currentTurnCreature) return;
+        if ((currentTurnCreature as any)._isLairAction) {
+            // Force manual mode, block ruleset
+            setManualMode(true);
+            setInitiativeOpen(true);
+            setActionOpen(false);
+            clearManualState();
+            setManualLock(false);
+            setIsLairAction(true);
+            return;
         }
-    }, [currentTurnCreature, encounterData])
+
+        setIsLairAction(false);
+        loadActions();
+    }, [currentTurnCreature, encounterData]);
     useEffect(() => {
         const el = mapViewportRef.current;
         if (!el) return;
@@ -350,32 +371,17 @@ function EncounterSimulation() {
 
     setCurrentTurnCreature(matchingCreature);
 }
-    async function basicActionGet(name : string) {
-        if (["dodge", "shove", "grapple", "hide"].includes(name.toLowerCase())) {
-            const response = await axiosTokenInstance.get("basic-actions");
-            const basicActions = response.data as SpellAction[];
-            return basicActions.find(basic => basic.spellname === name);
-        }
-        return;
-    }
-    function handleTokenSelect(cid: string) {
-  if (!encounterData || actionExecutionSession || preTurnEffects) return;
 
-  if (manualMode) {
-    setInitiativeOpen(true);
-    setInitiativeExpandedCid((prev) => (prev === cid ? null : cid));
-    return;
-  }
-
-  setSelectedCID((prev) => (prev === cid ? null : cid));
-}
     async function handleNextTurn() {
-        if (handlingNextTurn || actionExecutionSession || !encounterData || !currentTurnCreature ||
+
+        const isLairActionTurn = (currentTurnCreature as any)?._isLairAction === true;
+
+        if (handlingNextTurn || actionExecutionSession || !encounterData ||
+            (!currentTurnCreature && !isLairActionTurn) ||
             encStart || !activeEncounter || !eid || preTurnEffects) return;
 
         try {
             setHandlingNextTurn(true);
-
             const response = await axiosTokenInstance.get(`/encounter/${eid}/initiative/nextturn`);
             const preEffects = Array.isArray(response.data.preEffects) ? response.data.preEffects : [];
             const updatedEncounter = await getEncounter(eid);
@@ -386,14 +392,20 @@ function EncounterSimulation() {
             setEncounterData(updatedEncounter);
 
             const newCurrentTurnCreature = getCurrentTurnCreatureFromEncounter(updatedEncounter);
-            if (!newCurrentTurnCreature) {
-                console.error("Could not determine current turn creature from updated encounter.");
-                setCurrentTurnCreature(undefined);
-            } else {
-                setCurrentTurnCreature(newCurrentTurnCreature);
-            }
+            console.log("About to set creature:", newCurrentTurnCreature);
+            console.log("_isLairAction before set:", (newCurrentTurnCreature as any)?._isLairAction);
             if (Array.isArray(preEffects) && preEffects.length !== 0) {
                 setPreTurnEffects(preEffects);
+            }
+            if (newCurrentTurnCreature) {
+                setCurrentTurnCreature(newCurrentTurnCreature);
+            } else if (isLairActionTurn) {
+                // sentinel failed for some reason but we know it's a lair action — don't wipe
+                console.warn("Sentinel missing but confirmed lair action turn.");
+            } else {
+                // genuinely unknown creature — safe to wipe
+                console.error("Could not determine current turn creature from updated encounter.");
+                setCurrentTurnCreature(undefined);
             }
 
         } catch (error) {
@@ -403,6 +415,83 @@ function EncounterSimulation() {
             setHandlingNextTurn(false);
             setManualLock(false);
         }
+    }
+    function setManualState() {
+        setManualMode(true);
+        setInitiativeOpen(true);
+        setActionOpen(false);
+        clearManualState();
+    }
+    function clearManualState() {
+        setManualDraft({ affectedCreatures: [] });
+        setInitiativeExpandedCid(null);
+    }
+    function handleManualCreatureChange(nextCreature: ManualAffectedCreature) {
+        setManualDraft((prev) => {
+            const others = prev.affectedCreatures.filter(
+                (creature) => creature.cid !== nextCreature.cid
+            );
+
+            const changedKeys = Object.keys(nextCreature).filter((key) => key !== "cid");
+
+            if (changedKeys.length === 0) {
+                return { affectedCreatures: others };
+            }
+
+            return {
+                affectedCreatures: [...others, nextCreature],
+            };
+        });
+    }
+    async function handleManualSimulate() {
+        if (manualLock || !manualMode || !eid) return;
+
+        try {
+            setManualLock(true);
+            if (manualDraft.affectedCreatures.length > 0) {
+                await axiosTokenInstance.post(
+                    `/encounter/${eid}/simulate/manual`,
+                    manualDraft
+                );
+
+                const updatedEncounter = await getEncounter(eid);
+                if (updatedEncounter) {
+                    setEncounterData(updatedEncounter);
+                    const newCurrentTurnCreature = getCurrentTurnCreatureFromEncounter(updatedEncounter);
+                    setCurrentTurnCreature(newCurrentTurnCreature);
+                }
+            }
+
+            setManualDraft({ affectedCreatures: [] });
+            setInitiativeExpandedCid(null);
+            // await handleNextTurn();
+        } catch (error) {
+            console.error("Manual simulation failed:", error);
+        } finally {
+            setManualLock(false);
+            setManualMode(false);
+            setInitiativeRefreshKey(initiativeRefreshKey + 1);
+        }
+    }
+
+    async function basicActionGet(name : string) {
+        if (["dodge", "shove", "grapple", "hide"].includes(name.toLowerCase())) {
+            const response = await axiosTokenInstance.get("basic-actions");
+            const basicActions = response.data as SpellAction[];
+            return basicActions.find(basic => basic.spellname === name);
+        }
+        return;
+    }
+    function handleTokenSelect(cid: string) {
+        if (!encounterData || actionExecutionSession || preTurnEffects) return;
+
+        if (manualMode) {
+            setInitiativeOpen(true);
+            setInitiativeExpandedCid((prev) => (prev === cid ? null : cid));
+            return;
+        }
+
+        setSelectedCID((prev) => (prev === cid ? null : cid));
     }
     async function handleGridCellClick(cellX: number, cellY: number) {
   if (manualMode) return;
@@ -599,63 +688,8 @@ function EncounterSimulation() {
             );
           }
 }
-    async function handleManualSimulate() {
-          if (manualLock || !manualMode || !eid) return;
 
-          try {
-            setManualLock(true);
-            if (manualDraft.affectedCreatures.length > 0) {
-              await axiosTokenInstance.post(
-                `/encounter/${eid}/simulate/manual`,
-                manualDraft
-              );
 
-              const updatedEncounter = await getEncounter(eid);
-              if (updatedEncounter) {
-                setEncounterData(updatedEncounter);
-                const newCurrentTurnCreature = getCurrentTurnCreatureFromEncounter(updatedEncounter);
-                setCurrentTurnCreature(newCurrentTurnCreature);
-              }
-            }
-
-            setManualDraft({ affectedCreatures: [] });
-            setInitiativeExpandedCid(null);
-            // await handleNextTurn();
-          } catch (error) {
-            console.error("Manual simulation failed:", error);
-          } finally {
-            setManualLock(false);
-            setManualMode(false);
-            setInitiativeRefreshKey(initiativeRefreshKey + 1);
-          }
-        }
-    function clearManualState() {
-      setManualDraft({ affectedCreatures: [] });
-      setInitiativeExpandedCid(null);
-    }
-    function setManualState() {
-        setManualMode(true);
-        setInitiativeOpen(true);
-        setActionOpen(false);
-        clearManualState();
-    }
-    function handleManualCreatureChange(nextCreature: ManualAffectedCreature) {
-          setManualDraft((prev) => {
-            const others = prev.affectedCreatures.filter(
-              (creature) => creature.cid !== nextCreature.cid
-            );
-
-            const changedKeys = Object.keys(nextCreature).filter((key) => key !== "cid");
-
-            if (changedKeys.length === 0) {
-              return { affectedCreatures: others };
-            }
-
-            return {
-              affectedCreatures: [...others, nextCreature],
-            };
-          });
-        }
 
     //PAN/ZOOM FUNCTIONS
     function onPanStart(e: React.MouseEvent) {
@@ -700,13 +734,20 @@ function EncounterSimulation() {
                     }
                 </Col>
                 <Col className="d-flex align-items-center gap-2">
-                    {activeEncounter && currentTurnCreature && (
+                    {activeEncounter && (currentTurnCreature || isLairAction) && (
                         <>
-                            <p className="mb-0">Current Turn: {isPlayerCreature(currentTurnCreature)
-                                ? currentTurnCreature.stats.name
-                                : currentTurnCreature.name}
-                            </p>
+                            {currentTurnCreature ? (
+                                <p className="mb-0">
+                                    Current Turn: {isPlayerCreature(currentTurnCreature)
+                                    ? currentTurnCreature.stats.name
+                                    : currentTurnCreature.name}
+                                </p>
+                            ) : (
+                                <p className="mb-0">Lair Action</p>
+                            )}
+
                             <button
+                                disabled={isLairAction || actionExecutionSession !== undefined}
                                 onClick={() => {
                                     setManualMode(false);
                                     clearManualState();
@@ -717,23 +758,30 @@ function EncounterSimulation() {
 
                             <button
                                 disabled={actionExecutionSession !== undefined || handlingNextTurn || manualLock}
-                                onClick={() => {
-                                    setManualState()
-                                }}
+                                onClick={() => setManualState()}
                             >
                                 Manual
                             </button>
+
                             {manualMode && (
                                 <button onClick={handleManualSimulate}>Submit</button>
                             )}
+
                             {!manualMode && (
-                                <button disabled={actionExecutionSession !== undefined || preTurnEffects !== undefined}
-                                        onClick={handleNextTurn}>Next Turn</button>
+                                <button
+                                    disabled={actionExecutionSession !== undefined || preTurnEffects !== undefined}
+                                    onClick={handleNextTurn}
+                                >
+                                    Next Turn
+                                </button>
                             )}
                         </>
-                        )
-                    }
-                    {encStart && !activeEncounter && (<button onClick={simStart}>Start!</button>)}
+                    )}
+
+                    {encStart && !activeEncounter && (
+                        <button onClick={simStart}>Start!</button>
+                    )}
+
                 </Col>
                 <Col className="d-flex justify-content-end align-items-center">
                     <ExitSimulation />

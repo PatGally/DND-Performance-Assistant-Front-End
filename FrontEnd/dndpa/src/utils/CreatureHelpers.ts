@@ -35,6 +35,12 @@ export function resolveTargetToCid(target: string, encounter: Encounter): string
 export function getCurrentTurnCreatureFromEncounter(encounter: Encounter): Creature | undefined {
         const currentTurnEntry = encounter.initiative.find((entry : InitiativeEntry) => entry.currentTurn);
         if (!currentTurnEntry) return undefined;
+    if (currentTurnEntry.turnType === "lairAction") {
+        const sentinel = { _isLairAction: true } as unknown as Creature;
+        // console.log("Sentinel built:", sentinel);
+        // console.log("Sentinel _isLairAction:", (sentinel as any)._isLairAction);
+        return sentinel;
+    }
 
         const allCreatures: Creature[] = [
             ...(encounter.players ?? []),

@@ -70,27 +70,26 @@ export default function SimpleInitiativeEntry({
                             padding: "1px 6px",
                             letterSpacing: "0.05em",
                             textTransform: "uppercase",
-                        }}>
-              Active
-            </span>
+                        }}> Active </span> )}
+                    {entry.hp != null && (
+                        <button
+                            type="button"
+                            onClick={onToggle}
+                            aria-label="Expand creature details"
+                            style={{
+                                border: "1px solid #8b1a1a",
+                                background: "transparent",
+                                cursor: "pointer",
+                                fontSize: "11px",
+                                color: "#8b1a1a",
+                                borderRadius: "3px",
+                                padding: "2px 7px",
+                                fontFamily: "inherit",
+                            }}
+                        >
+                            ▶
+                        </button>
                     )}
-                    <button
-                        type="button"
-                        onClick={onToggle}
-                        aria-label="Expand creature details"
-                        style={{
-                            border: "1px solid #8b1a1a",
-                            background: "transparent",
-                            cursor: "pointer",
-                            fontSize: "11px",
-                            color: "#8b1a1a",
-                            borderRadius: "3px",
-                            padding: "2px 7px",
-                            fontFamily: "inherit",
-                        }}
-                    >
-                        ▶
-                    </button>
                 </div>
             </div>
 
@@ -99,69 +98,28 @@ export default function SimpleInitiativeEntry({
             {/* ── Core stats — 2-col grid ── */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2px 16px" }}>
                 <PropRow label="Initiative" value={entry.iValue} />
-                <PropRow label="AC"         value={entry.ac} />
-                <PropRow label="HP"         value={`${entry.hp} / ${entry.maxhp}`} />
+                {entry.ac != null && (
+                    <PropRow label="AC" value={entry.ac} />
+                )}
+                {entry.hp != null && entry.maxhp != null && (
+                    <PropRow label="HP" value={`${entry.hp} / ${entry.maxhp}`} />
+                )}
             </div>
 
             <hr style={s.thinRule} />
 
-            {/* ── Action resources ── */}
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2px 16px" }}>
-                <PropRow label="Action"       value={entry.actionResource} />
-                <PropRow label="Bonus Action" value={entry.bonusActionResource} />
+
+                {entry.hp != null && (
+                    <PropRow label="Action"       value={entry.actionResource} />
+                )}
+                {entry.hp != null && (
+                    <PropRow label="Bonus Action" value={entry.bonusActionResource} />
+                )}
+
             </div>
 
         </div>
     );
 }
-
-// export default function SimpleInitiativeEntry({
-//   entry,
-//   onToggle,
-// }: SimpleInitiativeEntryProps) {
-//   return (
-//     <div
-//       style={{
-//         border: "1px solid #ccc",
-//         borderRadius: "6px",
-//         padding: "10px 12px",
-//       }}
-//     >
-//       <div
-//         style={{
-//           display: "flex",
-//           justifyContent: "space-between",
-//           alignItems: "center",
-//           gap: "12px",
-//         }}
-//       >
-//         <div style={{ display: "flex", flexDirection: "column", gap: "4px", flex: 1 }}>
-//           <div><strong>{entry.name}</strong></div>
-//           <div>Initiative: {entry.iValue}</div>
-//             <div>HP: {entry.hp} / {entry.maxhp}</div>
-//             <div>AC: {entry.ac}</div>
-//           <div>Current Turn: {entry.currentTurn ? "Yes" : "No"}</div>
-//           <div>Action Resource: {entry.actionResource}</div>
-//           <div>Bonus Action Resource: {entry.bonusActionResource}</div>
-//           <div>B.A.R: {entry.bonusActionResource}</div>
-//
-//         </div>
-//
-//         <button
-//           type="button"
-//           onClick={onToggle}
-//           aria-label="Expand creature details"
-//           style={{
-//             border: "none",
-//             background: "transparent",
-//             cursor: "pointer",
-//             fontSize: "14px",
-//               color: "#ccc",
-//           }}
-//         >
-//           ▶
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }

@@ -8,7 +8,6 @@ import { EncounterPost } from "../../api/EncounterPost.ts";
 import { normalizePlayer } from "../../utils/normalizePlayer.ts";
 import { normalizeMonster } from "../../utils/normalizeMonster";
 
-// Player token imports
 import {
     ArtificerToken,
     BarbarianToken,
@@ -119,7 +118,7 @@ function isPanelValid(panel: ActivePanel, formData: EncounterFormData): boolean 
             return formData.monsters.length >= 1;
 
         case "ADD_INITIATIVE": {
-            const entries = formData.initiative;
+            const entries = formData.initiative.filter((e) => e.turnType !== "lairAction");
             const totalParticipants = formData.characters.length + formData.monsters.length;
             if (entries.length !== totalParticipants) return false;
             if (entries.some((e) => e.iValue <= 0)) return false;
@@ -231,6 +230,7 @@ function EncounterCreationNavAndSubmit({
             };
 
             console.log(payload);
+            console.log(JSON.stringify(payload, null, 2));
 
             await EncounterPost(payload);
             onSuccess();
