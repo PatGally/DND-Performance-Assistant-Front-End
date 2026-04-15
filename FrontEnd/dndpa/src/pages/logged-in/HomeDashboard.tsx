@@ -127,7 +127,7 @@ function HomeDashboard() {
                 className="text-white px-3 d-flex align-items-center justify-content-between"
                 style={{ flexShrink: 0, height: '56px', zIndex: 1000, backgroundColor: "rgba(15, 24, 40, 0.85)" }}
             >
-                <h3 className="mb-0">dndpa</h3>
+                <h3 className="mb-0">DNDPA</h3>
                 <UserMenu />
             </div>
 
