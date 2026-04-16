@@ -8,7 +8,7 @@ import type {
 import {isPlayerCreature} from "../../api/CreatureGet.ts";
 import type {CreatureAction} from "../../types/action.ts";
 import {getCreatureCid, getCreatureName} from "../CreatureHelpers.ts";
-import {isSpellAction} from "../ActionTypeChecker.ts";
+import {isSpellAction} from "./ActionTypeChecker.ts";
 import {buildRequiredInputs, extractActionEffects, normalizeAction} from "./actionHelpers.ts";
 
 export function extractRawPreTurnEffects(creature?: Creature): PreTurnEffect[] {

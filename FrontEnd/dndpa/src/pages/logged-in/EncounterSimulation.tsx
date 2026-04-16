@@ -26,7 +26,7 @@ import type {
     Encounter,
     ActionExecutionSession, ManualDraftState,
     AoeToken, ManualAoePlacement,
-    PendingPreTurnResolution, Recommendation as RecommendationType, ActionRequestDraft, RecommendationTarget
+    PendingPreTurnResolution
 } from "../../types/SimulationTypes.ts";
 
 import ExitSimulation from "../../components/ActiveEncounter/ExitSimulation.tsx";
@@ -36,26 +36,14 @@ import {
     buildPreTurnSession,
     syncPreTurnQueueFromCreature
 } from "../../utils/ActiveSimUtils/PreTurnHelpers.ts";
-import {
-    handleActionExecution,
-    handleActionSubmission,
-    handlePASubmission, handlePreTurnExecution,
-    loadActions
-} from "../../utils/ActiveSimUtils/actionHelpers.ts";
+import {loadActions} from "../../utils/ActiveSimUtils/actionHelpers.ts";
 import {onPanEnd, onPanMove, onPanStart, onWheel} from "../../utils/ActiveSimUtils/panningHelpers.ts";
 import {
-    clearManualAoePreview,
     clearManualState, handleManualCreatureChange,
     handleManualSimulate,
     setManualState
 } from "../../utils/ActiveSimUtils/manualHelpers.ts";
-import {
-  buildRecommendationAoeToken,
-  handleGridCellClick,
-  handleGridCellHover,
-  handleTokenSelect,
-} from "../../utils/ActiveSimUtils/tokenHelpers.ts";
-import {handleNextTurn, handlePreTurnBack, simStart} from "../../utils/ActiveSimUtils/simHelpers.ts";
+import { useEncounterSimulationCallbacks } from "../../hooks/ActiveSimHooks.ts";
 
 function EncounterSimulation() {
     const location = useLocation();
@@ -113,283 +101,19 @@ function EncounterSimulation() {
     setMapNaturalHeight((prev) => (prev === h ? prev : h));
 }, []);
 
-    const handleSetManualState = useCallback(() => {
-      setManualState({
-        actionExecutionSession,
-        latestHoverRequestRef,
-        setAoeTokens,
-        setManualAoePlacement,
-        setManualMode,
-        setInitiativeOpen,
-        setActionOpen,
-        setManualDraft,
-        setInitiativeExpandedCid,
-      });
-    },
-        [actionExecutionSession, latestHoverRequestRef, setAoeTokens, setManualAoePlacement,
-            setManualMode, setInitiativeOpen, setActionOpen, setManualDraft, setInitiativeExpandedCid,]);
-    const handleClearManualAoePreview = useCallback(() => {
-        clearManualAoePreview({
-          resultID: actionExecutionSession?.draft.resultID,
-          latestHoverRequestRef,
-          setAoeTokens,
-          setManualAoePlacement,
-        });
-    },
-        [actionExecutionSession, latestHoverRequestRef, setAoeTokens, setManualAoePlacement]);
-    const handleActiveMapTokenSelect = useCallback((cid: string) => {
-      handleTokenSelect({
-        cid,
-        encounterData,
-        actionExecutionSession,
-        hasPreTurnQueue,
-        manualMode,
-        setInitiativeOpen,
-        setInitiativeExpandedCid,
-        setSelectedCID,
-      });
-    }, [
-      encounterData,
-      actionExecutionSession,
-      hasPreTurnQueue,
-      manualMode,
-      setInitiativeOpen,
-      setInitiativeExpandedCid,
-      setSelectedCID,
-    ]);
-
-    const handleActiveMapGridCellClick = useCallback(async (cellX: number, cellY: number) => {
-      await handleGridCellClick({
-        cellX,
-        cellY,
-        endOfEncounter,
-        manualAoePlacement,
-        actionExecutionSession,
-        encounterData,
-        manualMode,
-        selectedCID,
-        hasPreTurnQueue,
-        eid,
-        setManualAoePlacement,
-        setEncounterData,
-        setSelectedCID,
-        setRecommendRefreshKey,
-        setActionExecutionSession,
-        setAoeTokens,
-          setInitiativeRefreshKey
-      });
-    }, [
-      endOfEncounter,
-      manualAoePlacement,
-      actionExecutionSession,
-      encounterData,
-      manualMode,
-      selectedCID,
-      hasPreTurnQueue,
-      eid,
-      setManualAoePlacement,
-      setEncounterData,
-      setSelectedCID,
-      setRecommendRefreshKey,
-      setActionExecutionSession,
-      setAoeTokens,
-        setInitiativeRefreshKey
-    ]);
-
-    const handleActiveMapGridCellHover = useCallback(async (cellX: number, cellY: number) => {
-      await handleGridCellHover({
-        cellX,
-        cellY,
-        manualAoePlacement,
-        latestHoverRequestRef,
-        setAoeTokens,
-      });
-    }, [
-      manualAoePlacement,
-      latestHoverRequestRef,
-      setAoeTokens,
-    ]);
-
-    const handleBuildRecommendationAoeToken = useCallback((
-      recommendation: RecommendationType,
-      previewResultID: string
-    ) => {
-      return buildRecommendationAoeToken({
-        recommendation,
-        previewResultID,
-        currentTurnCreature,
-        currentTurnActions,
-      });
-    }, [
-      currentTurnCreature,
-      currentTurnActions,
-    ]);
-
-    const handleSubmitAction = useCallback((action: CreatureAction) => {
-      void handleActionSubmission({
-        action,
-        currentTurnCreature,
-        setManualLock,
-        setActionExecutionSession,
-        setManualAoePlacement,
-      });
-    }, [
-      currentTurnCreature,
-      setManualLock,
-      setActionExecutionSession,
-      setManualAoePlacement,
-    ]);
-
-    const handleSubmitRecommendation = useCallback((
-      name: string,
-      prob: number,
-      eDam: number,
-      impact: number,
-      targets: RecommendationTarget,
-      previewResultID?: string
-    ) => {
-      void handlePASubmission({
-        name,
-        prob,
-        eDam,
-        impact,
-        targets,
-        previewResultID,
-        currentTurnCreature,
-        encounterData,
-        currentTurnActions,
-        setManualLock,
-        setAoeTokens,
-        setActionExecutionSession,
-      });
-    }, [
-      currentTurnCreature,
-      encounterData,
-      currentTurnActions,
-      setManualLock,
-      setAoeTokens,
-      setActionExecutionSession,
-    ]);
-
-    const handleExecuteAction = useCallback((finalDraft: ActionRequestDraft) => {
-      void handleActionExecution({
-        finalDraft,
-        eid,
-        currentTurnCreature,
-        encounterData,
-        actionExecutionSession,
-        aoeTokens,
-        setEncounterData,
-        setAoeTokens,
-        setCurrentTurnCreature,
-        setActionExecutionSession,
-        setManualLock,
-        setInitiativeRefreshKey,
-      });
-    }, [
-      eid,
-      currentTurnCreature,
-      encounterData,
-      actionExecutionSession,
-      aoeTokens,
-      setEncounterData,
-      setAoeTokens,
-      setCurrentTurnCreature,
-      setActionExecutionSession,
-      setManualLock,
-      setInitiativeRefreshKey,
-    ]);
-
-    const handleExecutePreTurn = useCallback((finalDraft: ActionRequestDraft) => {
-      void handlePreTurnExecution({
-        finalDraft,
-        eid,
-        currentTurnCreature,
-        encounterData,
-        preTurnQueue,
-        setManualLock,
-        setPreTurnQueue,
-        setActionExecutionSession,
-        setEncounterData,
-        setCurrentTurnCreature,
-        setInitiativeRefreshKey,
-      });
-    }, [
-      eid,
-      currentTurnCreature,
-      encounterData,
-      preTurnQueue,
-      setManualLock,
-      setPreTurnQueue,
-      setActionExecutionSession,
-      setEncounterData,
-        setCurrentTurnCreature,
-        setInitiativeRefreshKey,
-    ]);
-
-    const handleSimStart = useCallback(() => {
-        simStart({
-            encounterData,
-            setEncStart,
-            setActiveEncounter,
-            setCurrentTurnCreature,
-        });
-    }, [
-        encounterData,
-        setEncStart,
-        setActiveEncounter,
-        setCurrentTurnCreature,
-    ]);
-
-    const handleNextTurnWrapper = useCallback(() => {
-        void handleNextTurn({
-            currentTurnCreature,
-            handlingNextTurn,
-            actionExecutionSession,
-            encounterData,
-            encStart,
-            activeEncounter,
-            eid,
-            hasPreTurnQueue,
-            endOfEncounter,
-            setHandlingNextTurn,
-            setEncounterData,
-            setCurrentTurnCreature,
-            setPreTurnQueue,
-            setInitiativeRefreshKey,
-            setManualLock,
-        });
-    }, [
-        currentTurnCreature,
-        handlingNextTurn,
-        actionExecutionSession,
-        encounterData,
-        encStart,
-        activeEncounter,
-        eid,
-        hasPreTurnQueue,
-        endOfEncounter,
-        setHandlingNextTurn,
-        setEncounterData,
-        setCurrentTurnCreature,
-        setPreTurnQueue,
-        setInitiativeRefreshKey,
-        setManualLock,
-    ]);
-
-    const handleExitPreTurn = useCallback(() => {
-        handlePreTurnBack({
-            clearManualAoePreview: handleClearManualAoePreview,
-            setActionExecutionSession,
-            setManualLock,
-            setPreTurnQueue,
-        });
-    }, [
-        handleClearManualAoePreview,
-        setActionExecutionSession,
-        setManualLock,
-        setPreTurnQueue,
-    ]);
+    const {
+      handleSetManualState, handleClearManualAoePreview, handleActiveMapTokenSelect,
+      handleActiveMapGridCellClick, handleActiveMapGridCellHover, handleBuildRecommendationAoeToken,
+      handleSubmitAction, handleSubmitRecommendation, handleExecuteAction,
+      handleExecutePreTurn, handleSimStart, handleNextTurnWrapper, handleExitPreTurn,
+    } = useEncounterSimulationCallbacks({
+      eid, encounterData, currentTurnCreature, currentTurnActions, actionExecutionSession, aoeTokens,
+      manualAoePlacement, manualDraft, preTurnQueue, latestHoverRequestRef, hasPreTurnQueue, manualMode,
+      handlingNextTurn, endOfEncounter, encStart, activeEncounter, selectedCID, setAoeTokens, setManualAoePlacement,
+      setManualMode, setInitiativeOpen, setActionOpen, setManualDraft, setInitiativeExpandedCid, setSelectedCID,
+      setManualLock, setActionExecutionSession, setEncounterData, setCurrentTurnCreature, setPreTurnQueue,
+      setRecommendRefreshKey, setInitiativeRefreshKey, setEncStart, setActiveEncounter, setHandlingNextTurn,
+    });
 
     //ONLOAD EFFECTS
     useEffect(() => {

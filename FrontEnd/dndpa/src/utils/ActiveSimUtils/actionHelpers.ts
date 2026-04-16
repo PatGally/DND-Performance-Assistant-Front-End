@@ -13,7 +13,7 @@ import type {
   RollMode,
 } from "../../types/SimulationTypes.ts";
 
-import { isMonsterAction, isSpellAction } from "../ActionTypeChecker.ts";
+import { isMonsterAction, isSpellAction } from "./ActionTypeChecker.ts";
 import { actionsGet } from "../../api/ActionsGet.ts";
 import {
   getCreatureCid,

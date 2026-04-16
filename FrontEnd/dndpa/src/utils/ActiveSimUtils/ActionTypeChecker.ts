@@ -1,4 +1,4 @@
-import type {CreatureAction, MonsterAction, SpellAction, WeaponAction} from "../types/action.ts";
+import type {CreatureAction, MonsterAction, SpellAction, WeaponAction} from "../../types/action.ts";
 
 export function isSpellAction(action: CreatureAction): action is SpellAction {
   return "spellname" in action;

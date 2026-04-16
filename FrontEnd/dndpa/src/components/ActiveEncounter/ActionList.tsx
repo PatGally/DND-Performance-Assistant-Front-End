@@ -6,7 +6,7 @@ import type {
     MonsterAction,
 } from "../../types/action.ts";
 import { actionsGet } from "../../api/ActionsGet.ts";
-import { isSpellAction, isWeaponAction, isMonsterAction } from "../../utils/ActionTypeChecker.ts";
+import { isSpellAction, isWeaponAction, isMonsterAction } from "../../utils/ActiveSimUtils/ActionTypeChecker.ts";
 import "../../css/ActionList.css";
 
 type ActionListProps = {
