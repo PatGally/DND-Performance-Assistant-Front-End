@@ -92,7 +92,7 @@ const EncounterView = ({ encounters, loadingEncounter, onDeleteEncounter }: Prop
                                     </div>
                                 </div>
 
-                                <Card.Body>
+                                <Card.Body >
                                     <p className="text-muted mb-3" style={{ fontSize: '0.8rem' }}>
                                         {new Date(enc.date).toLocaleDateString()} &mdash; Completed: {String(enc.completed)}
                                     </p>

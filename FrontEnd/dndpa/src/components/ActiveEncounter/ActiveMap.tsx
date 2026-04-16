@@ -459,7 +459,7 @@ export default function ActiveMap({
         border: "1px solid #666",
         borderRadius: "8px",
         overflow: "hidden",
-        background: "#111",
+        background: "#1111",
       }}
     >
       <img

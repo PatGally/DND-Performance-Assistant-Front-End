@@ -62,7 +62,6 @@ function AddMonsters({ formData, updateFormData, monsters }: Props) {
             <Form>
                 <Row className="mb-3">
                     <Col>
-                        <Form.Label className="text-Dark">Search</Form.Label>
                         <Form.Control
                             type="text"
                             placeholder="Search by name..."
@@ -71,7 +70,6 @@ function AddMonsters({ formData, updateFormData, monsters }: Props) {
                         />
                     </Col>
                     <Col>
-                        <Form.Label className="text-Dark">CR</Form.Label>
                         <Form.Select
                             value={filterCR}
                             onChange={(e) => setFilterCR(e.target.value)}
@@ -83,7 +81,6 @@ function AddMonsters({ formData, updateFormData, monsters }: Props) {
                         </Form.Select>
                     </Col>
                     <Col>
-                        <Form.Label className="text-dark">Monster Type</Form.Label>
                         <Form.Select
                             value={filterType}
                             onChange={(e) => setFilterType(e.target.value)}
@@ -95,7 +92,6 @@ function AddMonsters({ formData, updateFormData, monsters }: Props) {
                         </Form.Select>
                     </Col>
                     <Col>
-                        <Form.Label className="text-Dark">Size</Form.Label>
                         <Form.Select
                             value={filterSize}
                             onChange={(e) => setFilterSize(e.target.value)}
@@ -108,11 +104,10 @@ function AddMonsters({ formData, updateFormData, monsters }: Props) {
                     </Col>
                 </Row>
             </Form>
-            {/*style={{ borderBottom: "1px solid black" }}*/}
-            <div className="d-flex px-3 text-dark mb-1" >
-                <span style={{ flex: 2.96}}>Name</span>
+            <div className="d-flex px-4 text-white mb-1" >
+                <span style={{ flex: 2.99}}>Name</span>
                 <span style={{ flex: 2.96}}> Creature Type</span>
-                <span style={{ flex: 1 }}>CR</span>
+                <span style={{ flex: 1.05 }}>CR</span>
                 <span style={{ flex: 1}}>Size</span>
             </div>
 

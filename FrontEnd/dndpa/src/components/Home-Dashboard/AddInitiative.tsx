@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import type { EncounterFormData } from "./CreateEncounter";
+import "./AddInitiative.css"
 
 export interface InitiativeEntry {
     key: string;
@@ -200,7 +201,6 @@ function AddInitiative({ formData, updateFormData }: Props) {
                     currentTurn:         false,
                     actionResource:      1,
                     bonusActionResource: 1,
-                    // movementMax:         p.movement,
                     movementResource:    p.movement,
                 },
             ];
@@ -221,99 +221,62 @@ function AddInitiative({ formData, updateFormData }: Props) {
 
     const sortedInitiative = sortInitiative(formData.initiative, dexMap);
 
-    const colors = {
-        bgDeep:        "rgba(8, 14, 26, 0.9)",
-        bgSet:         "rgba(22, 38, 65, 0.92)",
-        bgUnset:       "rgba(12, 19, 33, 0.75)",
-        bgLair:        "rgba(35, 28, 10, 0.85)",
-        borderDefault: "rgba(60, 85, 130, 0.35)",
-        textPrimary:   "rgb(235, 245, 255)",
-        textSecondary: "rgb(160, 185, 220)",
-        textMuted:     "rgb(115, 145, 190)",
-        player:        "rgb(56, 130, 240)",
-        playerDim:     "rgba(56, 130, 240, 0.15)",
-        monster:       "rgb(210, 65, 55)",
-        monsterDim:    "rgba(210, 65, 55, 0.15)",
-        lair:          "rgb(210, 160, 45)",
-        lairDim:       "rgba(210, 160, 45, 0.15)",
-        inputBg:       "rgba(8, 14, 26, 0.85)",
-    };
 
     return (
-        <div style={{ padding: "1.5rem", backgroundColor: "rgba(15, 24, 40, 0.85)" }}>
-            <p style={{ color: colors.textSecondary, marginBottom: "1.25rem", fontSize: "1.2rem" }}>
+        <div className="initiative-page">
+
+            <p className="initiative-intro">
                 Enter each creature's roll.
             </p>
 
             <div className="d-flex gap-4 flex-wrap align-items-start">
 
-                {/* ── Creatures column ──────────────────────────────────── */}
-                <div style={{ flex: "1 1 340px" }}>
+                {/* ── Creatures column ── */}
+                <div className="creature-column">
+
                     <div className="d-flex justify-content-between mb-2">
-                        <small style={{ color: colors.textMuted, textTransform: "uppercase", letterSpacing: "0.08em", fontSize: "0.9rem" }}>
-                            Creatures
-                        </small>
-                        <small style={{ color: colors.textMuted, fontSize: "1rem" }}>
-                            {formData.initiative.filter((e) => e.turnType !== "lairAction").length} / {allParticipants.length} set
+                        <small className="section-label">Creatures</small>
+                        <small className="section-count">
+                            {formData.initiative.filter(e => e.turnType !== "lairAction").length}
+                            {" / "}
+                            {allParticipants.length} set
                         </small>
                     </div>
 
                     {allParticipants.length === 0 && !hasLairAction ? (
-                        <p style={{
-                            color: colors.textSecondary,
-                            border: `1px solid ${colors.borderDefault}`,
-                            borderRadius: "8px",
-                            padding: "0.75rem",
-                            fontSize: "0.85rem",
-                            background: colors.bgUnset,
-                        }}>
+                        <p className="empty-state">
                             No characters or monsters added yet.
                         </p>
                     ) : (
                         <div className="d-flex flex-column gap-2">
 
-                            {/* ── Players & monsters (require a roll) ─────── */}
                             {allParticipants.map((p) => {
-                                const entry    = getEntry(p.key);
-                                const rawVal   = inputValues[p.key] ?? (entry ? String(entry.iValue) : "");
-                                const isSet    = Boolean(entry);
-                                const isPlayer = p.type === "player";
+                                const entry = getEntry(p.key);
+                                const rawVal = inputValues[p.key] ?? (entry ? String(entry.iValue) : "");
+                                const isSet = Boolean(entry);
+
+                                const type =
+                                    p.type === "player"
+                                        ? "player"
+                                        : "monster";
 
                                 return (
                                     <div
                                         key={p.key}
-                                        className="d-flex align-items-center gap-3 px-3 py-2"
-                                        style={{
-                                            borderRadius: "8px",
-                                            background: isSet ? colors.bgSet : colors.bgUnset,
-                                            border: `1px solid ${isSet
-                                                ? (isPlayer ? colors.player : colors.monster) + "55"
-                                                : colors.borderDefault}`,
-                                            transition: "background 0.2s, border-color 0.2s",
-                                        }}
+                                        className={`creature-row ${isSet ? "set" : "unset"} border-${type}`}
                                     >
-                                        <span style={{
-                                            minWidth: "60px",
-                                            textAlign: "center",
-                                            fontSize: "0.7rem",
-                                            fontWeight: 600,
-                                            letterSpacing: "0.05em",
-                                            padding: "3px 8px",
-                                            borderRadius: "4px",
-                                            background: isPlayer ? colors.playerDim : colors.monsterDim,
-                                            color:      isPlayer ? colors.player    : colors.monster,
-                                            border: `1px solid ${isPlayer ? colors.player : colors.monster}44`,
-                                        }}>
-                                            {isPlayer ? "Player" : "Monster"}
-                                        </span>
 
-                                        <span style={{ color: colors.textPrimary, flexGrow: 1, fontSize: "1.19rem" }}>
-                                            {p.name}
-                                        </span>
+                                <span className={`type-badge badge-${type}`}>
+                                    {p.type === "player" ? "Player" : "Monster"}
+                                </span>
 
-                                        <span style={{ color: colors.textMuted, fontSize: "0.9rem" }}>
-                                            DEX {p.dex}
-                                        </span>
+                                        <span className="creature-name">
+                                    {p.name}
+                                </span>
+
+                                        <span className="creature-dex">
+                                    DEX {p.dex}
+                                </span>
 
                                         <input
                                             type="number"
@@ -321,34 +284,13 @@ function AddInitiative({ formData, updateFormData }: Props) {
                                             value={rawVal}
                                             onChange={(e) => handleChange(p.key, e.target.value)}
                                             onBlur={(e) => handleBlur(p, e.target.value)}
-                                            style={{
-                                                width: "70px",
-                                                textAlign: "center",
-                                                background: colors.inputBg,
-                                                color: colors.textPrimary,
-                                                border: `1px solid ${colors.borderDefault}`,
-                                                borderRadius: "6px",
-                                                padding: "4px 6px",
-                                                fontSize: "0.875rem",
-                                                outline: "none",
-                                            }}
+                                            className="initiative-input"
                                         />
 
                                         <button
                                             onClick={() => isSet && handleClear(p.key)}
                                             disabled={!isSet}
-                                            title="Clear"
-                                            style={{
-                                                background: "none",
-                                                border: "none",
-                                                color: isSet ? colors.textSecondary : colors.textMuted,
-                                                cursor: isSet ? "pointer" : "not-allowed",
-                                                opacity: isSet ? 1 : 0.35,
-                                                fontSize: "0.8rem",
-                                                padding: "4px 6px",
-                                                borderRadius: "4px",
-                                                transition: "color 0.15s",
-                                            }}
+                                            className={`clear-btn ${isSet ? "enabled" : "disabled"}`}
                                         >
                                             ✕
                                         </button>
@@ -356,66 +298,25 @@ function AddInitiative({ formData, updateFormData }: Props) {
                                 );
                             })}
 
-                            {/* ── Single lair action row (read-only, always 20) ─ */}
+                            {/* ── Lair ── */}
                             {hasLairAction && (
                                 <>
-                                    <div style={{
-                                        marginTop: "0.4rem",
-                                        paddingTop: "0.4rem",
-                                        borderTop: `1px solid ${colors.borderDefault}`,
-                                    }}>
-                                        <small style={{
-                                            color: colors.lair,
-                                            textTransform: "uppercase",
-                                            letterSpacing: "0.08em",
-                                            fontSize: "0.72rem",
-                                            opacity: 0.8,
-                                        }}>
+                                    <div className="lair-header">
+                                        <small className="lair-label">
                                             Lair Action(s) - Note: One entry for all lair actions
                                         </small>
                                     </div>
 
-                                    <div
-                                        className="d-flex align-items-center gap-3 px-3 py-2"
-                                        style={{
-                                            borderRadius: "8px",
-                                            background: colors.bgLair,
-                                            border: `1px solid ${colors.lair}44`,
-                                        }}
-                                    >
-                                        <span style={{
-                                            minWidth: "60px",
-                                            textAlign: "center",
-                                            fontSize: "0.7rem",
-                                            fontWeight: 600,
-                                            letterSpacing: "0.05em",
-                                            padding: "3px 8px",
-                                            borderRadius: "4px",
-                                            background: colors.lairDim,
-                                            color:      colors.lair,
-                                            border:     `1px solid ${colors.lair}44`,
-                                        }}>
-                                            Lair
-                                        </span>
+                                    <div className="lair-row">
+                                        <span className="type-badge badge-lair">Lair</span>
 
-                                        <span style={{ color: colors.textPrimary, flexGrow: 1, fontSize: "1.19rem" }}>
-                                            {LAIR_NAME}
-                                        </span>
+                                        <span className="creature-name">
+                                    {LAIR_NAME}
+                                </span>
 
-                                        <span style={{
-                                            color: colors.lair,
-                                            fontSize: "0.85rem",
-                                            fontWeight: 600,
-                                            padding: "3px 10px",
-                                            borderRadius: "6px",
-                                            background: colors.lairDim,
-                                            border: `1px solid ${colors.lair}44`,
-                                        }}>
-                                            20
-                                        </span>
+                                        <span className="lair-value">20</span>
 
-                                        {/* Spacer aligns with the clear button column */}
-                                        <span style={{ width: "28px" }} />
+                                        <span className="lair-spacer" />
                                     </div>
                                 </>
                             )}
@@ -424,72 +325,59 @@ function AddInitiative({ formData, updateFormData }: Props) {
                     )}
                 </div>
 
-                {/* ── Turn order column ─────────────────────────────────── */}
-                <div style={{ flex: "0 0 220px" }}>
-                    <small style={{
-                        color: colors.textMuted,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.08em",
-                        fontSize: "1rem",
-                        display: "block",
-                        marginBottom: "0.5rem",
-                    }}>
+                {/* ── Turn order column ── */}
+                <div className="turn-order-column">
+
+                    <small className="section-label" style={{ display: "block", marginBottom: "0.5rem" }}>
                         Turn Order
                     </small>
 
-                    <div style={{
-                        borderRadius: "8px",
-                        padding: "0.75rem 1rem",
-                        background: colors.bgDeep,
-                        border: `1px solid ${colors.borderDefault}`,
-                    }}>
+                    <div className="turn-box">
+
                         {sortedInitiative.length === 0 ? (
-                            <small style={{ color: colors.textMuted, fontSize: "1rem" }}>
+                            <small className="turn-muted">
                                 No initiative set yet.
                             </small>
                         ) : (
-                            <ol style={{ marginBottom: 0, paddingLeft: "1.1rem" }}>
+                            <ol className="turn-list">
+
                                 {sortedInitiative.map((entry, i) => {
-                                    const nameColor =
-                                        entry.turnType === "Player"     ? colors.player :
-                                            entry.turnType === "lairAction" ? colors.lair   :
-                                                colors.monster;
+
+                                    const colorClass =
+                                        entry.turnType === "Player"
+                                            ? "turn-player"
+                                            : entry.turnType === "lairAction"
+                                                ? "turn-lair"
+                                                : "turn-monster";
 
                                     return (
-                                        <li key={entry.key} style={{ marginBottom: "0.35rem", fontSize: "1rem" }}>
-                                            <span style={{ fontWeight: i === 0 ? 600 : 400, color: nameColor }}>
-                                                {entry.name}
-                                            </span>
-                                            <span style={{ color: colors.textMuted, marginLeft: "6px", fontSize: "0.78rem" }}>
-                                                ({entry.iValue})
-                                            </span>
+                                        <li key={entry.key} className="turn-item">
+
+                                    <span className={colorClass} style={{ fontWeight: i === 0 ? 600 : 400 }}>
+                                        {entry.name}
+                                    </span>
+
+                                            <span className="turn-muted">
+                                        ({entry.iValue})
+                                    </span>
+
                                             {entry.turnType === "lairAction" && (
-                                                <span style={{
-                                                    marginLeft: "6px",
-                                                    fontSize: "0.65rem",
-                                                    color: colors.lair,
-                                                    background: colors.lairDim,
-                                                    border: `1px solid ${colors.lair}44`,
-                                                    borderRadius: "3px",
-                                                    padding: "1px 5px",
-                                                    fontWeight: 600,
-                                                    letterSpacing: "0.04em",
-                                                    verticalAlign: "middle",
-                                                }}>
-                                                    LAIR
-                                                </span>
+                                                <span className="turn-lair-tag">
+                                            LAIR
+                                        </span>
                                             )}
+
                                         </li>
                                     );
                                 })}
+
                             </ol>
                         )}
                     </div>
                 </div>
 
             </div>
-        </div>
-    );
+        </div>);
 }
 
 export default AddInitiative;

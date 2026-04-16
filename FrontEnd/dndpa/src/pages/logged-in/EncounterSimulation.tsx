@@ -156,7 +156,6 @@ function EncounterSimulation() {
                     setEncounterData(undefined);
                     return;
                 }
-                console.log("Enc", data);
 
                 setEncounterData(data);
             } catch (error) {
@@ -982,13 +981,18 @@ function EncounterSimulation() {
 }, []);
 
     return (
-        <Container fluid className="p-0 bg-dark"
-                   style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+        <Container fluid className="p-0" style={{ height: "100vh", display: "flex", flexDirection: "column", backgroundColor: "#000000" }}>
             <Row className="bg-dark text-white px-3 mx-0" style={{ height: "56px", flexShrink: 0 }}>
                 <Col className="d-flex align-items-center">
                     {encounterData
                         ? <h3 className="mb-0">{encounterData.name} Simulation</h3>
                         : <h3 className="mb-0">Encounter Simulation</h3>
+                            // ? <h3 className="mb-0">{(encounterData.name.length > 12
+                            //     ? encounterData.name.slice(0, 12) + "..."
+                            //     : encounterData.name)}{" "}
+                            //     Simulation
+                            // </h3>
+                            // : <h3 className="mb-0">Encounter Simulation</h3>
                     }
                 </Col>
                 <Col className="d-flex align-items-center gap-2">
@@ -1209,7 +1213,7 @@ function EncounterSimulation() {
                                   transform: "translateX(-50%)",
                                   zIndex: 15,
                                   width: "30%",
-                                  backgroundColor: "rgba(15, 24, 40, 0.85)",
+                                  backgroundColor: "rgba(15, 24, 40, 0.75)",
                                   backdropFilter: "blur(6px)",
                                   WebkitBackdropFilter: "blur(6px)",
                                   border: "none",

@@ -1,0 +1,83 @@
+.sie-wrap {
+    font-family: 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+    /*background-color: lavender;*/
+    background-color: #fdf1dc;
+    border: 2px solid #8b1a1a;
+    border-radius: 4px;
+    padding: 10px 14px;
+    color: #3b1a1a;
+    font-size: 13px;
+    line-height: 1.5;
+    min-width: 0;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.sie-red-rule {
+    border: none;
+    border-top: 2px solid #8b1a1a;
+    margin: 7px 0;
+}
+
+.sie-thin-rule {
+    border: none;
+    border-top: 1px solid #8b1a1a;
+    margin: 5px 0;
+    opacity: 0.35;
+}
+
+.sie-label {
+    color: #8b1a1a;
+    font-weight: bold;
+    font-style: italic;
+}
+
+/* Header */
+.sie-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sie-name {
+    font-size: 15px;
+    font-weight: bold;
+    color: #8b1a1a;
+    letter-spacing: 0.02em;
+}
+
+.sie-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sie-active-badge {
+    font-size: 10px;
+    font-weight: bold;
+    font-style: italic;
+    color: #8b1a1a;
+    border: 1px solid #8b1a1a;
+    border-radius: 3px;
+    padding: 1px 6px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.sie-toggle-btn {
+    border: 1px solid #8b1a1a;
+    background: transparent;
+    cursor: pointer;
+    font-size: 11px;
+    color: #8b1a1a;
+    border-radius: 3px;
+    padding: 2px 7px;
+    font-family: inherit;
+}
+
+/* Stat grids */
+.sie-stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 16px;
+}
