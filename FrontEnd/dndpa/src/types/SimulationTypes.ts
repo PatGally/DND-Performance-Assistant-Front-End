@@ -1,5 +1,6 @@
 import type {MonsterCreature, PlayerCreature} from "./creature.ts";
 import type {GridCoord} from "./creature.ts";
+import type {CreatureAction} from "./action.ts";
 
 export type InitiativeEntry = {
     name: string;
@@ -33,13 +34,6 @@ export type Encounter = {
     players : PlayerCreature[];
     monsters: MonsterCreature[];
 };
-export interface PreTurnEffect {
-    "name" : string;
-    "effect" : {
-        "spellName" : string;
-        "resultID": string;
-    }
-}
 export type ActionKind = "spell" | "weapon" | "monster";
 export type TargetMode = "none" | "self" | "single" | "multi" | "aoe";
 export type RollMode = "none" | "toHit" | "save" | "autohit" | "onHit";
@@ -79,7 +73,7 @@ export type ActionRequestDraft = {
   actionImpact: number;
   targets: string[];
   conditions: string[];
-  statusEffects: Record<string, unknown>[];
+  statusEffects: Record<string, any>[];
   outcome: OutcomeDraft;
   extraOutcome: ExtraOutcomeDraft;
   timestamp: string; // "HH:MM:SS"
@@ -163,10 +157,9 @@ export type ManualAoePlacement = {
   stage: ManualAoePlacementStage;
 };
 
-export type BuildManualAoePositioningArgs = {
-  shape: string;
-  radiusCells: number;
-  anchor: GridCoord;
-  cursor: GridCoord | null;
-  selfOrigin: boolean;
+export type PendingPreTurnResolution = {
+  effectName: "lingeffect" | "lingsave";
+  spell: CreatureAction;
+  resultID: string;
+  actor: string;
 };

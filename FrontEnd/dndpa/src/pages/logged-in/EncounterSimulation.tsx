@@ -21,13 +21,15 @@ import {
 import {getEncounter} from "../../api/EncounterGet.ts";
 import {fetchUUID} from "../../api/UUIDGet.ts";
 import {isPlayerCreature} from "../../api/CreatureGet.ts";
-import type {Creature, GridCoord} from "../../types/creature.ts";
-import type {CreatureAction, SpellAction} from "../../types/action.ts";
+import {basicActionGet} from "../../api/BasicActionGet.ts";
 
+import type {Creature, GridCoord} from "../../types/creature.ts";
+import type {CreatureAction} from "../../types/action.ts";
 import type {
-    Encounter, PreTurnEffect, NormalizedAction, ActionRequestDraft,
-    ActionExecutionSession, RollMode, ManualDraftState, ManualAffectedCreature,
-    RecommendationTarget, AoeToken, ManualAoePlacement
+    Encounter, ActionRequestDraft,
+    ActionExecutionSession, ManualDraftState, ManualAffectedCreature,
+    RecommendationTarget, AoeToken, ManualAoePlacement,
+    PendingPreTurnResolution
 } from "../../types/SimulationTypes.ts";
 import {
     normalizeGridCoords, isRecommendationAoeTarget, normalizeAoeShape,
@@ -36,36 +38,17 @@ import {
     resolveAoeTokenImageNameFromStats, buildAoeTokenFromStats, getAoeTargetsFromPositioning, buildManualAoePositioning
 } from "../../utils/aoeHelpers.ts";
 
-const WEAPON_DEFAULTS = {
-  targetMode: "single" as const,
-  targetCount: 1,
-  range: "5",
-  shape: "",
-  radius: "",
-  rollMode: "toHit" as const,
-  saveType: "",
-  halfSave: false,
-  actionCost: "action",
-};
 import ExitSimulation from "../../components/ActiveEncounter/ExitSimulation.tsx";
 import { Card } from "react-bootstrap";
 import Orb from '../../css/Orb.tsx';
 import {actionsGet} from "../../api/ActionsGet.ts";
+import {
+    buildPreTurnSession,
+    getActorByConcentrationID,
+    syncPreTurnQueueFromCreature
+} from "../../utils/PreTurnHelpers.ts";
+import {buildRequiredInputs, extractActionEffects, normalizeAction} from "../../utils/actionHelpers.ts";
 
-function parseCount(value?: string | number): number | null {
-  if (value === undefined || value === null || value === "") return null;
-  const n = Number(value);
-  return Number.isFinite(n) ? n : null;
-}
-function buildRequiredInputs(normalized: NormalizedAction) {
-  const fields: string[] = [];
-
-  if (normalized.rollMode === "toHit" || normalized.rollMode === "onHit") fields.push("attackRoll");
-  else if (normalized.rollMode === "save") fields.push("save");
-  if (normalized.hasDamage) fields.push("damageRoll");
-
-  return fields;
-}
 function clampPan(
     x: number,
     y: number,
@@ -90,109 +73,6 @@ function clampPan(
         y: Math.min(maxY, Math.max(minY, y)),
     };
 }
-function normalizeAction(action: CreatureAction): NormalizedAction {
-  if (isSpellAction(action)) {
-    const target = action.targeting?.[0];
-    const count = parseCount(target?.number);
-    const isAoe = !!target?.shape;
-    const isSelf = !!target?.self;
-
-    return {
-      kind: "spell",
-      name: action.spellname,
-      targetMode: isSelf
-        ? "self"
-        : isAoe
-          ? "aoe"
-          : count === 1
-            ? "single"
-            : (count ?? 0) > 1
-              ? "multi"
-              : "none",
-      targetCount: isSelf ? 0 : count,
-      range: target?.actionRange ?? "",
-      shape: target?.shape ?? "",
-      radius: target?.radius ?? "",
-      rollMode: (target?.rolls?.rollType as RollMode) || "none",
-      saveType: target?.rolls?.saveType ?? "",
-      halfSave: target?.rolls?.halfSave ?? false,
-      hasDamage: !!target?.rolls?.damage,
-      actionCost: target?.actionCost ?? "",
-      damage: target?.rolls?.damage ?? "",
-      damageMod: target?.rolls?.damageMod ?? "",
-      damageType: target?.damType?.[0] ?? "",
-    };
-  }
-  if (isMonsterAction(action)) {
-    const count = parseCount(action.number);
-    const isAoe = !!action.shape;
-
-    return {
-      kind: "monster",
-      name: action.name,
-      targetMode: isAoe
-        ? "aoe"
-        : count === 1
-          ? "single"
-          : (count ?? 0) > 1
-            ? "multi"
-            : "none",
-      targetCount: count,
-      range: action.actionRange ?? "",
-      shape: action.shape ?? "",
-      radius: "",
-      rollMode: (action.rolls?.rollType as RollMode) || "none",
-      saveType: action.rolls?.saveType ?? "",
-      halfSave: action.rolls?.halfSave ?? false,
-      hasDamage: !!action.rolls?.damage,
-      actionCost: action.actionCost ?? "",
-      damage: action.rolls?.damage ?? "",
-      damageMod: action.rolls?.damageMod ?? "",
-      damageType: action.damType?.[0] ?? "",
-    };
-  }
-
-  // Weapon defaults
-    //TODO: Account for ranged weapons in terms of range
-  return {
-  kind: "weapon",
-  name: action.name,
-  ...WEAPON_DEFAULTS,
-  hasDamage: !!action.properties.damage,
-  damage: action.properties.damage,
-  damageType: action.properties.damageType,
-  damageMod: "",
-  weaponStat: action.properties.weaponStat,
-};
-}
-function extractActionEffects(action: CreatureAction): {
-  conditions: string[];
-  statusEffects: Record<string, unknown>[];
-} {
-  if (isSpellAction(action)) {
-    const target = action.targeting?.[0];
-    return {
-      conditions: Array.isArray(target?.conditions) ? target.conditions : [],
-      statusEffects: Array.isArray(target?.statusEffect)
-        ? (target.statusEffect as Record<string, unknown>[])
-        : [],
-    };
-  }
-
-  if (isMonsterAction(action)) {
-    return {
-      conditions: Array.isArray(action.conditions) ? action.conditions : [],
-      statusEffects: Array.isArray(action.statusEffect)
-        ? (action.statusEffect as Record<string, unknown>[])
-        : [],
-    };
-  }
-
-  return {
-    conditions: [],
-    statusEffects: [],
-  };
-}
 
 function EncounterSimulation() {
     const location = useLocation();
@@ -202,11 +82,14 @@ function EncounterSimulation() {
     const [initiativeOpen, setInitiativeOpen] = useState(false);
     const [initiativeRefreshKey, setInitiativeRefreshKey] = useState(0);
     const [recommendRefreshKey, setRecommendRefreshKey] = useState(0);
+    const latestHoverRequestRef = useRef(0);
+    const didHydrateInitialPreTurnRef = useRef(false);
     const [actionOpen, setActionOpen] = useState(false);
 
     //Pre/post enc logic
     const [encStart, setEncStart] = useState(false);
     const [activeEncounter, setActiveEncounter] = useState(true);
+    const [endOfEncounter, setEndOfEncounter] = useState(false);
 
     const [encounterData, setEncounterData] = useState<Encounter>();
     const [loadingEncounter, setLoadingEncounter] = useState(true);
@@ -221,13 +104,14 @@ function EncounterSimulation() {
     //Locks the top three buttons
     const [actionExecutionSession, setActionExecutionSession] = useState<ActionExecutionSession>();
     const [handlingNextTurn, setHandlingNextTurn] = useState(false);
-    const [preTurnEffects, setPreTurnEffects] = useState<PreTurnEffect[]>();
+    const [preTurnQueue, setPreTurnQueue] = useState<PendingPreTurnResolution[]>([]);
     const [manualLock, setManualLock] = useState(false);
     const [manualMode, setManualMode] = useState(false);
     const [manualDraft, setManualDraft] = useState<ManualDraftState>({
       affectedCreatures: [],
     });
     const [initiativeExpandedCid, setInitiativeExpandedCid] = useState<string | null>(null);
+    const hasPreTurnQueue = preTurnQueue.length > 0;
 
     // Lair Action state
     const [isLairAction, setIsLairAction] = useState(false);
@@ -235,7 +119,6 @@ function EncounterSimulation() {
     //Pan/zoom state
     const mapViewportRef = useRef<HTMLDivElement>(null);
     const mapContentRef = useRef<HTMLDivElement>(null);
-
     const zoom = useRef(1);
     const pan = useRef({ x: 0, y: 0 });
     const isPanning = useRef(false);
@@ -244,9 +127,6 @@ function EncounterSimulation() {
     const [mapNaturalHeight, setMapNaturalHeight] = useState(600);
     const MIN_ZOOM = 0.25;
     const MAX_ZOOM = 4;
-
-    const latestHoverRequestRef = useRef(0);
-
     const applyTransform = () => {
         if (mapContentRef.current) {
             mapContentRef.current.style.transform =
@@ -276,6 +156,7 @@ function EncounterSimulation() {
                     setEncounterData(undefined);
                     return;
                 }
+                console.log("Enc", data);
 
                 setEncounterData(data);
             } catch (error) {
@@ -319,7 +200,12 @@ function EncounterSimulation() {
                 simStart();
             }
             if (storedTurn) {
-                setCurrentTurnCreature(storedTurn);
+              setCurrentTurnCreature(storedTurn);
+
+              if (!didHydrateInitialPreTurnRef.current) {
+                syncPreTurnQueueFromCreature(setPreTurnQueue, storedTurn);
+                didHydrateInitialPreTurnRef.current = true;
+              }
             }
         }
     }, [encounterData]);
@@ -352,6 +238,9 @@ function EncounterSimulation() {
       });
     }, [encounterData]);
     useEffect(() => {
+      didHydrateInitialPreTurnRef.current = false;
+    }, [eid]);
+    useEffect(() => {
         console.log("currentTurnCreature changed:", currentTurnCreature);
         console.log("_isLairAction flag:", (currentTurnCreature as any)?._isLairAction);
 
@@ -377,7 +266,31 @@ function EncounterSimulation() {
         el.addEventListener("wheel", handler, { passive: false });
         return () => el.removeEventListener("wheel", handler);
     }, []);
+    useEffect(() => {
+      if (!encounterData || !currentTurnCreature) return;
+      if (manualMode) return;
+      if (actionExecutionSession) return;
 
+      const nextItem = preTurnQueue[0];
+      if (!nextItem) return;
+      console.log("Turn queue of", preTurnQueue);
+
+      setManualLock(true);
+      setActionExecutionSession(buildPreTurnSession(nextItem, currentTurnCreature));
+    }, [preTurnQueue, encounterData, currentTurnCreature,
+                                                manualMode, actionExecutionSession]);
+    useEffect(() => {
+        const loadEndOfEncounter = async (): Promise<void> => {
+            const response = await axiosTokenInstance.get(`/encounter/${eid}/completed`)
+            if (response.data.isEnd) {
+                if (encounterData && !encounterData.completed) {
+                    await axiosTokenInstance.get("/encounter/{eid}/setcompleted")
+                }
+                setEndOfEncounter(true);
+            }
+        }
+        loadEndOfEncounter()
+    }, [encounterData, currentTurnCreature])
     //SIM FUNCTIONS
     function simStart(): void {
         if (!encounterData || encounterData.initiative.length === 0) return;
@@ -405,121 +318,50 @@ function EncounterSimulation() {
 
     setCurrentTurnCreature(matchingCreature);
 }
-
     async function handleNextTurn() {
+      const isLairActionTurn = (currentTurnCreature as any)?._isLairAction === true;
 
-        const isLairActionTurn = (currentTurnCreature as any)?._isLairAction === true;
+      if (handlingNextTurn || actionExecutionSession || !encounterData ||
+          (!currentTurnCreature && !isLairActionTurn) || encStart ||
+          !activeEncounter || !eid || hasPreTurnQueue || endOfEncounter) return;
 
-        if (handlingNextTurn || actionExecutionSession || !encounterData ||
-            (!currentTurnCreature && !isLairActionTurn) ||
-            encStart || !activeEncounter || !eid || preTurnEffects) return;
+      try {
+        setHandlingNextTurn(true);
 
-        try {
-            setHandlingNextTurn(true);
+        const response = await axiosTokenInstance.get(`/encounter/${eid}/initiative/nextturn`);
+        console.log("Next turn response:", response.data);
 
-            const response = await axiosTokenInstance.get(`/encounter/${eid}/initiative/nextturn`);
-            console.log("Next turn response:", response.data);
-            const preEffects = Array.isArray(response.data.preEffects) ? response.data.preEffects : [];
-            const updatedEncounter = await getEncounter(eid);
-            if (!updatedEncounter) {
-                console.error("Failed to reload encounter after advancing turn.");
-                return;
-            }
-            setEncounterData(updatedEncounter);
-
-            const newCurrentTurnCreature = getCurrentTurnCreatureFromEncounter(updatedEncounter);
-            console.log("About to set creature:", newCurrentTurnCreature);
-            console.log("_isLairAction before set:", (newCurrentTurnCreature as any)?._isLairAction);
-            if (Array.isArray(preEffects) && preEffects.length !== 0) {
-                setPreTurnEffects(preEffects);
-            }
-            if (newCurrentTurnCreature) {
-                setCurrentTurnCreature(newCurrentTurnCreature);
-            } else if (isLairActionTurn) {
-                // sentinel failed for some reason but we know it's a lair action — don't wipe
-                console.warn("Sentinel missing but confirmed lair action turn.");
-            } else {
-                // genuinely unknown creature — safe to wipe
-                console.error("Could not determine current turn creature from updated encounter.");
-                setCurrentTurnCreature(undefined);
-            }
-
-        } catch (error) {
-            console.error("Failed to advance turn:", error);
-        } finally {
-            setInitiativeRefreshKey((prev) => prev + 1);
-            setHandlingNextTurn(false);
-            setManualLock(false);
+        const updatedEncounter = await getEncounter(eid);
+        if (!updatedEncounter) {
+          console.error("Failed to reload encounter after advancing turn.");
+          return;
         }
-    }
-    function setManualState() {
-        setManualMode(true);
-        setInitiativeOpen(true);
-        setActionOpen(false);
-        clearManualState();
-    }
-    function clearManualState() {
-        setManualDraft({ affectedCreatures: [] });
-        setInitiativeExpandedCid(null);
-    }
-    function handleManualCreatureChange(nextCreature: ManualAffectedCreature) {
-        setManualDraft((prev) => {
-            const others = prev.affectedCreatures.filter(
-                (creature) => creature.cid !== nextCreature.cid
-            );
 
-            const changedKeys = Object.keys(nextCreature).filter((key) => key !== "cid");
+        setEncounterData(updatedEncounter);
 
-            if (changedKeys.length === 0) {
-                return { affectedCreatures: others };
-            }
+        const newCurrentTurnCreature = getCurrentTurnCreatureFromEncounter(updatedEncounter);
+        console.log("About to set creature:", newCurrentTurnCreature);
 
-            return {
-                affectedCreatures: [...others, nextCreature],
-            };
-        });
-    }
-    async function handleManualSimulate() {
-        if (manualLock || !manualMode || !eid) return;
-
-        try {
-            setManualLock(true);
-            if (manualDraft.affectedCreatures.length > 0) {
-                await axiosTokenInstance.post(
-                    `/encounter/${eid}/simulate/manual`,
-                    manualDraft
-                );
-
-                const updatedEncounter = await getEncounter(eid);
-                if (updatedEncounter) {
-                    setEncounterData(updatedEncounter);
-                    const newCurrentTurnCreature = getCurrentTurnCreatureFromEncounter(updatedEncounter);
-                    setCurrentTurnCreature(newCurrentTurnCreature);
-                }
-            }
-
-            setManualDraft({ affectedCreatures: [] });
-            setInitiativeExpandedCid(null);
-            // await handleNextTurn();
-        } catch (error) {
-            console.error("Manual simulation failed:", error);
-        } finally {
-            setManualLock(false);
-            setManualMode(false);
-            setInitiativeRefreshKey(initiativeRefreshKey + 1);
+        if (newCurrentTurnCreature) {
+          setCurrentTurnCreature(newCurrentTurnCreature);
+          syncPreTurnQueueFromCreature(setPreTurnQueue, newCurrentTurnCreature);
+        } else if (isLairActionTurn) {
+          console.warn("Sentinel missing but confirmed lair action turn.");
+        } else {
+          console.error("Could not determine current turn creature from updated encounter.");
+          setCurrentTurnCreature(undefined);
+          setPreTurnQueue([]);
         }
-    }
-
-    async function basicActionGet(name : string) {
-        if (["dodge", "shove", "grapple", "hide"].includes(name.toLowerCase())) {
-            const response = await axiosTokenInstance.get("basic-actions");
-            const basicActions = response.data as SpellAction[];
-            return basicActions.find(basic => basic.spellname === name);
-        }
-        return;
+      } catch (error) {
+        console.error("Failed to advance turn:", error);
+      } finally {
+        setInitiativeRefreshKey((prev) => prev + 1);
+        setHandlingNextTurn(false);
+        setManualLock(false);
+      }
     }
     function handleTokenSelect(cid: string) {
-        if (!encounterData || actionExecutionSession || preTurnEffects) return;
+        if (!encounterData || actionExecutionSession || hasPreTurnQueue) return;
 
         if (manualMode) {
             setInitiativeOpen(true);
@@ -531,6 +373,7 @@ function EncounterSimulation() {
     }
     async function handleGridCellClick(cellX: number, cellY: number) {
         const clickedCell: GridCoord = [cellX, cellY];
+        if(endOfEncounter) return;
 
       if (manualAoePlacement && actionExecutionSession && encounterData) {
         console.log("handleGridCellClick for AOEs");
@@ -565,7 +408,7 @@ function EncounterSimulation() {
       }
 
       if (manualMode) return;
-      if (!selectedCID || !encounterData || actionExecutionSession || preTurnEffects) return;
+      if (!selectedCID || !encounterData || actionExecutionSession || hasPreTurnQueue) return;
 
       try {
         const allCreatures: Creature[] = [
@@ -916,6 +759,70 @@ function EncounterSimulation() {
             );
           }
     }
+    async function handlePreTurnExecution(finalDraft: ActionRequestDraft) {
+      if (!eid || !currentTurnCreature || !encounterData) return;
+
+      const activeItem = preTurnQueue[0];
+      if (!activeItem) return;
+
+      try {
+        setManualLock(true);
+
+        const allCreatures: Creature[] = [
+          ...(encounterData.players ?? []),
+          ...(encounterData.monsters ?? []),
+        ];
+
+        const resolvedActor = getActorByConcentrationID(finalDraft.resultID, allCreatures);
+
+        const cleanedDraft: ActionRequestDraft = {
+          ...finalDraft,
+          actor: resolvedActor || finalDraft.actor,
+          conditions: [],
+          statusEffects: [],
+        };
+
+        const response = await axiosTokenInstance.post(
+          `/encounter/${eid}/simulate/preturn`,
+          {
+            ...cleanedDraft,
+            preTurnMeta: activeItem.effectName,
+          }
+        );
+
+        const savedOut = response?.data?.savedOut === true;
+
+        if (activeItem.effectName === "lingsave" && savedOut) {
+          await axiosTokenInstance.delete(
+            `/encounter/${eid}/creature/${getCreatureCid(currentTurnCreature)}/status-effect/${cleanedDraft.resultID}`
+          );
+        }
+
+        const updatedEncounter = await getEncounter(eid);
+        if (!updatedEncounter) {
+          console.error("Failed to reload encounter after pre-turn execution.");
+          return;
+        }
+
+        const updatedCreature = getCurrentTurnCreatureFromEncounter(updatedEncounter);
+
+        setPreTurnQueue((prev) => prev.slice(1));
+
+        setActionExecutionSession(undefined);
+
+        setEncounterData(updatedEncounter);
+        setCurrentTurnCreature(updatedCreature);
+
+        setInitiativeRefreshKey((prev) => prev + 1);
+      } catch (error) {
+        console.error("Failed to execute pre-turn effect:", error);
+        setActionExecutionSession((prev) =>
+          prev ? { ...prev, error: "Pre-turn execution failed." } : prev
+        );
+      } finally {
+        setManualLock(false);
+      }
+    }
     async function handleManualSimulate() {
           if (manualLock || !manualMode || !eid) return;
 
@@ -956,6 +863,12 @@ function EncounterSimulation() {
       setInitiativeOpen(true);
       setActionOpen(false);
       clearManualState();
+    }
+    function handlePreTurnBack() {
+      clearManualAoePreview(actionExecutionSession?.draft.resultID);
+      setActionExecutionSession(undefined);
+      setManualLock(false);
+      setPreTurnQueue((prev) => prev.slice(1));
     }
     async function commitManualAoePlacement(
       anchor: GridCoord,
@@ -1079,7 +992,7 @@ function EncounterSimulation() {
                     }
                 </Col>
                 <Col className="d-flex align-items-center gap-2">
-                    {activeEncounter && (currentTurnCreature || isLairAction) && (
+                    {activeEncounter && !endOfEncounter && (currentTurnCreature || isLairAction) && (
                         <>
                             {currentTurnCreature ? (
                                 <p className="mb-0">
@@ -1114,7 +1027,7 @@ function EncounterSimulation() {
 
                             {!manualMode && (
                                 <button
-                                    disabled={actionExecutionSession !== undefined || preTurnEffects !== undefined}
+                                    disabled={actionExecutionSession !== undefined || hasPreTurnQueue}
                                     onClick={handleNextTurn}
                                 >
                                     Next Turn
@@ -1234,7 +1147,7 @@ function EncounterSimulation() {
                         </div>
                     )}
 
-                    {!actionOpen && (
+                    {!actionOpen && !hasPreTurnQueue && !manualMode && !endOfEncounter && (
                         <button
                             onClick={() => setActionOpen(true)}
                             style={{
@@ -1248,7 +1161,8 @@ function EncounterSimulation() {
                             <ArrowLeftShort />
                         </button>
                     )}
-                    {actionOpen && encounterData && currentTurnCreature && !preTurnEffects && !manualMode && (
+                    {actionOpen && encounterData && currentTurnCreature && !hasPreTurnQueue
+                        && !manualMode && !endOfEncounter && (
                         <div style={{
                             position: "absolute",
                             top: 0,
@@ -1315,19 +1229,24 @@ function EncounterSimulation() {
                                         />
                                     </Col>
                                     <Col xs="auto" >
-                                        {preTurnEffects && preTurnEffects.length > 0 ? (
-                                            <>
-                                                <Card.Title>Resolve Pre-Turn Effects</Card.Title>
-                                                <Card.Text>
-                                                    This creature has effects that must be resolved before continuing.
-                                                </Card.Text>
+                                        {hasPreTurnQueue && encounterData && !endOfEncounter && actionExecutionSession ? (
+                                          <>
+                                            <Card.Title>Resolve Pre-Turn Effects</Card.Title>
+                                            <Card.Text>
+                                              {preTurnQueue.length} remaining for this creature.
+                                            </Card.Text>
 
-                                                {preTurnEffects.map((effect, index) => (
-                                                    <div key={index} className="mb-2">
-                                                        <strong>{effect.name ?? "Unnamed Effect"}</strong>
-                                                    </div>
-                                                ))}
-                                            </>
+                                            <InputHandler
+                                              encounter={encounterData}
+                                              actionSession={actionExecutionSession}
+                                              setActionExecutionSession={setActionExecutionSession}
+                                              setManualLock={setManualLock}
+                                              clearManualAoePreview={clearManualAoePreview}
+                                              handleActionExecution={handlePreTurnExecution}
+                                              aoePlacementStage="ready"
+                                              onExit={handlePreTurnBack}
+                                            />
+                                          </>
                                         ) : manualMode ? (
                                             <Card.Text>Manual Mode</Card.Text>
                                         ) : encounterData && actionExecutionSession ? (
@@ -1340,16 +1259,20 @@ function EncounterSimulation() {
                                               handleActionExecution={handleActionExecution}
                                               aoePlacementStage={manualAoePlacement?.stage ?? "ready"}
                                             />
-                                ) : (
-                                    <Recommendation
-                                          eid={eid}
-                                          cid={getCreatureCid(currentTurnCreature)}
-                                          setAoeTokens={setAoeTokens}
-                                          buildRecommendationAoeToken={buildRecommendationAoeToken}
-                                          handlePASubmission={handlePASubmission}
-                                          key={`${eid}-${recommendRefreshKey}`}
-                                        />
-                                )}
+                                        ) : !endOfEncounter ? (
+                                            <Recommendation
+                                                  eid={eid}
+                                                  cid={getCreatureCid(currentTurnCreature)}
+                                                  setAoeTokens={setAoeTokens}
+                                                  buildRecommendationAoeToken={buildRecommendationAoeToken}
+                                                  handlePASubmission={handlePASubmission}
+                                                  key={`${eid}-${recommendRefreshKey}`}
+                                                />
+                                        ) : (
+                                            <>
+                                                <h5>End of Encounter!</h5>
+                                            </>
+                                        )}
                                     </Col>
                                 </Row>
                             </Card.Body>
