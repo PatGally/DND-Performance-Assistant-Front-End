@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {getAoeOverlayBox, getConeImageStyle, getLineImageStyle} from "../../utils/aoeHelpers.ts";
+import {getAoeOverlayBox, getConeImageStyle, getLineImageStyle} from "../../utils/ActiveSimUtils/aoeHelpers.ts";
 import {
   ArtificerToken,
   BarbarianToken,
@@ -494,7 +494,17 @@ export default function ActiveMap({
           return (
             <div
               key={index}
-              onDoubleClick={() => onGridCellClick(x, y)}
+              onClick={() => {
+                if (!isAoePlacementActive && selectedCID) {
+                  onGridCellClick(x, y);
+                }
+              }}
+
+              onDoubleClick={() => {
+                if (isAoePlacementActive) {
+                  onGridCellClick(x, y);
+                }
+              }}
               onMouseEnter={() => onGridCellHover(x, y)}
               style={{
                 border: "1px solid rgba(255,255,255,0.25)",

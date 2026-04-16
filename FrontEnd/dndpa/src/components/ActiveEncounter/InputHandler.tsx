@@ -19,9 +19,10 @@ type InputHandlerProps = {
   setActionExecutionSession: React.Dispatch<React.SetStateAction<ActionExecutionSession | undefined>>;
   handleActionExecution: (draft: ActionRequestDraft) => void;
   setManualLock: React.Dispatch<React.SetStateAction<boolean>>;
-  clearManualAoePreview: (resultID?: string) => void;
+  clearManualAoePreview: () => void;
   aoePlacementStage: "pick_anchor" | "pick_direction" | "ready";
   onExit?: () => void;
+
 };
 
 function getCurrentTimeString(): string {
@@ -231,7 +232,7 @@ export default function InputHandler({
       return;
     }
 
-    clearManualAoePreview(actionSession.draft.resultID);
+    clearManualAoePreview();
     setActionExecutionSession(undefined);
     setManualLock(false);
   }

@@ -32,7 +32,7 @@ import {
     isStatusEffectRecord,
     normalizeSpellSlots,
     normalizeValue,
-} from "../../utils/ManualEntryHelpers.ts";
+} from "../../utils/ActiveSimUtils/ManualEntryHelpers.ts";
 
 import type { StatusEffectRecord } from "../../types/ManualEntryTypes.ts";
 

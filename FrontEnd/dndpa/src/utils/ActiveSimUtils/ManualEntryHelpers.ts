@@ -1,17 +1,17 @@
-import type { SpellSlotRow, StatusEffectRecord} from "../types/ManualEntryTypes.ts";
-import {STAT_KEYS} from "../types/ManualEntryTypes.ts";
+import type { SpellSlotRow, StatusEffectRecord} from "../../types/ManualEntryTypes.ts";
+import {STAT_KEYS} from "../../types/ManualEntryTypes.ts";
 
 import type {
     Creature,
     MonsterCreature,
-} from "../types/creature";
+} from "../../types/creature.ts";
 
-import { isPlayerCreature } from "../api/CreatureGet";
+import { isPlayerCreature } from "../../api/CreatureGet.ts";
 
 import type {
     ManualAffectedCreature,
     ManualStatBlock
-} from "../types/SimulationTypes.ts";
+} from "../../types/SimulationTypes.ts";
 
 export function deepEqual(a: unknown, b: unknown): boolean {
     return JSON.stringify(a) === JSON.stringify(b);

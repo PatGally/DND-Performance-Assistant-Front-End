@@ -4,7 +4,7 @@ import ComplexManualEntrySection from "./ComplexManualEntrySection";
 import {
     serializeSpellSlots,
     toInteger,
-} from "../../../utils/ManualEntryHelpers.ts";
+} from "../../../utils/ActiveSimUtils/ManualEntryHelpers.ts";
 import type { SpellSlotRow } from "../../../types/ManualEntryTypes.ts";
 
 export default function ComplexManualEntrySpellSlotsEditor({

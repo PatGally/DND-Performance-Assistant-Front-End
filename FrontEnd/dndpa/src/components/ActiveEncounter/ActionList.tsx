@@ -10,17 +10,16 @@ import { isSpellAction, isWeaponAction, isMonsterAction } from "../../utils/Acti
 import "../../css/ActionList.css";
 
 type ActionListProps = {
-    eid: string;
-    cid: string;
-    handleActionSubmission: (action: CreatureAction) => void;
-    setManualState: () => void;
+  eid: string;
+  cid: string;
+  handleActionSubmission: (action: CreatureAction) => void;
+  onSelectManual: () => void;
 };
 
 function getActionName(action: CreatureAction): string {
     if (isSpellAction(action)) return action.spellname;
     return action.name;
 }
-
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
     return (
         <div className="action-detail-row">
@@ -29,7 +28,6 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
         </div>
     );
 }
-
 function renderSpellDetails(action: SpellAction) {
     const target = action.targeting?.[0];
     return (
@@ -56,7 +54,6 @@ function renderSpellDetails(action: SpellAction) {
         </>
     );
 }
-
 function renderWeaponDetails(action: WeaponAction) {
     return (
         <>
@@ -67,7 +64,6 @@ function renderWeaponDetails(action: WeaponAction) {
         </>
     );
 }
-
 function renderMonsterDetails(action: MonsterAction) {
     return (
         <>
@@ -96,7 +92,7 @@ export default function ActionList({
                                        eid,
                                        cid,
                                        handleActionSubmission,
-                                       setManualState,
+                                        onSelectManual
                                    }: ActionListProps) {
     const [actions, setActions] = useState<CreatureAction[]>([]);
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
@@ -143,7 +139,7 @@ export default function ActionList({
                     <>
                         <span className="action-detail-value">No details available.</span>
                         <hr className="action-list-thin-rule" />
-                        <button className="action-select-btn manual" onClick={setManualState}>
+                        <button className="action-select-btn manual" onClick={onSelectManual}>
                             Select Manually
                         </button>
                     </>

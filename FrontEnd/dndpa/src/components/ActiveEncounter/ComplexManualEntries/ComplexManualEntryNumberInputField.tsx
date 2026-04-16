@@ -1,4 +1,4 @@
-import { toInteger } from "../../../utils/ManualEntryHelpers.ts";
+import { toInteger } from "../../../utils/ActiveSimUtils/ManualEntryHelpers.ts";
 
 export default function ComplexManualEntryNumberInputField({
     label,
