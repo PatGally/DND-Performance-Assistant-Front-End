@@ -23,7 +23,6 @@ export default function SimpleInitiativeEntry({
     return (
         <div className="sie-wrap">
 
-            {/* ── Header ── */}
             <div className="sie-header">
                 <span className="sie-name">{entry.name}</span>
                 <div className="sie-header-controls">
@@ -45,7 +44,6 @@ export default function SimpleInitiativeEntry({
 
             <hr className="sie-red-rule" />
 
-            {/* ── Core stats — 2-col grid ── */}
             <div className="sie-stat-grid">
                 <PropRow label="Initiative" value={entry.iValue} />
                 {entry.ac != null && (

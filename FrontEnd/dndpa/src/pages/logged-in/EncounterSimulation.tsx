@@ -1012,13 +1012,18 @@ function EncounterSimulation() {
 }, []);
 
     return (
-        <Container fluid className="p-0"
-                   style={{ height: "100vh", display: "flex", flexDirection: "column", backgroundColor: "#000000" }}>
+        <Container fluid className="p-0" style={{ height: "100vh", display: "flex", flexDirection: "column", backgroundColor: "#000000" }}>
             <Row className="bg-dark text-white px-3 mx-0" style={{ height: "56px", flexShrink: 0 }}>
                 <Col className="d-flex align-items-center">
                     {encounterData
                         ? <h3 className="mb-0">{encounterData.name} Simulation</h3>
                         : <h3 className="mb-0">Encounter Simulation</h3>
+                            // ? <h3 className="mb-0">{(encounterData.name.length > 12
+                            //     ? encounterData.name.slice(0, 12) + "..."
+                            //     : encounterData.name)}{" "}
+                            //     Simulation
+                            // </h3>
+                            // : <h3 className="mb-0">Encounter Simulation</h3>
                     }
                 </Col>
                 <Col className="d-flex align-items-center gap-2">

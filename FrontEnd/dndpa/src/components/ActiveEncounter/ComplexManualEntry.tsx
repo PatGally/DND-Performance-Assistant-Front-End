@@ -222,7 +222,7 @@ export default function ComplexManualEntry({
                 />
 
                 <ComplexManualEntryCheckboxField
-                    label="Enemy"
+                    label="Switch Side"
                     checked={currentEnemy}
                     onChange={(next) => update("enemy", next, baselineEnemy)}
                 />
