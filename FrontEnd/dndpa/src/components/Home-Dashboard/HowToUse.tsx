@@ -4,7 +4,6 @@ function HowToUse() {
     return (
         <div className="howto-container">
 
-            {/* Sidebar */}
             <nav className="howto-sidebar">
                 <h3>How To</h3>
 
@@ -44,10 +43,9 @@ function HowToUse() {
                 </ul>
             </nav>
 
-            {/* Content */}
             <div className="howto-content">
 
-                {/* Getting Started */}
+
                 <section id="welcome">
                     <h2>Getting Started</h2>
                     <h3>Welcome</h3>
@@ -77,7 +75,6 @@ function HowToUse() {
                     <p className="description-bg">Future roadmap...</p>
                 </section>
 
-                {/* System Setup */}
                 <section id="create-player">
                     <h2>System Setup</h2>
                     <h3>Creating a Player</h3>
@@ -120,7 +117,7 @@ function HowToUse() {
                     <p className="description-bg">Steps to create an encounter...</p>
                 </section>
 
-                {/* Encounter Simulation */}
+
                 <section id="manual-mode">
                     <h2>Encounter Simulation</h2>
                     <h3>Using Manual Mode</h3>

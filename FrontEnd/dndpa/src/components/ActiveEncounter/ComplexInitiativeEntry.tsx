@@ -1,9 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-    type Creature,
-    type MonsterCreature,
-    type PlayerCreature,
-} from "../../types/creature.ts";
+import {type Creature, type MonsterCreature, type PlayerCreature} from "../../types/creature.ts";
 import creatureGet from "../../api/CreatureGet";
 import {isPlayerCreature} from "../../api/CreatureGet";
 import type {InitiativeEntry} from "../../types/SimulationTypes";
@@ -178,7 +174,6 @@ function renderPlayer(creature: PlayerCreature, onToggle?: () => void) {
 
         return formatted.length > 0 ? formatted.join(", ") : "None";
     }
-
 
     return (
         <div style={s.wrap}>
@@ -360,12 +355,12 @@ function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
                 <span style={s.label}>{title}: </span>
                 <span style={{
                     display: "inline-flex",
-                    flexWrap: "wrap",       // ← wraps at parent boundary
+                    flexWrap: "wrap",
                     gap: "2px 4px",
                     alignItems: "baseline",
                 }}>
         {entries.map(([key, val], i) => (
-            <span key={key} style={{ whiteSpace: "nowrap" }}> {/* pair stays together */}
+            <span key={key} style={{ whiteSpace: "nowrap" }}>
                 <span style={{ fontWeight: "bold" }}>{key}</span>{" "}
                 <span style={{ color: "#8b1a1a" }}>{String(val)}</span>
                 {i < entries.length - 1 && (
@@ -389,7 +384,6 @@ function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
         );
     }
 
-    // Two-column property grid
     function PropRow({ label, value }: { label: string; value: React.ReactNode }) {
         return (
             <div>
@@ -419,7 +413,6 @@ function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
     return (
         <div style={s.wrap}>
 
-            {/* ── Header ── */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <span style={{ fontSize: "15px", fontWeight: "bold", color: "#8b1a1a", letterSpacing: "0.02em" }}>
           {creature.name}
@@ -450,7 +443,6 @@ function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
 
             <hr style={s.redRule} />
 
-            {/* ── Core properties — 2-col grid ── */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2px 16px" }}>
                 <PropRow label="HP"   value={`${creature.hp} / ${creature.maxhp}`} />
                 <PropRow label="AC"   value={creature.ac} />
@@ -463,10 +455,8 @@ function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
 
             <hr style={s.redRule} />
 
-            {/* ── Ability scores ── */}
             {statArray && <StatRow title="Ability Scores" data={statArray} />}
 
-            {/* ── Saving throws ── */}
             {saveProfs && Object.keys(saveProfs).length > 0 && (
                 <>
                     <hr style={s.thinRule} />
@@ -474,7 +464,6 @@ function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
                 </>
             )}
 
-            {/* ── Modifiers ── */}
             {modifiers && Object.keys(modifiers).length > 0 && (
                 <>
                     <hr style={s.thinRule} />
@@ -484,7 +473,6 @@ function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
 
             <hr style={s.redRule} />
 
-            {/* ── Trait lists ── */}
             <InlineList title="Damage Resistances"     items={creature.damResists} />
             <InlineList title="Damage Immunities"      items={creature.damImmunes} />
             <InlineList title="Damage Vulnerabilities" items={creature.damVulns} />
@@ -492,7 +480,6 @@ function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
             <InlineList title="Active Conditions"      items={activeConditions} />
             <InlineList title="Active Status Effects"  items={creature.activeStatusEffects}/>
 
-            {/* ── Spell info & multiattack ── */}
             {creature.spellInfo && (
                 <>
                     <hr style={s.thinRule} />
@@ -587,4 +574,3 @@ export default function ComplexInitiativeEntry({
     </div>
   );
 }
-

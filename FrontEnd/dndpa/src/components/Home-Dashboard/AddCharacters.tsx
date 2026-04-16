@@ -16,8 +16,6 @@ function AddCharacters({ formData, updateFormData, characters }: Props) {
     const [filterClass, setFilterClass] = useState("");
     const [filterLevel, setFilterLevel] = useState("");
 
-
-
     useEffect(() => {
         console.log("characters updated:", formData.characters);
     }, [formData.characters]);
@@ -60,7 +58,6 @@ function AddCharacters({ formData, updateFormData, characters }: Props) {
             <Form>
                 <Row className="mb-3">
                     <Col>
-                        <Form.Label >Search</Form.Label>
                         <Form.Control
                             type="text"
                             placeholder="Search by name..."
@@ -69,7 +66,6 @@ function AddCharacters({ formData, updateFormData, characters }: Props) {
                         />
                     </Col>
                     <Col>
-                        <Form.Label >Class</Form.Label>
                         <Form.Select
                             value={filterClass}
                             onChange={(e) => setFilterClass(e.target.value)}
@@ -81,7 +77,6 @@ function AddCharacters({ formData, updateFormData, characters }: Props) {
                         </Form.Select>
                     </Col>
                     <Col>
-                        <Form.Label >Level</Form.Label>
                         <Form.Select
                             value={filterLevel}
                             onChange={(e) => setFilterLevel(e.target.value)}
@@ -95,11 +90,11 @@ function AddCharacters({ formData, updateFormData, characters }: Props) {
                 </Row>
             </Form>
 
-            <div className="d-flex px-4 text-dark mb-1">
+            <div className="d-flex px-4 text-white mb-1">
                 <span style={{ flex: 3 }}>Name</span>
                 <span style={{ flex: 2.9 }}>Class</span>
-                <span style={{ flex: 1.1 }}>Level</span>
-                <span style={{ flex: 1 }}>HP</span>
+                <span style={{ flex: 1.05 }}>Level</span>
+                <span style={{ flex: 1.05 }}>HP</span>
             </div>
 
             <AnimatedList

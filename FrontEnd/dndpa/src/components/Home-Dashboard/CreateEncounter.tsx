@@ -75,9 +75,9 @@ function CreateEncounter({ monsters, onEncounterCreated }: Props) {
     };
 
     return (
-        <Container fluid className="px-0">
-            <Row>
-                <Col>
+        <Container fluid className="px-0" >
+            <Row className="g-0" style={{ minHeight: "100vh" }}>
+                <Col className="d-flex flex-column">
                     <EncounterCreationNavAndSubmit
                         activePanel={activePanel}
                         setActivePanel={setActivePanel}
