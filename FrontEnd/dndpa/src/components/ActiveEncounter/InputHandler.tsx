@@ -5,7 +5,7 @@ import type {
   ActionRequestDraft
 } from "../../types/SimulationTypes.ts";
 import type { Creature} from "../../types/creature.ts";
-import {getCreatureName, getCreatureCid} from "../../utils/CreatureHelpers.ts";
+import {getCreatureName, getCreatureCid} from "../../utils/ActiveSimUtils/CreatureHelpers.ts";
 
 type PerTargetInput = {
   attackRoll: string;

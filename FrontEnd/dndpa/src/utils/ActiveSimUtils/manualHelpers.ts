@@ -2,7 +2,7 @@ import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 
 import axiosTokenInstance from "../../api/AxiosTokenInstance.ts";
 import { getEncounter } from "../../api/EncounterGet.ts";
-import { getCurrentTurnCreatureFromEncounter } from "../CreatureHelpers.ts";
+import { getCurrentTurnCreatureFromEncounter } from "./CreatureHelpers.ts";
 
 import type { Creature } from "../../types/creature.ts";
 import type {

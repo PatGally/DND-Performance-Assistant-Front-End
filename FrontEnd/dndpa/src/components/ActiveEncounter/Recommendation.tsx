@@ -220,13 +220,20 @@ export default function Recommendation({
     );
   }
 
-  const targetDisplay = Array.isArray(currentRecommendation.target)
+  let targetDisplay;
+  try {
+      targetDisplay = Array.isArray(currentRecommendation.target)
     ? currentRecommendation.target.length > 0
       ? currentRecommendation.target.join(", ")
       : "None"
     : currentRecommendation.target.targetsHit.length > 0
       ? currentRecommendation.target.targetsHit.join(", ")
       : "AOE placement";
+  }
+  catch(e) {
+    console.error("Recommendation targetDisplay error", e);
+    targetDisplay = "None";
+  }
 
   return (
     <div

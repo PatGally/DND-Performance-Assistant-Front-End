@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import type { EncounterFormData } from "./CreateEncounter";
-import "./AddInitiative.css"
+import "../../css/AddInitiative.css"
 
 export interface InitiativeEntry {
     key: string;

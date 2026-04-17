@@ -7,7 +7,7 @@ import type {
   PendingPreTurnResolution,
 } from "../../types/SimulationTypes.ts";
 
-import { getCreatureName, getCurrentTurnCreatureFromEncounter } from "../CreatureHelpers.ts";
+import { getCreatureName, getCurrentTurnCreatureFromEncounter } from "./CreatureHelpers.ts";
 import axiosTokenInstance from "../../api/AxiosTokenInstance.ts";
 import { getEncounter } from "../../api/EncounterGet.ts";
 import { syncPreTurnQueueFromCreature } from "./PreTurnHelpers.ts";
@@ -59,6 +59,10 @@ export function simStart({
 
   const initStart = encounterData.initiative[0]?.name;
   if (!initStart) return;
+
+  if(initStart.toLowerCase() == "lair action") {
+    setCurrentTurnCreature({ _isLairAction: true } as unknown as Creature);
+  }
 
   const allCreatures: Creature[] = [
     ...(encounterData.players ?? []),

@@ -15,7 +15,7 @@ import InputHandler from "../../components/ActiveEncounter/InputHandler.tsx";
 import {
     getCreatureCid, getCreaturePosition,
     getCurrentTurnCreatureFromEncounter
-} from "../../utils/CreatureHelpers.ts";
+} from "../../utils/ActiveSimUtils/CreatureHelpers.ts";
 
 import {getEncounter} from "../../api/EncounterGet.ts";
 import {isPlayerCreature} from "../../api/CreatureGet.ts";
@@ -124,6 +124,7 @@ function EncounterSimulation() {
                 setEncounterError(null);
 
                 const data = await getEncounter(eid);
+                console.log(data);
                 if (!data) {
                     setEncounterError("Encounter was not found.");
                     setEncounterData(undefined);
@@ -168,7 +169,8 @@ function EncounterSimulation() {
             setActiveEncounter(false);
         } else {
             const storedTurn = getCurrentTurnCreatureFromEncounter(encounterData);
-            if (storedTurn && storedTurn.name === encounterData.initiative[0].name) {
+            if ((storedTurn && storedTurn.name === encounterData.initiative[0].name) ||
+                (!storedTurn && encounterData.initiative[0].name.toLowerCase() == "lair action")) {
                 handleSimStart();
             }
             if (storedTurn) {
@@ -256,7 +258,7 @@ function EncounterSimulation() {
             const response = await axiosTokenInstance.get(`/encounter/${eid}/completed`)
             if (response.data.isEnd) {
                 if (encounterData && !encounterData.completed) {
-                    await axiosTokenInstance.get("/encounter/{eid}/setcompleted")
+                    await axiosTokenInstance.get(`/encounter/${eid}/setcompleted`);
                 }
                 setEndOfEncounter(true);
             }

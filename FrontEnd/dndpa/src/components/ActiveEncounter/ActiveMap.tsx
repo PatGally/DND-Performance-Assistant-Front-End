@@ -531,13 +531,14 @@ export default function ActiveMap({
   const isCone = (aoe.shape ?? "").toLowerCase() === "cone";
   const lineImageStyle = getLineImageStyle(aoe, cells, cellWidth, cellHeight);
   const isLine = (aoe.shape ?? "").toLowerCase() === "line";
+  const isCircle = (aoe.shape ?? "").toLowerCase() === "circle";
 
   const localCellSet = new Set(
     cells.map(([x, y]) => `${x - overlayBox.minX},${y - overlayBox.minY}`)
   );
 
-  const anchorLocalX = aoe.anchor[0] - overlayBox.minX;
-  const anchorLocalY = aoe.anchor[1] - overlayBox.minY;
+  // const anchorLocalX = aoe.anchor[0] - overlayBox.minX;
+  // const anchorLocalY = aoe.anchor[1] - overlayBox.minY;
 
   return (
     <div key={aoe.resultID}>
@@ -634,24 +635,20 @@ export default function ActiveMap({
             const localX = index % overlayBox.widthCells;
             const localY = Math.floor(index / overlayBox.widthCells);
             const isUsedCell = localCellSet.has(`${localX},${localY}`);
-            const isAnchorCell =
-              localX === anchorLocalX && localY === anchorLocalY;
+            // const isAnchorCell =
+            //   localX === anchorLocalX && localY === anchorLocalY;
 
             return (
               <div
                 key={`${aoe.resultID}-cell-${index}`}
                 style={{
                   boxSizing: "border-box",
-                  background: isAnchorCell
-                    ? "rgba(0,255,255,0.28)"
-                    : isUsedCell
+                  background: isUsedCell && !isCircle
                       ? overlaySrc
                         ? "rgba(255,255,255,0.08)"
                         : getAoeFallbackFill(aoe.shape)
                       : "transparent",
-                  border: isAnchorCell
-                    ? "2px solid rgba(0,255,255,0.95)"
-                    : isUsedCell
+                  border: isUsedCell && !isCircle
                       ? getAoeBorder(aoe.shape)
                       : "none",
                 }}

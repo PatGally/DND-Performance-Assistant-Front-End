@@ -8,10 +8,10 @@ import {
 import type { SpellSlotRow } from "../../../types/ManualEntryTypes.ts";
 
 export default function ComplexManualEntrySpellSlotsEditor({
-    value,
-    maxSlots,
-    onChange,
-}: {
+                                                               value,
+                                                               maxSlots,
+                                                               onChange,
+                                                           }: {
     value: SpellSlotRow[];
     maxSlots: SpellSlotRow[];
     onChange: (next: SpellSlotRow[]) => void;
@@ -44,9 +44,10 @@ export default function ComplexManualEntrySpellSlotsEditor({
             <div
                 style={{
                     display: "grid",
-                    gridTemplateColumns: "80px 1fr",
+                    gridTemplateColumns: "56px minmax(0, 1fr)",
                     gap: 8,
                     alignItems: "center",
+                    width: "100%",
                 }}
             >
                 <strong>Level</strong>
@@ -61,8 +62,15 @@ export default function ComplexManualEntrySpellSlotsEditor({
 
                         <input
                             type="number"
+                            min={0}
+                            max={row.max}
                             value={row.current}
                             onChange={(e) => updateRow(index, e.target.value)}
+                            style={{
+                                width: "100%",
+                                minWidth: 0,
+                                boxSizing: "border-box",
+                            }}
                         />
                     </div>
                 ))}

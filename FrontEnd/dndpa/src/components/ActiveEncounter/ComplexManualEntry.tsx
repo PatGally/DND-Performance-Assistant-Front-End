@@ -46,13 +46,13 @@ import ComplexManualEntrySpellSlotsEditor from "./ComplexManualEntries/ComplexMa
 import ComplexManualEntryCreatureSummary from "./ComplexManualEntries/ComplexManualEntryCreatureSummary";
 
 export default function ComplexManualEntry({
-    eid,
-    cid,
-    initiativeEntry,
-    draftValue,
-    onDraftChange,
-    onToggle,
-}: {
+                                               eid,
+                                               cid,
+                                               initiativeEntry,
+                                               draftValue,
+                                               onDraftChange,
+                                               onToggle,
+                                           }: {
     eid: string;
     cid: string;
     initiativeEntry: InitiativeEntry;
@@ -132,6 +132,24 @@ export default function ComplexManualEntry({
         return draftValue?.[key] ?? baseline?.[key];
     }
 
+    function getMonsterSpellSlots(sourceCreature: Creature) {
+        if (isPlayerCreature(sourceCreature)) {
+            return undefined;
+        }
+
+        const monster = sourceCreature as Record<string, unknown>;
+        const spellInfo =
+            monster.spellInfo && typeof monster.spellInfo === "object"
+                ? (monster.spellInfo as Record<string, unknown>)
+                : undefined;
+
+        return (
+            monster.spellSlots ??
+            spellInfo?.spellSlots ??
+            spellInfo?.slots
+        );
+    }
+
     if (!creature || !baseline) {
         return <div>Loading...</div>;
     }
@@ -173,8 +191,23 @@ export default function ComplexManualEntry({
         val("saveProfs") as ManualStatBlock | undefined
     );
 
-    const currentSpellSlots = normalizeSpellSlots(val("spellSlots"));
-    const baselineSpellSlots = normalizeSpellSlots(baseline.spellSlots);
+    const monsterSpellSlots = getMonsterSpellSlots(creature);
+
+    const currentSpellSlots = normalizeSpellSlots(
+        val("spellSlots") ?? monsterSpellSlots
+    );
+
+    const baselineSpellSlots = normalizeSpellSlots(
+        baseline.spellSlots ?? monsterSpellSlots
+    );
+
+    const monsterHasSpellSlots =
+        !isPlayerCreature(creature) &&
+        (Object.keys(baselineSpellSlots).length > 0 ||
+            Object.keys(currentSpellSlots).length > 0);
+
+    const showSpellSlotEditor =
+        isPlayerCreature(creature) || monsterHasSpellSlots;
 
     return (
         <div style={{ border: "1px solid #ccc", padding: 10 }}>
@@ -240,7 +273,7 @@ export default function ComplexManualEntry({
                 onChange={(next) => update("saveProfs", next, baselineSaveProfs)}
             />
 
-            {isPlayerCreature(creature) && (
+            {showSpellSlotEditor && (
                 <ComplexManualEntrySpellSlotsEditor
                     value={currentSpellSlots}
                     maxSlots={baselineSpellSlots}

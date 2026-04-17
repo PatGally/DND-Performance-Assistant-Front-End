@@ -41,7 +41,6 @@ const router = createBrowserRouter(
 );
 
 createRoot(document.getElementById('root')!).render(
-    //Todo hide the clientID
   <StrictMode>
       <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
           <RouterProvider router={router} />

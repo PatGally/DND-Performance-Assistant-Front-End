@@ -30,7 +30,7 @@ import {
   getCreatureCid,
   getCreaturePosition,
   getCreatureSize,
-} from "../CreatureHelpers.ts";
+} from "./CreatureHelpers.ts";
 
 import { normalizeAction } from "./actionHelpers.ts";
 
