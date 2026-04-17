@@ -94,7 +94,7 @@ function LoadCharacter({ onDeletePlayer }: Props) {
         <div className="p-3 d-flex flex-column" style={{
             backgroundColor: "rgba(15, 24, 40, 0.85)",
             flex: 1,
-            minHeight: 0
+            minHeight: "100vh"
         }}>
             <Form>
                 <Row className="mb-3">

@@ -53,6 +53,7 @@ type EncounterCreationNavProps = {
     setActivePanel: (panel: ActivePanel) => void;
     formData: EncounterFormData;
     onSuccess: () => void;
+    encounterLimitReached: boolean;
 };
 
 const panelOrder: ActivePanel[] = [
@@ -140,7 +141,7 @@ function EncounterCreationNavAndSubmit({
                                            activePanel,
                                            setActivePanel,
                                            formData,
-                                           onSuccess,
+                                           onSuccess, encounterLimitReached
                                        }: EncounterCreationNavProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -167,7 +168,10 @@ function EncounterCreationNavAndSubmit({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
+        if (encounterLimitReached){
+            console.log("Limit Test for Encounters ",encounterLimitReached);
+            return
+        }
         if (isSubmitting) return;
         setIsSubmitting(true);
 

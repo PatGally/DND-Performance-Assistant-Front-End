@@ -91,7 +91,7 @@ function UserGuide() {
                 </section>
                 <section id="new-to-dnd">
                     <h2>New To Dungeons & Dragons?</h2>
-                    <p className="description-bg" >
+                    <div className="description-bg" >
                         <p>
                             If you're new to Dungeons & Dragons, the <strong>Performance Assistant (PA)</strong> helps you decide
                             what to do on your turn during combat.
@@ -153,12 +153,12 @@ function UserGuide() {
                                 Acts like a guide while you’re still learning the rules of the game
                             </li>
                         </ul>
-                    </p>
+                    </div>
                 </section>
                 <section id="system-limits">
                     <h2>System/Website Limitations</h2>
 
-                    <p className="description-bg">
+                    <div className="description-bg">
                         <strong>System Limitations:</strong>
                         <ul>
                             <li>
@@ -187,7 +187,7 @@ function UserGuide() {
                             <li>Forgot Password functionality is not yet implemented</li>
                             <li>Account deletion is not yet available</li>
                         </ul>
-                    </p>
+                    </div>
                 </section>
                 <section id="planned-features">
                     <h2>Planned Features</h2>

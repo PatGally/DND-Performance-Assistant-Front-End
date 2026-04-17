@@ -49,7 +49,7 @@ function EncounterSimulation() {
     const location = useLocation();
     const eid = location.state?.eid;
 
-    //Side components
+    //Side homeComponents
     const [initiativeOpen, setInitiativeOpen] = useState(false);
     const [initiativeRefreshKey, setInitiativeRefreshKey] = useState(0);
     const [recommendRefreshKey, setRecommendRefreshKey] = useState(0);

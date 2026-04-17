@@ -1,17 +1,6 @@
 import React from 'react';
 import '../../css/LandingPage.css';
 
-/**
- * LandingPagePA
- * -------------
- * First page the user sees after logging in. Intentionally simple for alpha
- * testing — a welcome header, a short intro paragraph, a small row of info
- * cards, and a primary CTA.
- *
- * Text is all lorem ipsum placeholders — swap in real copy when ready.
- * Uses the same `pa-` class prefix and BEM-ish naming as HomePagePA so the
- * two can share a design language and CSS conventions.
- */
 const LandingPage: React.FC = () => {
     const infoCards = [
         {
@@ -33,9 +22,18 @@ const LandingPage: React.FC = () => {
             id: 'c3',
             title: 'Manual Mode Control',
             body: 'Override the system at any time. Adjust stats, positioning, and effects freely for full control over your encounter.',
+        },
+        {
+            id: 'c4',
+            title: 'Device Recommendation',
+            body: 'During the Alpha stage, this project is best experienced on a desktop or laptop for optimal performance and usability.',
+        },
+        {
+            id: 'c5',
+            title: 'Encounter Limitation Per User',
+            body: 'Users can have up to 5 Encounters',
         }
     ];
-
     return (
         <div className="pa-landing">
             <div className="pa-landing__inner">
