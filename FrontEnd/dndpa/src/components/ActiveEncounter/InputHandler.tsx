@@ -19,8 +19,10 @@ type InputHandlerProps = {
   setActionExecutionSession: React.Dispatch<React.SetStateAction<ActionExecutionSession | undefined>>;
   handleActionExecution: (draft: ActionRequestDraft) => void;
   setManualLock: React.Dispatch<React.SetStateAction<boolean>>;
-  clearManualAoePreview: (resultID?: string) => void;
+  clearManualAoePreview: () => void;
   aoePlacementStage: "pick_anchor" | "pick_direction" | "ready";
+  onExit?: () => void;
+
 };
 
 function getCurrentTimeString(): string {
@@ -36,9 +38,11 @@ export default function InputHandler({
   encounter,
   actionSession,
   setActionExecutionSession,
-    setManualLock,
-    clearManualAoePreview,
-  handleActionExecution, aoePlacementStage
+  setManualLock,
+  clearManualAoePreview,
+  handleActionExecution,
+  aoePlacementStage,
+  onExit,
 }: InputHandlerProps) {
   const [localError, setLocalError] = useState<string>("");
   const allCreatures: Creature[] = useMemo(
@@ -219,15 +223,19 @@ export default function InputHandler({
   setLocalError("");
   handleActionExecution(finalDraft);
 }
-function handleExit() {
-  console.log("Handle Exit");
-  console.log(actionSession);
-  console.log(aoePlacementStage);
+  function handleExit() {
+      console.log("Handle Exit");
+    console.log(actionSession);
+    console.log(aoePlacementStage);
+    if (onExit) {
+      onExit();
+      return;
+    }
 
-  clearManualAoePreview(actionSession.draft.resultID);
-  setActionExecutionSession(undefined);
-  setManualLock(false);
-}
+    clearManualAoePreview();
+    setActionExecutionSession(undefined);
+    setManualLock(false);
+  }
 
   return (
     <div className="bg-dark border rounded p-3" style={{ minWidth: "420px", maxWidth: "700px" }}>

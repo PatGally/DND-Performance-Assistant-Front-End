@@ -1,6 +1,6 @@
 import ComplexManualEntrySection from "./ComplexManualEntrySection";
 import { STAT_KEYS } from "../../../types/ManualEntryTypes.ts";
-import { getNumberValue, toInteger } from "../../../utils/ManualEntryHelpers.ts";
+import { getNumberValue, toInteger } from "../../../utils/ActiveSimUtils/ManualEntryHelpers.ts";
 
 import type {
     ManualStatBlock,

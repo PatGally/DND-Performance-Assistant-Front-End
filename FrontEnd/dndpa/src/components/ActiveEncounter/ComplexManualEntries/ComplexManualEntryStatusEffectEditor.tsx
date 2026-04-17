@@ -4,7 +4,7 @@ import { fetchUUID } from "../../../api/UUIDGet";
 
 import ComplexManualEntryMultiSelectSearch from "./ComplexManualEntryMultiSelectSearch";
 import { ATTRS_BY_EFFECT, type EffectKey } from "../../../types/ManualEntryTypes.ts";
-import { normalizeValue, toDisplayName } from "../../../utils/ManualEntryHelpers.ts";
+import { normalizeValue, toDisplayName } from "../../../utils/ActiveSimUtils/ManualEntryHelpers.ts";
 import type { StatusEffectRecord } from "../../../types/ManualEntryTypes.ts";
 
 export default function ComplexManualEntryStatusEffectEditor({

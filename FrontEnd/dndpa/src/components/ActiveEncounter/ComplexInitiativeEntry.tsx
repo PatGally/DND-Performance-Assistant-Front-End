@@ -241,7 +241,6 @@ function renderPlayer(creature: PlayerCreature, onToggle?: () => void) {
             {renderList("Active Conditions",      stats.activeConditions)}
             {renderList("Active Status Effects",  stats.activeStatusEffects)}
 
-
             <div>
                 <strong>Spell Slots:</strong> {formatSpellSlots(stats.spellSlots)}
             </div>

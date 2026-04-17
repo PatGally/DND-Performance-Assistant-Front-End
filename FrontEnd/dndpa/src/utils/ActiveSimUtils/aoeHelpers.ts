@@ -1,10 +1,10 @@
-import type {Creature, GridCoord} from "../types/creature.ts";
-import type {CreatureAction} from "../types/action.ts";
-import type {RecommendationTarget, RecommendationAoeTarget, Encounter} from "../types/SimulationTypes.ts";
+import type {Creature, GridCoord} from "../../types/creature.ts";
+import type {CreatureAction} from "../../types/action.ts";
+import type {RecommendationTarget, RecommendationAoeTarget, Encounter} from "../../types/SimulationTypes.ts";
 import {isMonsterAction, isSpellAction} from "./ActionTypeChecker.ts";
-import {type AoeToken} from "../types/SimulationTypes.ts";
-import {getCreatureCid, getCreaturePosition} from "./CreatureHelpers.ts";
-import axiosTokenInstance from "../api/AxiosTokenInstance.ts";
+import {type AoeToken} from "../../types/SimulationTypes.ts";
+import {getCreatureCid, getCreaturePosition} from "../CreatureHelpers.ts";
+import axiosTokenInstance from "../../api/AxiosTokenInstance.ts";
 export const DAMAGE_TYPE_IMAGE_SUFFIX: Record<string, string> = {
   acid: "Acid",
   bludgeoning: "Bludgeoning",
