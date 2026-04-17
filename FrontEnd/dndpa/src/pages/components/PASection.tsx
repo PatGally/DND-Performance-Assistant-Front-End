@@ -56,7 +56,7 @@ const PASection: React.FC = () => {
             image: '/placeholder-news-4.jpg',
             title: 'Dynamic Weighting',
             categoryIcon: '/placeholder-icon.png',
-            category: 'ADAPTS AND IMPROVES BASED ON REAL GAMEPLAY',
+            category: 'ADAPTS AND IMPROVES PERFORMANCE ASSISTANT BASED ON REAL GAMEPLAY',
         },
     ];
 
