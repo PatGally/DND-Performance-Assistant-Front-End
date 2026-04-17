@@ -38,8 +38,8 @@ const HomePagePA: React.FC = () => {
             <main className="pa-main">
                 <HeroCarousel />
                 <PASection />
-                <HowToUseHome />
-                <OpenSource />
+                {/*<HowToUseHome />*/}
+                {/*<OpenSource />*/}
                 <AboutUs />
             </main>
 

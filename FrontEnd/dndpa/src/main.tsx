@@ -5,38 +5,32 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import ProtectedRoute from "./ProtectedRoute.tsx";
 import './index.css'
 import HomeDashboard from "./pages/logged-in/HomeDashboard.tsx";
-import NotFoundPage from "./pages/NotFoundPage.tsx";
-import Encounter from "./pages/logged-in/Encounter.tsx";
 import EncounterSimulation from "./pages/logged-in/EncounterSimulation.tsx";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import HomePagePA from "./pages/HomePagePA.tsx";
 import SignUp from "./pages/SignUp.tsx";
 import SignIn from "./pages/SignIn.tsx";
-//TODO
-// Add restyled page that redirects specific to where you are in the website
-// If you logged in and type a messed up link it should put you in the HomeDashboard
-// else HomePagePA
-const router = createBrowserRouter(
+import NotFoundPrivate from "./pages/NotFoundPrivate.tsx";
+import NotFoundPublic from "./pages/NotFoundPublic";
+import NotFoundRouter from "./pages/NoteFoundRouter.tsx";
 
+const router = createBrowserRouter(
     [
-        {path: '/', element: <HomePagePA />, errorElement: <NotFoundPage />},
+        {path: '/', element: <HomePagePA />, errorElement: <NotFoundPublic />},
         {
             path: 'user-dashboard',
             element: <ProtectedRoute><HomeDashboard /></ProtectedRoute>,
-            errorElement: <NotFoundPage />
+            errorElement: <NotFoundPrivate />
         },
         {
             path: 'encounter-simulation',
             element: <ProtectedRoute><EncounterSimulation /></ProtectedRoute>,
-            errorElement: <NotFoundPage/>
+            errorElement: <NotFoundPrivate/>
         },
-        {
-            path: 'encounter-setup',
-            element: <ProtectedRoute><Encounter /></ProtectedRoute>,
-            errorElement: <NotFoundPage/>
-        },
-        {path: 'sign-in', element: <SignIn />, errorElement: <NotFoundPage/>},
-        {path: 'sign-up', element: <SignUp />, errorElement: <NotFoundPage/>}
+        {path: 'sign-in', element: <SignIn />, errorElement: <NotFoundPublic/>},
+        {path: 'sign-up', element: <SignUp />, errorElement: <NotFoundPublic/>},
+
+        { path: '*', element: <NotFoundRouter /> },
     ]
 );
 

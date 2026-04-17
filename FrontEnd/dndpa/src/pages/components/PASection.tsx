@@ -24,9 +24,8 @@ const PASection: React.FC = () => {
     const featured: NewsItem = {
         id: 'featured',
         image: '/placeholder-news-featured.jpg',
-        title: 'Lorem Ipsum Dolor Sit Amet',
-        categoryIcon: '/placeholder-icon.png',
-        category: 'NEWS',
+        title: 'WE ARE OPEN SOURCE!',
+        // categoryIcon: '/placeholder-icon.png',
     };
 
     const sideItems: NewsItem[] = [
@@ -70,7 +69,7 @@ const PASection: React.FC = () => {
             <div className="pa-news__grid">
                 {/* LEFT: featured card */}
                 <article className="pa-news__featured">
-                    <a href={`#news-${featured.id}`} className="pa-news__featured-link">
+                    <a className="pa-news__featured-link">
                         <div
                             className="pa-news__featured-image"
                             style={{ backgroundImage: `url(${featured.image})` }}
@@ -79,7 +78,7 @@ const PASection: React.FC = () => {
                         />
                         <h3 className="pa-news__featured-title">{featured.title}</h3>
                         <div className="pa-news__meta">
-                            <div className="pa-news__meta-icon" aria-hidden="true" />
+                            {/*<div className="pa-news__meta-icon" aria-hidden="true" />*/}
                             <span className="pa-news__meta-label">{featured.category}</span>
                         </div>
                     </a>
@@ -89,7 +88,7 @@ const PASection: React.FC = () => {
                 <div className="pa-news__list">
                     {sideItems.map((item) => (
                         <article key={item.id} className="pa-news__card">
-                            <a href={`#news-${item.id}`} className="pa-news__card-link">
+                            <a className="pa-news__card-link">
                                 <div className="pa-news__card-body">
                                     <h3 className="pa-news__card-title">{item.title}</h3>
                                     <div className="pa-news__meta">
