@@ -16,7 +16,7 @@ const LandingPage: React.FC = () => {
         {
             id: 'c2',
             title: 'Built-In Rules Engine',
-            body: 'Automatically enforces Dungeons & Dragons 5th Edition (2014) rules, including action economy, spell slots, and movement limits—so you can focus on gameplay, not rule-checking.',
+            body: 'Automatically enforces Dungeons & Dragons 5th Edition (2014) rules, like action economy, and spell slots—so you can focus on gameplay, not rule-checking.',
         },
         {
             id: 'c3',
