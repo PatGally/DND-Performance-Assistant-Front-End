@@ -36,10 +36,11 @@ const defaultFormData: EncounterFormData = {
 
 type Props = {
     monsters: MonsterCreature[];
-    onEncounterCreated: () => void; // ← just void
+    onEncounterCreated: () => void;
+    encounterLimitReached: boolean;
 };
 
-function CreateEncounter({ monsters, onEncounterCreated }: Props) {
+function CreateEncounter({ monsters, onEncounterCreated, encounterLimitReached }: Props) {
     const [activePanel, setActivePanel] = useState<ActivePanel>("SET_ENCOUNTERNAME");
     const [formData, setFormData] = useState<EncounterFormData>(defaultFormData);
     const [characters, setCharacters] = useState<CharacterPayload[]>([]);
@@ -82,7 +83,8 @@ function CreateEncounter({ monsters, onEncounterCreated }: Props) {
                         activePanel={activePanel}
                         setActivePanel={setActivePanel}
                         formData={formData}
-                        onSuccess={onEncounterCreated} // ← wired through
+                        onSuccess={onEncounterCreated}
+                        encounterLimitReached={encounterLimitReached}
                     />
                     {renderPanel()}
                 </Col>

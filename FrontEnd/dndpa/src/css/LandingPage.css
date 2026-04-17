@@ -11,8 +11,8 @@
 .pa-landing {
     --pa-landing-bg: rgba(15, 24, 40, 0.85);
     --pa-landing-text: #ffffff;
-    --pa-landing-text-dim: rgba(255, 255, 255, 0.7);
-    --pa-landing-card-bg: rgba(255, 255, 255, 0.06);
+    --pa-landing-text-dim: rgba(255, 255, 255, 0.9);
+    --pa-landing-card-bg: rgba(7, 7, 7, 0.47);
     --pa-landing-card-border: rgba(255, 255, 255, 0.12);
     --pa-landing-cta-bg: #ffffff;
     --pa-landing-cta-text: #000000;
@@ -112,7 +112,7 @@
 
 .pa-landing__card:hover {
     background: rgba(255, 255, 255, 0.09);
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(4, 3, 3, 0.2);
 }
 
 .pa-landing__card-title {

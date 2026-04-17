@@ -1,4 +1,3 @@
-import React from "react";
 import { useEffect, useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { Form, Button, Row, Col } from "react-bootstrap";
@@ -12,7 +11,7 @@ import calcSpellSlots from "../../utils/calcSpellSlots.ts";
 import {fetchUUID} from "../../api/UUIDGet.ts"
 import { uuidPolyfill } from '../../api/uuidPolyfill.ts';
 import Container from "react-bootstrap/Container";
-
+import '../../css/CharCreation.css';
 
 uuidPolyfill();
 
@@ -33,7 +32,11 @@ type FormFields = {
     spells: string[];
 };
 
-const CharCreation: React.FC = () => {
+type Props = {
+    onCharacterCreated: () => void;
+};
+
+function CharCreation({onCharacterCreated}: Props) {
     const {
         register,
         handleSubmit, watch, resetField, reset,
@@ -125,8 +128,6 @@ const CharCreation: React.FC = () => {
 
                 return [w.name];
             });
-        console.log("Checking weapons", selectedWeapons);
-        console.log("Checking ALL weapons", allWeapons);
 
         const attributes = calcAttributes(data.level, data.characterClass);
         const spellSlots = calcSpellSlots(data.level, data.characterClass);
@@ -182,188 +183,230 @@ const CharCreation: React.FC = () => {
         try{
             await createCharacter( payload );
             reset();
-            console.log("Form cleared and ready for the next character!");
-
+            onCharacterCreated();
         } catch (error) {
         console.error("Submission failed, keeping data in form", error);
     }
     };
 
+    const ABILITY_STATS = [
+        'strength',
+        'dexterity',
+        'constitution',
+        'intelligence',
+        'wisdom',
+        'charisma',
+    ] as const;
+
+    const CHARACTER_CLASSES = [
+        'Barbarian', 'Bard', 'Cleric', 'Druid', 'Fighter',
+        'Monk', 'Paladin', 'Ranger', 'Rogue',
+        'Sorcerer', 'Warlock', 'Wizard',
+    ];
+
     return (
-        <Container className="rounded-2 bg-light shadow bg-dark-subtle">
-            <Form onSubmit={handleSubmit(onSubmit)} className="p-4">
+        <Container fluid className="pa-char-create">
+            <Form onSubmit={handleSubmit(onSubmit)} className="pa-char-create__form">
 
-                <Form.Group className="mb-3">
-                    <Form.Label>Character Name</Form.Label>
-                    <Form.Control
-                        type="text"
-                        isInvalid={!!errors.name}
-                        {...register("name", {
-                            required: "Character name is required",
-                            minLength: { value: 2, message: "Name too short" },
-                        })}
-                    />
-                    <Form.Control.Feedback type="invalid">
-                        {errors.name?.message}
-                    </Form.Control.Feedback>
-                </Form.Group>
+                <div className="pa-char-create__header">
+                    <h2 className="pa-char-create__title">Create Your Player's Here</h2>
+                </div>
 
+                <section className="pa-char-create__section">
+                    <h3 className="pa-char-create__section-title">Identity</h3>
 
-                <Form.Group className="mb-3">
-                    <Form.Label>Class</Form.Label>
-                    <Form.Select
-                        isInvalid={!!errors.characterClass}
-                        {...register("characterClass", {
-                            required: "Class is required",
-                        })}>
-                        <option value="">Select Class</option>
-                        {[
-                            "Barbarian","Bard","Cleric","Druid","Fighter",
-                            "Monk","Paladin","Ranger","Rogue",
-                            "Sorcerer","Warlock","Wizard"
-                        ].map(cls => (
-                            <option key={cls} value={cls}>{cls}</option>
-                        ))}
-                    </Form.Select>
-                    <Form.Control.Feedback type="invalid">
-                        {errors.characterClass?.message}
-                    </Form.Control.Feedback>
-                </Form.Group>
+                    <Form.Group className="mb-3">
+                        <Form.Label className="pa-char-create__label">Player Name</Form.Label>
+                        <Form.Control
+                            type="text"
+                            className="pa-char-create__input"
+                            isInvalid={!!errors.name}
+                            {...register('name', {
+                                required: 'Player name is required',
+                                minLength: { value: 2, message: 'Name too short' },
+                            })}
+                        />
+                        <Form.Control.Feedback type="invalid">
+                            {errors.name?.message}
+                        </Form.Control.Feedback>
+                    </Form.Group>
 
-                <Row className="mb-3">
-                    <Col md={6}>
-                        <Form.Group>
-                            <Form.Label>Level</Form.Label>
-                            <Form.Control
-                                type="number"
-                                isInvalid={!!errors.level}
-                                {...register("level", {
-                                    required: "Level is Required",
-                                    min: { value: 1, message: "Min level is 1" },
-                                    max: { value: 20, message: "Max level is 20" },
-                                    valueAsNumber: true,
-                                    // setValueAs: (v) => (v === "" ? 0 : Number(v)),
-                                })}
-                            />
-                            <Form.Control.Feedback type="invalid">
-                                {errors.level?.message}
-                            </Form.Control.Feedback>
-                        </Form.Group>
-                    </Col>
+                    <Form.Group className="mb-3">
+                        <Form.Label className="pa-char-create__label">Class</Form.Label>
+                        <Form.Select
+                            className="pa-char-create__input"
+                            isInvalid={!!errors.characterClass}
+                            {...register('characterClass', { required: 'Class is required' })}
+                        >
+                            <option value="">Select Class</option>
+                            {CHARACTER_CLASSES.map((cls) => (
+                                <option key={cls} value={cls}>{cls}</option>
+                            ))}
+                        </Form.Select>
+                        <Form.Control.Feedback type="invalid">
+                            {errors.characterClass?.message}
+                        </Form.Control.Feedback>
+                    </Form.Group>
+                </section>
 
-                    <Col md={6}>
-                        <Form.Group>
-                            <Form.Label>Armor Class</Form.Label>
-                            <Form.Control
-                                type="number"
-                                isInvalid={!!errors.ac}
-                                {...register("ac", {
-                                    required: "Armor Class is required",
-                                    min: { value: 10, message: "AC too low" },
-                                    max: { value: 30, message: "AC too high" },
-                                    valueAsNumber: true,
-                                })}
-                            />
-                            <Form.Control.Feedback type="invalid">
-                                {errors.ac?.message}
-                            </Form.Control.Feedback>
-                        </Form.Group>
-                    </Col>
-                </Row>
+                <section className="pa-char-create__section">
+                    <h3 className="pa-char-create__section-title">Core Stats</h3>
 
-                <Row>
-                    {[
-                        "strength",
-                        "dexterity",
-                        "constitution",
-                        "intelligence",
-                        "wisdom",
-                        "charisma",
-                    ].map((stat) => (
-                        <Col md={2} className="mb-3" key={stat}>
+                    <Row className="mb-3">
+                        <Col md={6}>
                             <Form.Group>
-                                <Form.Label className="text-capitalize">{stat}</Form.Label>
+                                <Form.Label className="pa-char-create__label">Level</Form.Label>
                                 <Form.Control
                                     type="number"
-                                    isInvalid={!!errors[stat as keyof FormFields]}
-                                    {...register(stat as keyof FormFields, {
-                                        required: `${stat} is required`,
-                                        min: { value: 3, message: "Min 3" },
-                                        max: { value: 20, message: "Max 20" },
+                                    className="pa-char-create__input"
+                                    isInvalid={!!errors.level}
+                                    {...register('level', {
+                                        required: 'Level is Required',
+                                        min: { value: 1, message: 'Min level is 1' },
+                                        max: { value: 20, message: 'Max level is 20' },
                                         valueAsNumber: true,
                                     })}
                                 />
                                 <Form.Control.Feedback type="invalid">
-                                    {errors[stat as keyof FormFields]?.message as string}
+                                    {errors.level?.message}
                                 </Form.Control.Feedback>
                             </Form.Group>
                         </Col>
-                    ))}
-                </Row>
 
-                <Form.Group className="mb-4">
-                    <Form.Label>Weapons</Form.Label>
-
-                    {loadingWeapons && <div>Loading weapons...</div>}
-
-                    {!loadingWeapons && (
-                        <div className="d-flex flex-wrap gap-3">
-                            {allWeapons.map((weapon) => (
-                                <Form.Check
-                                    key={weapon.name}
-                                    type="checkbox"
-                                    label={weapon.name}
-                                    value={weapon.name}
-                                    {...register("weapons", {
-                                        validate: (v) => v.length > 0 || "Select at least one weapon",
+                        <Col md={6}>
+                            <Form.Group>
+                                <Form.Label className="pa-char-create__label">Armor Class</Form.Label>
+                                <Form.Control
+                                    type="number"
+                                    className="pa-char-create__input"
+                                    isInvalid={!!errors.ac}
+                                    {...register('ac', {
+                                        required: 'Armor Class is required',
+                                        min: { value: 10, message: 'AC too low' },
+                                        max: { value: 30, message: 'AC too high' },
+                                        valueAsNumber: true,
                                     })}
                                 />
-                            ))}
-                        </div>
-                    )}
+                                <Form.Control.Feedback type="invalid">
+                                    {errors.ac?.message}
+                                </Form.Control.Feedback>
+                            </Form.Group>
+                        </Col>
+                    </Row>
+                </section>
 
-                    {errors.weapons && (
-                        <div className="text-danger mt-1">{errors.weapons.message}</div>
-                    )}
-                </Form.Group>
+                <section className="pa-char-create__section">
+                    <h3 className="pa-char-create__section-title">Ability Scores</h3>
+                    <Row>
+                        {ABILITY_STATS.map((stat) => (
+                            <Col md={2} className="mb-3" key={stat}>
+                                <Form.Group className="pa-char-create__stat">
+                                    <Form.Label className="pa-char-create__label text-capitalize">
+                                        {stat}
+                                    </Form.Label>
+                                    <Form.Control
+                                        type="number"
+                                        className="pa-char-create__input pa-char-create__input--stat"
+                                        isInvalid={!!errors[stat as keyof FormFields]}
+                                        {...register(stat as keyof FormFields, {
+                                            required: `${stat} is required`,
+                                            min: { value: 3, message: 'Min 3' },
+                                            max: { value: 20, message: 'Max 20' },
+                                            valueAsNumber: true,
+                                        })}
+                                    />
+                                    <Form.Control.Feedback type="invalid">
+                                        {errors[stat as keyof FormFields]?.message as string}
+                                    </Form.Control.Feedback>
+                                </Form.Group>
+                            </Col>
+                        ))}
+                    </Row>
+                </section>
 
-                {level && characterClass &&(
+                <section className="pa-char-create__section">
+                    <h3 className="pa-char-create__section-title">Equipment</h3>
+
                     <Form.Group className="mb-4">
-                        <Form.Label>Available Spells</Form.Label>
+                        <Form.Label className="pa-char-create__label">Weapons</Form.Label>
 
-                        {loadingSpells && <div>Loading spells...</div>}
+                        {loadingWeapons && (
+                            <div className="pa-char-create__loading">Loading weapons...</div>
+                        )}
 
-                        {!loadingSpells && spells.length > 0 && (
-                            <div className="d-flex flex-wrap gap-3">
-                                {spells.map((spell) => (
+                        {!loadingWeapons && (
+                            <div className="pa-char-create__options d-flex flex-wrap gap-3">
+                                {allWeapons.map((weapon) => (
                                     <Form.Check
-                                        key={spell.id}
-                                        type="switch"
-                                        label={spell.spellname}
-                                        value={spell.spellname}
-                                        {...register("spells", {
-                                            validate: (v) =>
-                                                v.length > 0 || "Select at least one spell",
+                                        key={weapon.name}
+                                        type="checkbox"
+                                        label={weapon.name}
+                                        value={weapon.name}
+                                        className="pa-char-create__check"
+                                        {...register('weapons', {
+                                            validate: (v) => v.length > 0 || 'Select at least one weapon',
                                         })}
                                     />
                                 ))}
                             </div>
                         )}
 
-                        {errors.spells && (
-                            <div className="text-danger mt-1">
-                                {errors.spells.message}
+                        {errors.weapons && (
+                            <div className="pa-char-create__error mt-1">
+                                {errors.weapons.message}
                             </div>
                         )}
                     </Form.Group>
+                </section>
+
+                {level && characterClass && (
+                    <section className="pa-char-create__section">
+                        <h3 className="pa-char-create__section-title">Spells</h3>
+
+                        <Form.Group className="mb-4">
+                            <Form.Label className="pa-char-create__label">Available Spells</Form.Label>
+
+                            {loadingSpells && (
+                                <div className="pa-char-create__loading">Loading spells...</div>
+                            )}
+
+                            {!loadingSpells && spells.length > 0 && (
+                                <div className="pa-char-create__options d-flex flex-wrap gap-3">
+                                    {spells.map((spell) => (
+                                        <Form.Check
+                                            key={spell.id}
+                                            type="switch"
+                                            label={spell.spellname}
+                                            value={spell.spellname}
+                                            className="pa-char-create__check pa-char-create__check--switch"
+                                            {...register('spells', {
+                                                validate: (v) => v.length > 0 || 'Select at least one spell',
+                                            })}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+
+                            {errors.spells && (
+                                <div className="pa-char-create__error mt-1">
+                                    {errors.spells.message}
+                                </div>
+                            )}
+                        </Form.Group>
+                    </section>
                 )}
 
-                <Button type="submit" variant="primary" disabled={isSubmitting || loadingCid}>
-                    {isSubmitting ? "Creating..." : "Create Character"}
-                </Button>
+                <div className="pa-char-create__actions">
+                    <Button
+                        type="submit"
+                        className="pa-char-create__submit"
+                        disabled={isSubmitting || loadingCid}
+                    >
+                        {isSubmitting ? 'Creating...' : 'Create Character'}
+                    </Button>
+                </div>
             </Form>
         </Container>
-
     );
 };
 

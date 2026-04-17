@@ -16,21 +16,15 @@ import UserGuide from "../../components/Home-Dashboard/UserGuide.tsx";
 import Survey from "../../components/Home-Dashboard/Survey"
 import LandingPage from "../../components/Home-Dashboard/LandingPage.tsx";
 
-
 import PixelBlast from '../../css/PixelBlast';
 
-//TODO remove creaturePacket - since you most likely will not display how many creatures are in an encounter
-// for encounter view component - it's unnecessary and may be slowing down loading time for image on encounter
-
-//Todo!! instead of showing the encounter page first - load in a welcome page for user to see
-// and also images for encounters will load in better becuase user won't have to watch all of it
-
-//TODO add username to account when they pull the drop down. They should see that
 function HomeDashboard() {
     const [activePage, setActivePage] = useState('LANDING_PAGE');
     const [monsters, setMonsters] = useState<MonsterCreature[]>([]);
     const [encounters, setEncounters] = useState<EncounterWithPacket[]>([]);
     const [loadingEncounter, setLoadingEncounter] = useState<boolean>(false);
+    const [encounterLimitReached, setEncounterLimitReached] = useState(false);
+    const MAX_ENCOUNTERS = 5;
 
     useEffect(() => {
         const fetchMonsters = async () => {
@@ -68,6 +62,8 @@ function HomeDashboard() {
             }));
             setEncounters(encountersWithPackets);
 
+            setEncounterLimitReached(encountersWithPackets.length >= MAX_ENCOUNTERS);
+
             for (const encounterItem of encountersWithPackets) {
                 try {
                     const packet = await creaturePacketGet(encounterItem.eid);
@@ -95,6 +91,9 @@ function HomeDashboard() {
         await fetchEncounters();
         setActivePage("SAVED_ENCOUNTERS");
     };
+    const handleCharacterCreated = async() => {
+        setActivePage("LOAD_CHARACTERS");
+    }
 
     return (
         <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100vh',
@@ -141,9 +140,12 @@ function HomeDashboard() {
                 <div style={{ flex: 1, overflowY: 'auto' }}>
                     {activePage === 'LANDING_PAGE' && <LandingPage />}
                     {activePage === 'SAVED_ENCOUNTERS' && <EncounterView encounters={encounters} loadingEncounter={loadingEncounter} onDeleteEncounter={handleDeleteEncounter} />}
-                    {activePage === 'CREATE_ENCOUNTER' && <CreateEncounter monsters={monsters} onEncounterCreated={handleEncounterCreated} />}
+                    {activePage === 'CREATE_ENCOUNTER' && <CreateEncounter
+                        monsters={monsters} onEncounterCreated={handleEncounterCreated}
+                        encounterLimitReached={encounterLimitReached}
+                    />}
                     {activePage === 'LOAD_CHARACTERS' && <LoadCharacter onDeletePlayer={onDeletePlayer} />}
-                    {activePage === 'CREATE_CHARACTER' && <CharCreation />}
+                    {activePage === 'CREATE_CHARACTER' && <CharCreation onCharacterCreated={handleCharacterCreated}/>}
                     {activePage === 'HOW_TO_USE' && <UserGuide />}
                     {activePage === 'SURVEY' && <Survey />}
                 </div>

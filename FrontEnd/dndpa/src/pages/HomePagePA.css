@@ -48,6 +48,7 @@ body {
     background: var(--pa-bg);
     color: var(--pa-text);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    /*font-family: 'Cinzel', serif;*/
     -webkit-font-smoothing: antialiased;
 }
 
@@ -315,16 +316,16 @@ body {
 }
 
 .pa-hero__cta-arrow {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    background: lavender;
+    background: white;
     /*background: #E40712;*/
     color: var(--pa-text-dark);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-weight: 700;
+    /*font-weight: 7040;*/
     flex-shrink: 0;
 }
 
