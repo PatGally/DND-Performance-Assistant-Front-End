@@ -91,3 +91,10 @@
     padding: 10px;
     border-radius: 10px 5px 15px 20px;
 }
+
+h1 {
+    border-bottom: 5px solid #ccc;
+}
+h2{
+    padding-top: 15px;
+}

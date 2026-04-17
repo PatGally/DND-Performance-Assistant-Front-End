@@ -12,7 +12,7 @@ import creaturePacketGet from "../../api/CreaturePacketGet";
 import type { EncounterWithPacket, EncounterDash } from "../../types/encounter";
 import {deleteEncounter} from "../../api/DeleteEncounter"
 import {deletePlayer} from "../../api/DeletePlayer";
-import HowToUse from "../../components/Home-Dashboard/HowToUse";
+import UserGuide from "../../components/Home-Dashboard/UserGuide.tsx";
 import Survey from "../../components/Home-Dashboard/Survey"
 
 import PixelBlast from '../../css/PixelBlast';
@@ -22,7 +22,6 @@ import PixelBlast from '../../css/PixelBlast';
 
 //Todo!! instead of showing the encounter page first - load in a welcome page for user to see
 // and also images for encounters will load in better becuase user won't have to watch all of it
-
 
 //TODO add username to account when they pull the drop down. They should see that
 function HomeDashboard() {
@@ -132,9 +131,7 @@ function HomeDashboard() {
             </div>
 
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative', zIndex: 1 }}>
-                <div
-                    className="p-2"
-                    style={{ width: '70px', backgroundColor: "rgba(15, 24, 40, 0.85)" }}
+                <div className="p-2" style={{ width: '70px', backgroundColor: "rgba(15, 24, 40, 0.85)" }}
                 >
                     <HomeDashNav setActivePage={setActivePage} />
                 </div>
@@ -144,7 +141,7 @@ function HomeDashboard() {
                     {activePage === 'CREATE_ENCOUNTER' && <CreateEncounter monsters={monsters} onEncounterCreated={handleEncounterCreated} />}
                     {activePage === 'LOAD_CHARACTERS' && <LoadCharacter onDeletePlayer={onDeletePlayer} />}
                     {activePage === 'CREATE_CHARACTER' && <CharCreation />}
-                    {activePage === 'HOW_TO_USE' && <HowToUse />}
+                    {activePage === 'HOW_TO_USE' && <UserGuide />}
                     {activePage === 'SURVEY' && <Survey />}
                 </div>
             </div>

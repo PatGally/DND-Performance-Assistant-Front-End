@@ -1,4 +1,3 @@
-
 /* Page wrapper */
 .initiative-page {
     padding: 1.5rem;
@@ -98,10 +97,6 @@
     background-color: #1b1f2a;
 }
 
-/* =========================
-   TYPE BADGES
-   ========================= */
-
 .type-badge {
     min-width: 60px;
     text-align: center;
@@ -114,30 +109,23 @@
     border-radius: 4px;
 }
 
-/* Player */
 .badge-player {
     color: #f3e6d0;
     background: rgba(56, 130, 240, 0.15);
     border: 1px solid rgba(56, 130, 240, 0.35);
 }
 
-/* Monster */
 .badge-monster {
     color: #f3e6d0;
     background: rgba(210, 65, 55, 0.15);
     border: 1px solid rgba(210, 65, 55, 0.35);
 }
 
-/* Lair */
 .badge-lair {
     color: #f3e6d0;
     background: rgba(210, 160, 45, 0.15);
     border: 1px solid rgba(210, 160, 45, 0.35);
 }
-
-/* =========================
-   TEXT STYLES
-   ========================= */
 
 .creature-name {
     color: #f3e6d0;
@@ -151,9 +139,7 @@
     opacity: 0.8;
 }
 
-/* =========================
-   INPUT (MATCH ITEM SYSTEM)
-   ========================= */
+
 
 .initiative-input {
     width: 70px;
@@ -176,9 +162,6 @@
     box-shadow: 0 0 8px rgba(201, 170, 113, 0.25);
 }
 
-/* =========================
-   BUTTON
-   ========================= */
 
 .clear-btn {
     background: none;
