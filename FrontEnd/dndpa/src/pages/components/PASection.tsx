@@ -1,5 +1,4 @@
 import React from 'react';
-import performanceIcon from '../../assets/performance-assistant.svg'
 
 interface NewsItem {
     id: string;
