@@ -124,6 +124,7 @@ function EncounterSimulation() {
                 setEncounterError(null);
 
                 const data = await getEncounter(eid);
+                console.log(data);
                 if (!data) {
                     setEncounterError("Encounter was not found.");
                     setEncounterData(undefined);
@@ -257,7 +258,7 @@ function EncounterSimulation() {
             const response = await axiosTokenInstance.get(`/encounter/${eid}/completed`)
             if (response.data.isEnd) {
                 if (encounterData && !encounterData.completed) {
-                    await axiosTokenInstance.get("/encounter/{eid}/setcompleted")
+                    await axiosTokenInstance.get(`/encounter/${eid}/setcompleted`);
                 }
                 setEndOfEncounter(true);
             }

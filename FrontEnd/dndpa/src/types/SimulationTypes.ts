@@ -123,6 +123,7 @@ export type Recommendation = {
     "topsis": number;
     "overallRank": number;
 }
+
 export type RecommendationAoeTarget = {
   targetsHit: string[];
   positioning: GridCoord[];
