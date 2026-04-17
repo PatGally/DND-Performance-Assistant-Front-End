@@ -1,4 +1,6 @@
 import type {MonsterCreature, PlayerCreature} from "./creature.ts";
+import type {GridCoord} from "./creature.ts";
+import type {CreatureAction} from "./action.ts";
 
 export type InitiativeEntry = {
     name: string;
@@ -32,13 +34,6 @@ export type Encounter = {
     players : PlayerCreature[];
     monsters: MonsterCreature[];
 };
-export interface PreTurnEffect {
-    "name" : string;
-    "effect" : {
-        "spellName" : string;
-        "resultID": string;
-    }
-}
 export type ActionKind = "spell" | "weapon" | "monster";
 export type TargetMode = "none" | "self" | "single" | "multi" | "aoe";
 export type RollMode = "none" | "toHit" | "save" | "autohit" | "onHit";
@@ -78,11 +73,11 @@ export type ActionRequestDraft = {
   actionImpact: number;
   targets: string[];
   conditions: string[];
-  statusEffects: Record<string, unknown>[];
+  statusEffects: Record<string, any>[];
   outcome: OutcomeDraft;
   extraOutcome: ExtraOutcomeDraft;
   timestamp: string; // "HH:MM:SS"
-    token? : any;
+    token? : AoeToken | null;
 };
 export type ActionExecutionSession = {
   action: NormalizedAction;
@@ -93,7 +88,6 @@ export type ActionExecutionSession = {
 
 export type StatKey = "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA";
 export type ManualStatBlock = Partial<Record<StatKey, number>>;
-
 export type ManualAffectedCreature = {
   cid: string;
   statArray?: ManualStatBlock;
@@ -112,7 +106,61 @@ export type ManualAffectedCreature = {
   enemy?: boolean;
   spellSlots?: number[][];
 };
-
 export type ManualDraftState = {
   affectedCreatures: ManualAffectedCreature[];
+};
+
+export type Recommendation = {
+    name : string;
+    prob : number;
+    eDam : number;
+    impact: number;
+    target : string[] | {targetsHit : string[]; positioning : GridCoord[]};
+    "probDisplay": number;
+    "probInit": number;
+    "probParts": unknown[];
+    "pareto": boolean;
+    "topsis": number;
+    "overallRank": number;
+}
+
+export type RecommendationAoeTarget = {
+  targetsHit: string[];
+  positioning: GridCoord[];
+};
+
+export type RecommendationTarget = Recommendation["target"];
+
+export type AoeToken = {
+  name: string;
+  positioning: GridCoord[];
+  token_image: string;
+  resultID: string;
+  cid: string;
+  anchor: GridCoord;
+  timing: string;
+  shape: string;
+};
+
+type ManualAoePlacementStage = "pick_anchor" | "pick_direction" | "ready";
+
+export type ManualAoePlacement = {
+  resultID: string;
+  name: string;
+  cid: string;
+  shape: "circle" | "square" | "cone" | "line";
+  radiusCells: number;
+  rangeCells: number;
+  timing: string;
+  token_image: string;
+  selfOrigin: boolean;
+  anchor: GridCoord | null;
+  stage: ManualAoePlacementStage;
+};
+
+export type PendingPreTurnResolution = {
+  effectName: "lingeffect" | "lingsave";
+  spell: CreatureAction;
+  resultID: string;
+  actor: string;
 };

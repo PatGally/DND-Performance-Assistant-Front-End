@@ -1,7 +1,7 @@
-import {isPlayerCreature} from "../api/CreatureGet.ts";
-import {type Creature} from "../types/creature.ts";
-import type {Encounter, InitiativeEntry} from "../types/SimulationTypes.ts";
-import type {GridCoord} from "../types/creature.ts";
+import {isPlayerCreature} from "../../api/CreatureGet.ts";
+import {type Creature} from "../../types/creature.ts";
+import type {Encounter, InitiativeEntry} from "../../types/SimulationTypes.ts";
+import type {GridCoord} from "../../types/creature.ts";
 
 export function getCreatureCid(creature: Creature): string {
     return isPlayerCreature(creature) ? creature.stats.cid : creature.cid;
@@ -35,6 +35,10 @@ export function resolveTargetToCid(target: string, encounter: Encounter): string
 export function getCurrentTurnCreatureFromEncounter(encounter: Encounter): Creature | undefined {
         const currentTurnEntry = encounter.initiative.find((entry : InitiativeEntry) => entry.currentTurn);
         if (!currentTurnEntry) return undefined;
+    if (currentTurnEntry.turnType === "lairAction") {
+        const sentinel = { _isLairAction: true } as unknown as Creature;
+        return sentinel;
+    }
 
         const allCreatures: Creature[] = [
             ...(encounter.players ?? []),

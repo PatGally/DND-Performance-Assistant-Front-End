@@ -6,8 +6,7 @@ function calcSpellSlots(level: number, characterClass: string): SpellSlots2D {
 
     const cls = characterClass.toLowerCase();
 
-    // Full casters
-    if (["sorcerer", "cleric", "druid", "bard"].includes(cls)) {
+    if (["sorcerer", "cleric", "druid", "bard", "wizard"].includes(cls)) {
         slotProgression = [
             [2, 0, 0, 0, 0, 0, 0, 0, 0],
             [3, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -31,7 +30,6 @@ function calcSpellSlots(level: number, characterClass: string): SpellSlots2D {
             [4, 3, 3, 3, 3, 2, 2, 1, 1],
         ];
     }
-    // Half-casters: Paladin, Ranger
     else if (["paladin", "ranger"].includes(cls)) {
         slotProgression = [
             [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -56,7 +54,6 @@ function calcSpellSlots(level: number, characterClass: string): SpellSlots2D {
             [4, 3, 3, 3, 2, 0, 0, 0, 0],
         ];
     }
-    // Warlock
     else if (cls === "warlock") {
         slotProgression = [
             [1, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -85,20 +82,16 @@ function calcSpellSlots(level: number, characterClass: string): SpellSlots2D {
         usesSlots = false;
     }
 
-    // If class doesn't use slots
     if (!usesSlots) {
         return Array(9).fill(0).map(() => ["0", "0"]);
     }
 
-    // Handle out of range levels
     if (level < 1 || level > 20) {
         return Array(9).fill(0).map(() => ["0", "0"]);
     }
 
-    // Get max slots for level
     const maxSlots = slotProgression[level - 1];
 
-    // Format as [["current","max"]]
     return maxSlots.map(n => [n.toString(), n.toString()]);
 }
 

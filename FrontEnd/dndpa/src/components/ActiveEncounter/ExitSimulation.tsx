@@ -95,7 +95,7 @@ const UserMenu = () => {
                     <div className="menu-divider" />
 
                     <button className="menu-item logout-item" onClick={handleReNavigate}>
-                        <BoxArrowRight size={16} />
+                        <BoxArrowRight size={'1.4rem'} />
                         <span>Exit Encounter</span>
                     </button>
                 </div>

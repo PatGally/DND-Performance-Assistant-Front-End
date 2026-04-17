@@ -1,0 +1,293 @@
+.pa-char-create {
+    --pa-cc-bg-base: rgba(15, 24, 40, 0.85);
+    --pa-cc-bg-tint: rgba(15, 24, 40, 0.85);
+    --pa-cc-ink: #0F1828;
+
+    --pa-cc-surface: rgba(255, 255, 255, 0.04);
+    --pa-cc-surface-hover: rgba(255, 255, 255, 0.08);
+    --pa-cc-border: rgba(255, 255, 255, 0.12);
+    --pa-cc-border-strong: rgba(255, 255, 255, 0.25);
+
+    --pa-cc-text: #ffffff;
+    --pa-cc-text-dim: rgba(255, 255, 255, 0.84);
+    --pa-cc-text-muted: rgba(255, 255, 255, 0.78);
+
+    --pa-cc-error: #f87171;
+
+    --pa-cc-radius-sm: 6px;
+    --pa-cc-radius-md: 10px;
+    --pa-cc-radius-pill: 999px;
+    --pa-cc-transition: 180ms ease;
+}
+
+.pa-char-create {
+    max-width: none;
+    /*margin: 40px auto;*/
+    padding: 0;
+    /*border-radius: var(--pa-cc-radius-md);*/
+    /* Layered background: solid base + the navy tint on top so the rgba
+       color is reliable regardless of what sits behind the container. */
+    background-color: var(--pa-cc-bg-base);
+    /*background-image: linear-gradient(var(--pa-cc-bg-tint), var(--pa-cc-bg-tint));*/
+    /*border: 1px solid var(--pa-cc-border);*/
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    color: var(--pa-cc-text);
+    font-family:  Roboto, Helvetica, Arial, sans-serif;
+    /*font-family: 'Cinzel', serif;*/
+    -webkit-font-smoothing: antialiased;
+}
+
+.pa-char-create__form {
+    padding: 40px;
+}
+
+.pa-char-create__header {
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--pa-cc-border);
+    margin-bottom: 32px;
+}
+
+.pa-char-create__title {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    margin: 0 0 6px 0;
+    color: var(--pa-cc-text);
+}
+
+.pa-char-create__subtitle {
+    font-size: 1.7rem;
+    color: var(--pa-cc-text-dim);
+    margin: 0;
+}
+
+/* ---------- Sections ---------- */
+.pa-char-create__section {
+    margin-bottom: 32px;
+}
+
+.pa-char-create__section:last-of-type {
+    margin-bottom: 16px;
+}
+
+.pa-char-create__section-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--pa-cc-text-muted);
+    margin: 0 0 16px 0;
+}
+
+.pa-char-create__label.form-label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--pa-cc-text-dim);
+    margin-bottom: 6px;
+    letter-spacing: 0.02em;
+}
+
+/* ---------- Inputs & Selects ----------
+   Scoped overrides to Bootstrap's .form-control / .form-select so other
+   forms in the app aren't affected. */
+.pa-char-create .pa-char-create__input.form-control,
+.pa-char-create .pa-char-create__input.form-select {
+    background-color: var(--pa-cc-surface);
+    border: 1px solid var(--pa-cc-border);
+    color: var(--pa-cc-text);
+    border-radius: var(--pa-cc-radius-sm);
+    padding: 10px 14px;
+    transition: border-color var(--pa-cc-transition), background-color var(--pa-cc-transition);
+}
+
+.pa-char-create .pa-char-create__input.form-control::placeholder {
+    color: var(--pa-cc-text-muted);
+}
+
+.pa-char-create .pa-char-create__input.form-control:hover,
+.pa-char-create .pa-char-create__input.form-select:hover {
+    background-color: var(--pa-cc-surface-hover);
+}
+
+.pa-char-create .pa-char-create__input.form-control:focus,
+.pa-char-create .pa-char-create__input.form-select:focus {
+    background-color: var(--pa-cc-surface-hover);
+    border-color: var(--pa-cc-border-strong) !important;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06) !important;
+    color: var(--pa-cc-text);
+    outline: none;
+}
+
+/* Invalid state — muted red so it reads clearly against the dark surface */
+.pa-char-create .pa-char-create__input.form-control.is-invalid,
+.pa-char-create .pa-char-create__input.form-select.is-invalid {
+    border-color: var(--pa-cc-error);
+    background-image: none; /* remove Bootstrap's red icon — it clashes */
+}
+
+.pa-char-create .pa-char-create__input.form-control.is-invalid:focus,
+.pa-char-create .pa-char-create__input.form-select.is-invalid:focus {
+    box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.15) !important;
+}
+
+/* Bootstrap's invalid feedback text */
+.pa-char-create .invalid-feedback {
+    color: var(--pa-cc-error);
+    font-size: 0.9rem;
+}
+
+/* Native select dropdown arrow — Bootstrap's default is dark; flip to light */
+.pa-char-create .pa-char-create__input.form-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3E%3C/svg%3E");
+}
+
+.pa-char-create .pa-char-create__input.form-select option {
+    background-color: #1a1a1a;
+    color: var(--pa-cc-text);
+}
+
+/* ---------- Ability stat inputs ----------
+   The six stat fields sit close together, so center their values visually
+   to feel more like "stat blocks" than generic inputs. */
+.pa-char-create__stat .pa-char-create__input--stat {
+    text-align: center;
+    font-weight: 600;
+}
+
+/* ---------- Checkbox / switch options ---------- */
+.pa-char-create__options {
+    padding: 16px;
+    background: var(--pa-cc-surface);
+    border: 1px solid var(--pa-cc-border);
+    border-radius: var(--pa-cc-radius-sm);
+}
+
+.pa-char-create .pa-char-create__check.form-check {
+    color: var(--pa-cc-text);
+    min-height: auto;
+    margin-bottom: 0;
+    padding-left: 1.75em;
+}
+
+.pa-char-create .pa-char-create__check .form-check-label {
+    font-size: 1.2rem;
+    color: var(--pa-cc-text-dim);
+    cursor: pointer;
+    transition: color var(--pa-cc-transition);
+}
+
+.pa-char-create .pa-char-create__check:hover .form-check-label {
+    color: var(--pa-cc-text);
+}
+
+.pa-char-create .pa-char-create__check .form-check-input {
+    background-color: var(--pa-cc-surface);
+    border: 1px solid var(--pa-cc-border-strong);
+    cursor: pointer;
+    transition: background-color var(--pa-cc-transition), border-color var(--pa-cc-transition);
+}
+
+.pa-char-create .pa-char-create__check .form-check-input:focus {
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+    border-color: var(--pa-cc-text);
+}
+
+.pa-char-create .pa-char-create__check .form-check-input:checked {
+    background-color: var(--pa-cc-text);
+    border-color: var(--pa-cc-text);
+}
+
+/* Checkbox checkmark — render in the ink color so it echoes the palette */
+.pa-char-create .pa-char-create__check .form-check-input[type="checkbox"]:checked {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='none' stroke='%230F1828' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3 6-6'/%3E%3C/svg%3E");
+}
+
+/* Switch knob + track */
+.pa-char-create .pa-char-create__check--switch .form-check-input[type="checkbox"] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3E%3Ccircle r='3' fill='rgba(255, 255, 255, 0.7)'/%3E%3C/svg%3E");
+}
+
+.pa-char-create .pa-char-create__check--switch .form-check-input[type="checkbox"]:checked {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3E%3Ccircle r='3' fill='%230F1828'/%3E%3C/svg%3E");
+}
+
+/* ---------- Loading + error states ---------- */
+.pa-char-create__loading {
+    font-size: 1rem;
+    color: var(--pa-cc-text-muted);
+    font-style: italic;
+    padding: 12px 0;
+}
+
+.pa-char-create__error {
+    color: var(--pa-cc-error);
+    font-size: 0.9rem;
+}
+
+/* ---------- Actions ---------- */
+.pa-char-create__actions {
+    padding-top: 24px;
+    border-top: 1px solid var(--pa-cc-border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.pa-char-create .pa-char-create__submit.btn {
+    background: var(--pa-cc-text);
+    color: var(--pa-cc-ink);
+    border: none;
+    padding: 12px 36px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    border-radius: var(--pa-cc-radius-pill);
+    transition: opacity var(--pa-cc-transition), transform var(--pa-cc-transition);
+}
+
+.pa-char-create .pa-char-create__submit.btn:hover:not(:disabled) {
+    background: var(--pa-cc-text);
+    color: var(--pa-cc-ink);
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.pa-char-create .pa-char-create__submit.btn:focus,
+.pa-char-create .pa-char-create__submit.btn:active {
+    background: var(--pa-cc-text) !important;
+    color: var(--pa-cc-ink) !important;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15) !important;
+}
+
+.pa-char-create .pa-char-create__submit.btn:disabled {
+    background: var(--pa-cc-surface-hover);
+    color: var(--pa-cc-text-muted);
+    opacity: 1;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width: 768px) {
+    .pa-char-create {
+        margin: 20px 16px;
+    }
+
+    .pa-char-create__form {
+        padding: 24px;
+    }
+
+    .pa-char-create__title {
+        font-size: 22px;
+    }
+
+    .pa-char-create__actions {
+        justify-content: stretch;
+    }
+
+    .pa-char-create .pa-char-create__submit.btn {
+        width: 100%;
+    }
+}

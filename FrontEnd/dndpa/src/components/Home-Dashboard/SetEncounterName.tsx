@@ -11,7 +11,7 @@ function SetEncounterName({ formData, updateFormData }: Props) {
     const isInvalid = isTouched && formData.name.trim().length < 3;
 
     return (
-        <div className="p-3">
+        <div className="p-3" style={{backgroundColor: "rgba(15, 24, 40, 0.85)", height: "100%"}}>
             <Form.Group>
                 <Form.Control
                     type="text"

@@ -1,0 +1,100 @@
+.howto-container {
+    display: flex;
+    min-height: 100vh;
+    background-color: rgba(15, 24, 40, 0.85);
+    /*background-color: white; !* change this later *!*/
+    color: #ccc;
+    font-family: Arial, sans-serif;
+}
+
+/* Sidebar */
+.howto-sidebar {
+    width: 250px;
+    padding: 20px;
+    border-right: 1px solid #ccc;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+
+.howto-sidebar h3 {
+    margin-bottom: 15px;
+}
+
+.howto-sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+.howto-sidebar li {
+    margin-bottom: 10px;
+}
+
+.howto-sidebar a {
+    text-decoration: none;
+    color: #ccc;
+    transition: color 0.2s ease;
+}
+
+.howto-sidebar a:hover {
+    color: #007bff;
+}
+
+/* Content */
+.howto-content {
+    flex: 1;
+    padding: 40px;
+    max-width: 900px;
+}
+
+.howto-content section {
+    margin-bottom: 50px;
+}
+
+.howto-content h2 {
+    margin-bottom: 10px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 5px;
+}
+
+.howto-content p {
+    line-height: 1.6;
+}
+
+
+/**/
+
+.howto-nav {
+    list-style: none;
+    padding: 0;
+}
+
+.nav-section {
+    font-weight: bold;
+    color: #eeeeee;
+    margin-top: 15px;
+}
+
+.nav-section ul {
+    list-style: none;
+    padding-left: 15px;
+    margin-top: 5px;
+}
+
+.nav-section li {
+    font-weight: normal;
+    margin-bottom: 6px;
+}
+
+.description-bg{
+    background-color: rgba(30, 33, 40, 0.85);
+    padding: 10px;
+    border-radius: 10px 5px 15px 20px;
+}
+
+h1 {
+    border-bottom: 5px solid #ccc;
+}
+h2{
+    padding-top: 15px;
+}

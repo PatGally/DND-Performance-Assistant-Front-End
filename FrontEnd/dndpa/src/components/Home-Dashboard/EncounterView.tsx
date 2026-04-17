@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, Modal, Button } from "react-bootstrap";
 import type { EncounterWithPacket } from "../../types/encounter.ts";
 import "bootstrap/dist/css/bootstrap.min.css";
+import NoEncounters from "./NoEncounters.tsx";
 
 type Props = {
     encounters: EncounterWithPacket[];
@@ -38,10 +39,16 @@ const EncounterView = ({ encounters, loadingEncounter, onDeleteEncounter }: Prop
     };
 
     if (loadingEncounter) return <div>Loading...</div>;
-    if (encounters.length === 0) return <div>No encounters found</div>;
+    if (encounters.length === 0)
+        return<div style={{ backgroundColor: "rgba(15, 24, 40, 0.85)", flex: 1, minHeight: "100vh"}}>
+            <NoEncounters />
+    </div>;
     return (
-        <>
-            <div className="container">
+        < >
+            <div className="container-fluid"
+                 style={{ backgroundColor: "rgba(15, 24, 40, 0.85)",
+                flex: 1,
+                minHeight: "100vh"}}>
                 <div className="row g-3">
                     {(encounters ?? []).map((enc) => (
                         <div key={enc.eid} className="col-12 col-md-6 col-lg-4">
@@ -92,7 +99,7 @@ const EncounterView = ({ encounters, loadingEncounter, onDeleteEncounter }: Prop
                                     </div>
                                 </div>
 
-                                <Card.Body>
+                                <Card.Body >
                                     <p className="text-muted mb-3" style={{ fontSize: '0.8rem' }}>
                                         {new Date(enc.date).toLocaleDateString()} &mdash; Completed: {String(enc.completed)}
                                     </p>

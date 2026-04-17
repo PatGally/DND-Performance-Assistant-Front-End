@@ -1,0 +1,293 @@
+/* Page wrapper */
+.initiative-page {
+    padding: 1.5rem;
+    background-color: rgba(15, 24, 40, 0.85);
+    height: 100%;
+}
+
+/* Intro text */
+.initiative-intro {
+    color: #f3e6d0;
+    margin-bottom: 1.25rem;
+    font-size: 1.2rem;
+}
+
+/* =========================
+   COLUMN LAYOUT
+   ========================= */
+
+.creature-column {
+    flex: 1 1 340px;
+}
+
+.turn-order-column {
+    flex: 0 0 220px;
+}
+
+/* =========================
+   SECTION HEADERS
+   ========================= */
+
+.section-label {
+    color: #c9aa71;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.9rem;
+}
+
+.section-count {
+    color: #f3e6d0;
+    font-size: 1rem;
+    opacity: 0.7;
+}
+
+/* =========================
+   EMPTY STATE (MATCH ITEM STYLE)
+   ========================= */
+
+.empty-state {
+    color: #f3e6d0;
+
+    border: 1px solid rgba(201, 170, 113, 0.25);
+    border-radius: 8px;
+
+    padding: 0.75rem;
+    font-size: 0.85rem;
+
+    background-color: #1b1f2a;
+}
+
+/* =========================
+   CREATURE ROW (ITEM-LIKE CARD)
+   ========================= */
+
+.creature-row {
+    padding: 12px 14px;
+
+    background-color: #1b1f2a; /* SAME as .item */
+    border-radius: 8px;
+
+    margin-bottom: 0;
+
+    color: #f3e6d0;
+
+    border: 1px solid rgba(201, 170, 113, 0.25);
+
+    transition: all 0.2s ease;
+
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Hover matches .item hover */
+.creature-row:hover {
+    border-color: rgba(201, 170, 113, 0.45);
+    box-shadow: 0 0 10px rgba(201, 170, 113, 0.15);
+}
+
+/* Selected / set state (like .item.selected) */
+.creature-row.set {
+    background-color: #243047;
+    border: 1px solid #c9aa71;
+    box-shadow: 0 0 12px rgba(201, 170, 113, 0.35);
+}
+
+.creature-row.unset {
+    background-color: #1b1f2a;
+}
+
+.type-badge {
+    min-width: 60px;
+    text-align: center;
+
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+
+.badge-player {
+    color: #f3e6d0;
+    background: rgba(56, 130, 240, 0.15);
+    border: 1px solid rgba(56, 130, 240, 0.35);
+}
+
+.badge-monster {
+    color: #f3e6d0;
+    background: rgba(210, 65, 55, 0.15);
+    border: 1px solid rgba(210, 65, 55, 0.35);
+}
+
+.badge-lair {
+    color: #f3e6d0;
+    background: rgba(210, 160, 45, 0.15);
+    border: 1px solid rgba(210, 160, 45, 0.35);
+}
+
+.creature-name {
+    color: #f3e6d0;
+    flex-grow: 1;
+    font-size: 1.19rem;
+}
+
+.creature-dex {
+    color: #c9aa71;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+
+
+.initiative-input {
+    width: 70px;
+    text-align: center;
+
+    background: #1b1f2a;
+    color: #f3e6d0;
+
+    border: 1px solid rgba(201, 170, 113, 0.25);
+    border-radius: 6px;
+
+    padding: 4px 6px;
+    font-size: 0.875rem;
+
+    outline: none;
+}
+
+.initiative-input:focus {
+    border-color: #c9aa71;
+    box-shadow: 0 0 8px rgba(201, 170, 113, 0.25);
+}
+
+
+.clear-btn {
+    background: none;
+    border: none;
+
+    font-size: 0.8rem;
+    padding: 4px 6px;
+    border-radius: 4px;
+
+    cursor: pointer;
+    transition: color 0.15s ease, opacity 0.15s ease;
+}
+
+.clear-btn.enabled {
+    color: #c9aa71;
+    opacity: 1;
+}
+
+.clear-btn.disabled {
+    color: #f3e6d0;
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* =========================
+   LAIR SECTION (ITEM-COMPATIBLE)
+   ========================= */
+
+.lair-header {
+    margin-top: 0.4rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid rgba(201, 170, 113, 0.25);
+}
+
+.lair-label {
+    color: #c9aa71;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    opacity: 0.8;
+}
+
+.lair-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    padding: 12px 14px;
+
+    background-color: #1b1f2a;
+    border-radius: 8px;
+
+    border: 1px solid rgba(201, 170, 113, 0.25);
+}
+
+.lair-value {
+    color: #c9aa71;
+    font-size: 0.85rem;
+    font-weight: 600;
+
+    padding: 3px 10px;
+    border-radius: 6px;
+
+    background: rgba(201, 170, 113, 0.15);
+    border: 1px solid rgba(201, 170, 113, 0.35);
+}
+
+.lair-spacer {
+    width: 28px;
+}
+
+/* =========================
+   TURN ORDER PANEL (MATCH ITEM)
+   ========================= */
+
+.turn-box {
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+
+    background-color: #1b1f2a;
+    border: 1px solid rgba(201, 170, 113, 0.25);
+}
+
+.turn-list {
+    margin-bottom: 0;
+    padding-left: 1.1rem;
+}
+
+.turn-item {
+    margin-bottom: 0.35rem;
+    font-size: 1rem;
+}
+
+.turn-muted {
+    color: #c9aa71;
+    opacity: 0.7;
+    font-size: 0.78rem;
+    margin-left: 6px;
+}
+
+/* Turn colors */
+.turn-player {
+    color: rgb(56, 130, 240);
+}
+
+.turn-monster {
+    color: rgb(210, 65, 55);
+}
+
+.turn-lair {
+    color: rgb(210, 160, 45);
+}
+
+/* Lair tag */
+.turn-lair-tag {
+    margin-left: 6px;
+    font-size: 0.65rem;
+
+    color: #c9aa71;
+
+    background: rgba(201, 170, 113, 0.15);
+    border: 1px solid rgba(201, 170, 113, 0.3);
+
+    border-radius: 3px;
+    padding: 1px 5px;
+
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}

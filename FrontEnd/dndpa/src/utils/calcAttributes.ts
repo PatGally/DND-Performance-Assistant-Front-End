@@ -32,7 +32,6 @@ function calcAttributes(level: number, characterClass: string) {
 
     const attribute = CharAttributeList[characterClass];
 
-    console.log("Massive test here",attribute);
     return {...attribute};
 
 }

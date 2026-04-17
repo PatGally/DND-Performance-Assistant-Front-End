@@ -25,8 +25,22 @@ import MonstrosityToken from "./monster_tokens/Monstrosity.png";
 import OozeToken from "./monster_tokens/Ooze.png";
 import PlantToken from "./monster_tokens/Plant.png";
 import UndeadToken from "./monster_tokens/Undead.png";
+import aoeAcid from "./aoe_tokens/circle/aoeAcid.png";
+import aoeBludgeoning from "./aoe_tokens/circle/aoeBludgeoning.png";
+import aoeCold from "./aoe_tokens/circle/aoeCold.png";
+import aoeFire from "./aoe_tokens/circle/aoeFire.png";
+import aoeForce from "./aoe_tokens/circle/aoeForce.png";
+import aoeLightning from "./aoe_tokens/circle/aoeLightning.png";
+import aoeNecrotic from "./aoe_tokens/circle/aoeNecrotic.png";
+import aoePiercing from "./aoe_tokens/circle/aoePiercing.png";
+import aoePoison from "./aoe_tokens/circle/aoePoison.png";
+import aoePsychic from "./aoe_tokens/circle/aoePsychic.png";
+import aoeRadiant from "./aoe_tokens/circle/aoeRadiant.png";
+import aoeSlashing from "./aoe_tokens/circle/aoeSlashing.png";
+import aoeDefault from "./aoe_tokens/circle/aoeDefault.png";
 
 export {ArtificerToken, BarbarianToken, BardToken, ClericToken, DruidToken, FighterToken, MonkToken, PaladinToken,
     RangerToken, RogueToken, SorcererToken, WarlockToken, WizardToken, AberrationToken, BeastToken, CelestialToken,
     ConstructToken , DragonToken, ElementalToken, FeyToken, FiendToken, GiantToken, HumanoidToken, MonstrosityToken,
-    OozeToken, PlantToken, UndeadToken};
+    OozeToken, PlantToken, UndeadToken, aoeAcid, aoeBludgeoning, aoeCold, aoeFire, aoeForce, aoeLightning, aoeNecrotic,
+    aoePiercing, aoePoison, aoePsychic, aoeRadiant, aoeSlashing, aoeDefault};

@@ -1,527 +1,334 @@
 import { useEffect, useMemo, useState } from "react";
-import creatureGet, { isPlayerCreature } from "../../api/CreatureGet.ts";
+
+import creatureGet, { isPlayerCreature } from "../../api/CreatureGet";
+import { getConditions } from "../../api/ConditionGet";
+import { getStatusEffects } from "../../api/StatusEffectsGet";
+
 import type {
-  Creature,
-  MonsterCreature,
-  PlayerCreature,
-} from "../../types/creature.ts";
-import type { InitiativeEntry, ManualAffectedCreature, ManualStatBlock, StatKey } from "../../types/SimulationTypes.ts";
+    Creature,
+} from "../../types/creature";
 
-type ComplexManualEntryProps = {
-  eid: string;
-  cid: string;
-  initiativeEntry: InitiativeEntry;
-  onToggle: () => void;
-  draftValue?: ManualAffectedCreature;
-  onDraftChange: (next: ManualAffectedCreature) => void;
-};
+import type {
+    InitiativeEntry,
+    ManualAffectedCreature,
+    ManualStatBlock,
+} from "../../types/SimulationTypes";
 
-const STAT_KEYS: StatKey[] = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
+import {
+    BLOCKED_CONDITIONS,
+    BLOCKED_STATUS_EFFECTS,
+    DAMAGE_TYPES,
+} from "../../types/ManualEntryTypes.ts";
 
-function deepEqual(a: unknown, b: unknown): boolean {
-  return JSON.stringify(a) === JSON.stringify(b);
-}
-function toNumberOrUndefined(value: string): number | undefined {
-  if (value.trim() === "") return undefined;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
-function parseCommaList(value: string): string[] {
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-function safeJsonStringify(value: unknown): string {
-  return JSON.stringify(value ?? [], null, 2);
-}
-function normalizeStatBlock(
-  value: Record<string, unknown> | undefined
-): ManualStatBlock | undefined {
-  if (!value) return undefined;
+import {
+    creatureToBaseline,
+    deepEqual,
+    expandStatBlock,
+    getBooleanValue,
+    getNumberValue,
+    getStatusEffectAttributes,
+    getStatusEffectResultIDs,
+    getStatusEffectRoll,
+    isStatusEffectRecord,
+    normalizeSpellSlots,
+    normalizeValue,
+} from "../../utils/ActiveSimUtils/ManualEntryHelpers.ts";
 
-  const out: ManualStatBlock = {};
-  for (const key of STAT_KEYS) {
-    const raw = value[key];
-    if (typeof raw === "number") {
-      out[key] = raw;
-    }
-  }
-  return out;
-}
+import type { StatusEffectRecord } from "../../types/ManualEntryTypes.ts";
 
-function creatureToBaseline(creature: Creature, cid: string): ManualAffectedCreature {
-  if (isPlayerCreature(creature)) {
-    const stats = creature.stats;
-
-    return {
-      cid,
-      statArray: normalizeStatBlock(stats.statArray as Record<string, unknown> | undefined),
-      saveProfs: normalizeStatBlock(stats.saveProfs as Record<string, unknown> | undefined),
-      modifiers: normalizeStatBlock(stats.modifiers as Record<string, unknown> | undefined),
-      damResists: stats.damResists ?? [],
-      damImmunes: stats.damImmunes ?? [],
-      damVulns: stats.damVulns ?? [],
-      conImmunes: stats.conImmunes ?? [],
-      activeConditions: stats.activeConditions ?? [],
-      activeStatusEffects: Array.isArray(stats.activeStatusEffects)
-        ? (stats.activeStatusEffects as Record<string, unknown>[])
-        : [],
-      hp: typeof stats.hp === "number" ? stats.hp : undefined,
-      position: Array.isArray(stats.position) ? stats.position : [],
-      ac: typeof stats.ac === "number" ? stats.ac : undefined,
-      spellSlots: Array.isArray(stats.spellSlots)
-        ? (stats.spellSlots as number[][])
-        : [],
-    };
-  }
-
-  const monster = creature as MonsterCreature;
-
-  return {
-    cid,
-    statArray: normalizeStatBlock(monster.statArray as Record<string, unknown> | undefined),
-    saveProfs: normalizeStatBlock(monster.saveProfs as Record<string, unknown> | undefined),
-    modifiers: normalizeStatBlock(monster.modifiers as Record<string, unknown> | undefined),
-    damResists: monster.damResists ?? [],
-    damImmunes: monster.damImmunes ?? [],
-    damVulns: monster.damVulns ?? [],
-    conImmunes: monster.conImmunes ?? [],
-    activeConditions: (monster.activeConditions ?? monster.activeCons ?? []) as string[],
-    activeStatusEffects: Array.isArray(monster.activeStatusEffects)
-      ? (monster.activeStatusEffects as Record<string, unknown>[])
-      : [],
-    hp: typeof monster.hp === "number" ? monster.hp : undefined,
-    position: Array.isArray(monster.position) ? monster.position : [],
-    ac: typeof monster.ac === "number" ? monster.ac : undefined,
-    lResists: typeof monster.lResists === "number" ? monster.lResists : undefined,
-    enemy: typeof monster.enemy === "boolean" ? monster.enemy : undefined,
-  };
-}
-
-function SectionHeader({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ marginTop: "12px", marginBottom: "8px" }}>
-      <strong>{children}</strong>
-    </div>
-  );
-}
-
-function NumberField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: number | undefined;
-  onChange: (next: number | undefined) => void;
-}) {
-  return (
-    <div style={{ marginBottom: "10px" }}>
-      <div style={{ marginBottom: "4px" }}>{label}</div>
-      <input
-        type="number"
-        value={value ?? ""}
-        onChange={(e) => onChange(toNumberOrUndefined(e.target.value))}
-        style={{ width: "100%" }}
-      />
-    </div>
-  );
-}
-
-function CheckboxField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: boolean | undefined;
-  onChange: (next: boolean) => void;
-}) {
-  return (
-    <label
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        marginBottom: "10px",
-      }}
-    >
-      <input
-        type="checkbox"
-        checked={!!value}
-        onChange={(e) => onChange(e.target.checked)}
-      />
-      <span>{label}</span>
-    </label>
-  );
-}
-
-function ListField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string[] | undefined;
-  onChange: (next: string[]) => void;
-}) {
-  return (
-    <div style={{ marginBottom: "10px" }}>
-      <div style={{ marginBottom: "4px" }}>{label}</div>
-      <textarea
-        rows={2}
-        value={(value ?? []).join(", ")}
-        onChange={(e) => onChange(parseCommaList(e.target.value))}
-        style={{ width: "100%" }}
-      />
-      <div style={{ fontSize: "12px", opacity: 0.8 }}>Comma-separated</div>
-    </div>
-  );
-}
-
-function JsonField<T>({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: T | undefined;
-  onChange: (next: T) => void;
-}) {
-  const [raw, setRaw] = useState<string>(safeJsonStringify(value));
-  const [error, setError] = useState<string>("");
-
-  useEffect(() => {
-    setRaw(safeJsonStringify(value));
-    setError("");
-  }, [value]);
-
-  return (
-    <div style={{ marginBottom: "10px" }}>
-      <div style={{ marginBottom: "4px" }}>{label}</div>
-      <textarea
-        rows={5}
-        value={raw}
-        onChange={(e) => setRaw(e.target.value)}
-        onBlur={() => {
-          try {
-            const parsed = JSON.parse(raw) as T;
-            onChange(parsed);
-            setError("");
-          } catch {
-            setError("Invalid JSON");
-          }
-        }}
-        style={{ width: "100%" }}
-      />
-      {error ? (
-        <div style={{ fontSize: "12px", color: "#ff8080" }}>{error}</div>
-      ) : null}
-    </div>
-  );
-}
-
-function StatBlockEditor({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: ManualStatBlock | undefined;
-  onChange: (next: ManualStatBlock) => void;
-}) {
-  const current = value ?? {};
-
-  return (
-    <div style={{ marginBottom: "10px" }}>
-      <SectionHeader>{label}</SectionHeader>
-      {STAT_KEYS.map((key) => (
-        <NumberField
-          key={key}
-          label={key}
-          value={current[key]}
-          onChange={(nextValue) =>
-            onChange({
-              ...current,
-              [key]: nextValue,
-            })
-          }
-        />
-      ))}
-    </div>
-  );
-}
+import ComplexManualEntrySection from "./ComplexManualEntries/ComplexManualEntrySection.tsx";
+import ComplexManualEntryNumberInputField from "./ComplexManualEntries/ComplexManualEntryNumberInputField";
+import ComplexManualEntryCheckboxField from "./ComplexManualEntries/ComplexManualEntryCheckboxField";
+import ComplexManualEntryStatBlockEditor from "./ComplexManualEntries/ComplexManualEntryStatBlockEditor.tsx";
+import ComplexManualEntryMultiSelectSearch from "./ComplexManualEntries/ComplexManualEntryMultiSelectSearch";
+import ComplexManualEntryStatusEffectEditor from "./ComplexManualEntries/ComplexManualEntryStatusEffectEditor";
+import ComplexManualEntrySpellSlotsEditor from "./ComplexManualEntries/ComplexManualEntrySpellSlotsEditor";
+import ComplexManualEntryCreatureSummary from "./ComplexManualEntries/ComplexManualEntryCreatureSummary";
 
 export default function ComplexManualEntry({
-  eid,
-  cid,
-  initiativeEntry,
-  onToggle,
-  draftValue,
-  onDraftChange,
-}: ComplexManualEntryProps) {
-  const [creature, setCreature] = useState<Creature | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>("");
+                                               eid,
+                                               cid,
+                                               initiativeEntry,
+                                               draftValue,
+                                               onDraftChange,
+                                               onToggle,
+                                           }: {
+    eid: string;
+    cid: string;
+    initiativeEntry: InitiativeEntry;
+    onToggle?: () => void;
+    draftValue?: ManualAffectedCreature;
+    onDraftChange: (next: ManualAffectedCreature) => void;
+}) {
+    const [creature, setCreature] = useState<Creature | null>(null);
+    const [conditions, setConditions] = useState<string[]>([]);
+    const [statusEffects, setStatusEffects] = useState<string[]>([]);
 
-  useEffect(() => {
-    async function loadCreature() {
-      try {
-        setLoading(true);
-        setError("");
-        const data = await creatureGet(eid, cid);
+    useEffect(() => {
+        let isMounted = true;
 
-        if (!data) {
-          setError("Creature not found.");
-          setCreature(null);
-          return;
+        async function loadData() {
+            try {
+                const [c, conds, stats] = await Promise.all([
+                    creatureGet(eid, cid),
+                    getConditions(),
+                    getStatusEffects(),
+                ]);
+
+                if (!isMounted) return;
+
+                setCreature(c);
+                setConditions(conds);
+                setStatusEffects(stats);
+            } catch (err) {
+                console.error(err);
+            }
         }
 
-        setCreature(data);
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
+        loadData();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [eid, cid]);
+
+    const filteredConditions = useMemo(() => {
+        return conditions.filter(
+            (condition) => !BLOCKED_CONDITIONS.has(normalizeValue(condition))
+        );
+    }, [conditions]);
+
+    const filteredStatusEffects = useMemo(() => {
+        return statusEffects.filter(
+            (effect) => !BLOCKED_STATUS_EFFECTS.has(normalizeValue(effect))
+        );
+    }, [statusEffects]);
+
+    const baseline = useMemo(
+        () => (creature ? creatureToBaseline(creature, cid) : undefined),
+        [creature, cid]
+    );
+
+    function update(
+        key: keyof ManualAffectedCreature,
+        val: unknown,
+        base: unknown
+    ) {
+        const next = {
+            ...(draftValue ?? { cid }),
+            cid,
+        } as Record<string, unknown>;
+
+        if (deepEqual(val, base)) {
+            delete next[key];
         } else {
-          setError("Failed to load creature.");
+            next[key] = val;
         }
-      } finally {
-        setLoading(false);
-      }
+
+        onDraftChange(next as ManualAffectedCreature);
     }
 
-    loadCreature();
-  }, [eid, cid]);
-
-  const baseline = useMemo(() => {
-    if (!creature) return undefined;
-    return creatureToBaseline(creature, cid);
-  }, [creature, cid]);
-
-  function updatePatchField<K extends keyof ManualAffectedCreature>(
-    key: K,
-    nextValue: ManualAffectedCreature[K],
-    baselineValue: ManualAffectedCreature[K]
-  ) {
-    const nextPatch: ManualAffectedCreature = {
-      ...(draftValue ?? { cid }),
-      cid,
-    };
-
-    if (deepEqual(nextValue, baselineValue)) {
-      delete nextPatch[key];
-    } else {
-      nextPatch[key] = nextValue;
+    function val(key: keyof ManualAffectedCreature) {
+        return draftValue?.[key] ?? baseline?.[key];
     }
 
-    const changedKeys = Object.keys(nextPatch).filter((field) => field !== "cid");
+    function getMonsterSpellSlots(sourceCreature: Creature) {
+        if (isPlayerCreature(sourceCreature)) {
+            return undefined;
+        }
 
-    if (changedKeys.length === 0) {
-      onDraftChange({ cid });
-      return;
+        const monster = sourceCreature as Record<string, unknown>;
+        const spellInfo =
+            monster.spellInfo && typeof monster.spellInfo === "object"
+                ? (monster.spellInfo as Record<string, unknown>)
+                : undefined;
+
+        return (
+            monster.spellSlots ??
+            spellInfo?.spellSlots ??
+            spellInfo?.slots
+        );
     }
 
-    onDraftChange(nextPatch);
-  }
-
-  function getDisplayValue<K extends keyof ManualAffectedCreature>(
-    key: K
-  ): ManualAffectedCreature[K] | undefined {
-    if (draftValue && draftValue[key] !== undefined) {
-      return draftValue[key];
+    if (!creature || !baseline) {
+        return <div>Loading...</div>;
     }
-    return baseline?.[key];
-  }
 
-  return (
-    <div
-      style={{
-        border: "1px solid #ccc",
-        borderRadius: "6px",
-        padding: "10px 12px",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "12px",
-        }}
-      >
-        <div>
-          <strong>{initiativeEntry.name}</strong>
-        </div>
+    const currentStatusEffects = Array.isArray(val("activeStatusEffects"))
+        ? (val("activeStatusEffects") as unknown[]).filter(isStatusEffectRecord)
+        : [];
 
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-label="Collapse creature details"
-          style={{
-            border: "none",
-            background: "transparent",
-            cursor: "pointer",
-            fontSize: "14px",
-            transform: "rotate(90deg)",
-          }}
-        >
-          ▶
-        </button>
-      </div>
+    const normalizedCurrentStatusEffects: StatusEffectRecord[] = currentStatusEffects.map((record) => {
+        const recordObj = record as Record<string, unknown>;
 
-      {loading && <div style={{ marginTop: "10px" }}>Loading creature.</div>}
-      {error && <div style={{ marginTop: "10px" }}>Error: {error}</div>}
+        return {
+            name: String((record as { name: unknown }).name),
+            effect: {
+                roll: getStatusEffectRoll(recordObj),
+                attribute: getStatusEffectAttributes(recordObj),
+                resultID: getStatusEffectResultIDs(recordObj),
+            },
+        };
+    });
 
-      {!loading && !error && creature && baseline && (
-        <div style={{ marginTop: "10px", paddingLeft: "8px" }}>
-          {isPlayerCreature(creature) ? (
-            <>
-              <div><strong>Type:</strong> Player</div>
-              <div><strong>Name:</strong> {(creature as PlayerCreature).stats.name}</div>
-              <div><strong>Class:</strong> {(creature as PlayerCreature).stats.characterClass}</div>
-              <div><strong>Level:</strong> {(creature as PlayerCreature).stats.level}</div>
-            </>
-          ) : (
-            <>
-              <div><strong>Type:</strong> Monster</div>
-              <div><strong>Name:</strong> {(creature as MonsterCreature).name}</div>
-              <div><strong>CR:</strong> {(creature as MonsterCreature).cr}</div>
-              <div><strong>Creature Type:</strong> {(creature as MonsterCreature).creatureType}</div>
-              <div><strong>Size:</strong> {(creature as MonsterCreature).size}</div>
-            </>
-          )}
+    const baselineHp = getNumberValue(baseline.hp, 0);
+    const baselineAc = getNumberValue(baseline.ac, 0);
+    const baselineLResists = getNumberValue(baseline.lResists, 0);
+    const baselineEnemy = getBooleanValue(baseline.enemy, false);
 
-          <SectionHeader>Core</SectionHeader>
+    const currentHp = getNumberValue(val("hp"), baselineHp);
+    const currentAc = getNumberValue(val("ac"), baselineAc);
+    const currentLResists = getNumberValue(val("lResists"), baselineLResists);
+    const currentEnemy = getBooleanValue(val("enemy"), baselineEnemy);
 
-          <NumberField
-            label="HP"
-            value={getDisplayValue("hp") as number | undefined}
-            onChange={(next) => updatePatchField("hp", next, baseline.hp)}
-          />
+    const baselineStatArray = expandStatBlock(baseline.statArray);
+    const currentStatArray = expandStatBlock(
+        val("statArray") as ManualStatBlock | undefined
+    );
 
-          <NumberField
-            label="AC"
-            value={getDisplayValue("ac") as number | undefined}
-            onChange={(next) => updatePatchField("ac", next, baseline.ac)}
-          />
+    const baselineSaveProfs = expandStatBlock(baseline.saveProfs);
+    const currentSaveProfs = expandStatBlock(
+        val("saveProfs") as ManualStatBlock | undefined
+    );
 
-          {!isPlayerCreature(creature) && (
-            <>
-              <NumberField
-                label="Legendary Resists"
-                value={getDisplayValue("lResists") as number | undefined}
-                onChange={(next) =>
-                  updatePatchField("lResists", next, baseline.lResists)
-                }
-              />
+    const monsterSpellSlots = getMonsterSpellSlots(creature);
 
-              <CheckboxField
-                label="Enemy"
-                value={getDisplayValue("enemy") as boolean | undefined}
-                onChange={(next) => updatePatchField("enemy", next, baseline.enemy)}
-              />
-            </>
-          )}
+    const currentSpellSlots = normalizeSpellSlots(
+        val("spellSlots") ?? monsterSpellSlots
+    );
 
-          {/*<JsonField<number[][]>*/}
-          {/*  label="Position"*/}
-          {/*  value={getDisplayValue("position") as number[][] | undefined}*/}
-          {/*  onChange={(next) => updatePatchField("position", next, baseline.position)}*/}
-          {/*/>*/}
+    const baselineSpellSlots = normalizeSpellSlots(
+        baseline.spellSlots ?? monsterSpellSlots
+    );
 
-          <StatBlockEditor
-            label="Stat Array"
-            value={getDisplayValue("statArray") as ManualStatBlock | undefined}
-            onChange={(next) =>
-              updatePatchField("statArray", next, baseline.statArray)
-            }
-          />
+    const monsterHasSpellSlots =
+        !isPlayerCreature(creature) &&
+        (Object.keys(baselineSpellSlots).length > 0 ||
+            Object.keys(currentSpellSlots).length > 0);
 
-          <StatBlockEditor
-            label="Save Proficiencies"
-            value={getDisplayValue("saveProfs") as ManualStatBlock | undefined}
-            onChange={(next) =>
-              updatePatchField("saveProfs", next, baseline.saveProfs)
-            }
-          />
+    const showSpellSlotEditor =
+        isPlayerCreature(creature) || monsterHasSpellSlots;
 
-          {/*<StatBlockEditor*/}
-          {/*  label="Modifiers"*/}
-          {/*  value={getDisplayValue("modifiers") as ManualStatBlock | undefined}*/}
-          {/*  onChange={(next) =>*/}
-          {/*    updatePatchField("modifiers", next, baseline.modifiers)*/}
-          {/*  }*/}
-          {/*/>*/}
+    return (
+        <div style={{ border: "1px solid #ccc", padding: 10 }}>
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 10,
+                    gap: 12,
+                }}
+            >
+                <strong>{initiativeEntry.name}</strong>
 
-          <SectionHeader>Lists</SectionHeader>
+                {onToggle && (
+                    <button
+                        type="button"
+                        onClick={onToggle}
+                        style={{ cursor: "pointer" }}
+                    >
+                        Close
+                    </button>
+                )}
+            </div>
 
-          <ListField
-            label="Damage Resistances"
-            value={getDisplayValue("damResists") as string[] | undefined}
-            onChange={(next) =>
-              updatePatchField("damResists", next, baseline.damResists)
-            }
-          />
+            <ComplexManualEntryCreatureSummary creature={creature} />
 
-          <ListField
-            label="Damage Immunities"
-            value={getDisplayValue("damImmunes") as string[] | undefined}
-            onChange={(next) =>
-              updatePatchField("damImmunes", next, baseline.damImmunes)
-            }
-          />
+            <ComplexManualEntrySection title="Core">
+                <ComplexManualEntryNumberInputField
+                    label="HP"
+                    value={currentHp}
+                    onChange={(next) => update("hp", next, baselineHp)}
+                />
 
-          <ListField
-            label="Damage Vulnerabilities"
-            value={getDisplayValue("damVulns") as string[] | undefined}
-            onChange={(next) =>
-              updatePatchField("damVulns", next, baseline.damVulns)
-            }
-          />
+                <ComplexManualEntryNumberInputField
+                    label="AC"
+                    value={currentAc}
+                    onChange={(next) => update("ac", next, baselineAc)}
+                />
 
-          <ListField
-            label="Condition Immunities"
-            value={getDisplayValue("conImmunes") as string[] | undefined}
-            onChange={(next) =>
-              updatePatchField("conImmunes", next, baseline.conImmunes)
-            }
-          />
+                <ComplexManualEntryNumberInputField
+                    label="Legendary Resists"
+                    value={currentLResists}
+                    onChange={(next) => update("lResists", next, baselineLResists)}
+                />
 
-          <ListField
-            label="Active Conditions"
-            value={getDisplayValue("activeConditions") as string[] | undefined}
-            onChange={(next) =>
-              updatePatchField("activeConditions", next, baseline.activeConditions)
-            }
-          />
+                <ComplexManualEntryCheckboxField
+                    label="Switch Side"
+                    checked={currentEnemy}
+                    onChange={(next) => update("enemy", next, baselineEnemy)}
+                />
+            </ComplexManualEntrySection>
 
-          <JsonField<Record<string, unknown>[]>
-            label="Active Status Effects"
-            value={
-              getDisplayValue("activeStatusEffects") as
-                | Record<string, unknown>[]
-                | undefined
-            }
-            onChange={(next) =>
-              updatePatchField(
-                "activeStatusEffects",
-                next,
-                baseline.activeStatusEffects
-              )
-            }
-          />
-
-          {isPlayerCreature(creature) && (
-            <JsonField<number[][]>
-              label="Spell Slots"
-              value={getDisplayValue("spellSlots") as number[][] | undefined}
-              onChange={(next) =>
-                updatePatchField("spellSlots", next, baseline.spellSlots)
-              }
+            <ComplexManualEntryStatBlockEditor
+                title="Stat Array"
+                value={currentStatArray}
+                onChange={(next) => update("statArray", next, baselineStatArray)}
             />
-          )}
+
+            <ComplexManualEntryStatBlockEditor
+                title="Save Proficiencies"
+                value={currentSaveProfs}
+                onChange={(next) => update("saveProfs", next, baselineSaveProfs)}
+            />
+
+            {showSpellSlotEditor && (
+                <ComplexManualEntrySpellSlotsEditor
+                    value={currentSpellSlots}
+                    maxSlots={baselineSpellSlots}
+                    onChange={(next) =>
+                        update(
+                            "spellSlots",
+                            next as ManualAffectedCreature["spellSlots"],
+                            baselineSpellSlots
+                        )
+                    }
+                />
+            )}
+
+            <ComplexManualEntryMultiSelectSearch
+                label="Condition Immunities"
+                options={filteredConditions}
+                value={val("conImmunes") as string[]}
+                onChange={(v) => update("conImmunes", v, baseline.conImmunes)}
+            />
+
+            <ComplexManualEntryMultiSelectSearch
+                label="Active Conditions"
+                options={filteredConditions}
+                value={val("activeConditions") as string[]}
+                onChange={(v) => update("activeConditions", v, baseline.activeConditions)}
+            />
+
+            <ComplexManualEntryStatusEffectEditor
+                options={filteredStatusEffects}
+                value={normalizedCurrentStatusEffects}
+                onChange={(next) =>
+                    update("activeStatusEffects", next, baseline.activeStatusEffects)
+                }
+            />
+
+            <ComplexManualEntryMultiSelectSearch
+                label="Damage Resistances"
+                options={[...DAMAGE_TYPES]}
+                value={val("damResists") as string[]}
+                onChange={(v) => update("damResists", v, baseline.damResists)}
+            />
+
+            <ComplexManualEntryMultiSelectSearch
+                label="Damage Immunities"
+                options={[...DAMAGE_TYPES]}
+                value={val("damImmunes") as string[]}
+                onChange={(v) => update("damImmunes", v, baseline.damImmunes)}
+            />
+
+            <ComplexManualEntryMultiSelectSearch
+                label="Damage Vulnerabilities"
+                options={[...DAMAGE_TYPES]}
+                value={val("damVulns") as string[]}
+                onChange={(v) => update("damVulns", v, baseline.damVulns)}
+            />
         </div>
-      )}
-    </div>
-  );
+    );
 }

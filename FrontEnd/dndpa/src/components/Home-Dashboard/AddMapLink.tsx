@@ -38,10 +38,9 @@ function AddMapLink({ formData, updateFormData }: Props) {
     };
 
     return (
-        <div className="p-3">
+        <div className="p-3 " style={{backgroundColor: "rgba(15, 24, 40, 0.85)", height: "100%"}}>
             <Form onSubmit={(e) => e.preventDefault()}>
                 <Form.Group>
-                    <Form.Label>Map Image (Google Drive Link)</Form.Label>
                     <Form.Control
                         type="text"
                         placeholder="Paste Google Drive share link..."
@@ -54,7 +53,7 @@ function AddMapLink({ formData, updateFormData }: Props) {
                             {error}
                         </Form.Control.Feedback>
                     ) : (
-                        <Form.Text>
+                        <Form.Text className="text-white">
                             Paste a Google Drive share link (e.g. https://drive.google.com/file/d/.../view?usp=share_link)
                         </Form.Text>
                     )}
@@ -62,7 +61,7 @@ function AddMapLink({ formData, updateFormData }: Props) {
 
                 {formData.maplink && !error && (
                     <div className="mt-3">
-                        <Form.Label>Preview</Form.Label>
+                        <Form.Label className="text-white">Preview</Form.Label>
                         <img
                             src={formData.maplink}
                             alt="Map preview"

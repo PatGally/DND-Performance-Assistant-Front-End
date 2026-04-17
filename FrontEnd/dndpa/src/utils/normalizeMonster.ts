@@ -8,7 +8,6 @@ function getSizeFootprint(size: string): [number, number][] {
         case "large":      dim = 2; break;
         case "huge":       dim = 3; break;
         case "gargantuan": dim = 4; break;
-        // tiny, small, medium — all 1×1
         default:           dim = 1; break;
     }
 
