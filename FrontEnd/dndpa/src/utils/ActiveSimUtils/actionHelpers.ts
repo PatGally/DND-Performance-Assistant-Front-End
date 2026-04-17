@@ -21,7 +21,7 @@ import {
   getCreaturePosition,
   getCurrentTurnCreatureFromEncounter,
   resolveTargetToCid,
-} from "../CreatureHelpers.ts";
+} from "./CreatureHelpers.ts";
 import { fetchUUID } from "../../api/UUIDGet.ts";
 import {
   feetToCells,

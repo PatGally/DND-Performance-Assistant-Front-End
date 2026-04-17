@@ -1,7 +1,7 @@
-import {isPlayerCreature} from "../api/CreatureGet.ts";
-import {type Creature} from "../types/creature.ts";
-import type {Encounter, InitiativeEntry} from "../types/SimulationTypes.ts";
-import type {GridCoord} from "../types/creature.ts";
+import {isPlayerCreature} from "../../api/CreatureGet.ts";
+import {type Creature} from "../../types/creature.ts";
+import type {Encounter, InitiativeEntry} from "../../types/SimulationTypes.ts";
+import type {GridCoord} from "../../types/creature.ts";
 
 export function getCreatureCid(creature: Creature): string {
     return isPlayerCreature(creature) ? creature.stats.cid : creature.cid;

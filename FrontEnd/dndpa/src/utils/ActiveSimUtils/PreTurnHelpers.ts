@@ -7,7 +7,7 @@ import type {
 } from "../../types/SimulationTypes.ts";
 import {isPlayerCreature} from "../../api/CreatureGet.ts";
 import type {CreatureAction} from "../../types/action.ts";
-import {getCreatureCid, getCreatureName} from "../CreatureHelpers.ts";
+import {getCreatureCid, getCreatureName} from "./CreatureHelpers.ts";
 import {isSpellAction} from "./ActionTypeChecker.ts";
 import {buildRequiredInputs, extractActionEffects, normalizeAction} from "./actionHelpers.ts";
 

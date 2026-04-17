@@ -15,7 +15,7 @@ import InputHandler from "../../components/ActiveEncounter/InputHandler.tsx";
 import {
     getCreatureCid, getCreaturePosition,
     getCurrentTurnCreatureFromEncounter
-} from "../../utils/CreatureHelpers.ts";
+} from "../../utils/ActiveSimUtils/CreatureHelpers.ts";
 
 import {getEncounter} from "../../api/EncounterGet.ts";
 import {isPlayerCreature} from "../../api/CreatureGet.ts";
@@ -168,7 +168,8 @@ function EncounterSimulation() {
             setActiveEncounter(false);
         } else {
             const storedTurn = getCurrentTurnCreatureFromEncounter(encounterData);
-            if (storedTurn && storedTurn.name === encounterData.initiative[0].name) {
+            if ((storedTurn && storedTurn.name === encounterData.initiative[0].name) ||
+                (!storedTurn && encounterData.initiative[0].name.toLowerCase() == "lair action")) {
                 handleSimStart();
             }
             if (storedTurn) {
