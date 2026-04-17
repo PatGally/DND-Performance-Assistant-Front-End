@@ -1,34 +1,36 @@
-import {Button, Form, Col, Container} from "react-bootstrap";
-import React from "react";
-import logo from '../components/nav/logo1.png'
-import { login } from "../api/Login.ts"
+import {Button, Form, Col, Container, InputGroup} from "react-bootstrap";
+import {Eye, EyeSlash, ArrowRightShort} from "react-bootstrap-icons";
+import React, {useState} from "react";
+import d20 from '../assets/d20.png'
+import {login} from "../api/Login.ts"
 import {googleLogin} from '../api/GoogleLogin.ts'
+import "./HomePagePA.css"
 
 import {z} from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { uuidPolyfill } from '../api/uuidPolyfill.ts';
+import {zodResolver} from "@hookform/resolvers/zod";
+import {uuidPolyfill} from '../api/uuidPolyfill.ts';
 import {type SubmitHandler, useForm} from "react-hook-form";
 import {GoogleLogin} from "@react-oauth/google";
 import {Link, useNavigate} from "react-router-dom";
 
 uuidPolyfill();
 
-const schema= z.object({
+const schema = z.object({
     password: z.string(),
     username: z.string()
 })
 type FormFields = z.infer<typeof schema>;
 
 
-
-const LogInPage: React.FC = () =>{
+const LogInPage: React.FC = () => {
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
     const {
         register,
         handleSubmit,
         setError,
         reset,
-        formState: { errors, isSubmitting },
+        formState: {errors, isSubmitting},
     } = useForm<FormFields>({
 
         resolver: zodResolver(schema),
@@ -47,40 +49,54 @@ const LogInPage: React.FC = () =>{
             setError("root", {message: `Incorrect username or password, error: ${error}`,});
         }
     }
-
     return (
-        <Container fluid className="d-flex justify-content-center bg-dark text-light pt-5 min-vh-100">
-            <Col xs={12} md={6} lg={4} className="text-center ">
-                <img src={logo} alt="Company Logo" style={{ height: "80px" }} />
-                <h4> Sign in to dndnpa</h4>
-
+        <Container fluid className=" text-center d-flex justify-content-center pa-bg-card text-light pt-5 min-vh-100">
+            <Col xs={12} md={6} lg={4}>
+                <img src={d20} alt="Website Logo" style={{height: "80px"}}/>
+                <h4> Sign in to DNDPA</h4>
                 <Form onSubmit={handleSubmit(onSubmit)}>
                     <Form.Group className="mt-3 text-start">
-                        <Form.Label>Username</Form.Label>
+                        <Form.Label>Email*</Form.Label>
                         <Form.Control
-                            isInvalid={!!errors.username}
-                            {...register("username")}
+                            isInvalid={!!errors.email}
+                            {...register("email")}
                             type="text"
+                            placeholder="Email"
                         />
                         <Form.Control.Feedback type="invalid">
-                            {errors.username?.message}
+                            {errors.email?.message}
                         </Form.Control.Feedback>
                     </Form.Group>
 
                     <Form.Group className="mt-3 text-start">
-                        <Form.Label>Password</Form.Label>
-                        <Form.Control
-                            isInvalid={!!errors.password}
-                            {...register("password")}
-                            type="password"
-                        />
-                        <Form.Control.Feedback type="invalid">
-                            {errors.password?.message}
-                        </Form.Control.Feedback>
+                        <Form.Label>Password*</Form.Label>
+                        <InputGroup hasValidation className="flex-nowrap">
+                            <Form.Control
+                                isInvalid={!!errors.password}
+                                {...register("password")}
+                                type={showPassword ? "text" : "password"}
+                                placeholder="Enter Password"
+                                autoComplete="current-password"
+                            />
+                            <InputGroup.Text
+                                as="button"
+                                type="button"
+                                onClick={() => setShowPassword((prev) => !prev)}
+                                tabIndex={-1}
+                                aria-label={showPassword ? "Hide password" : "Show password"}
+                                style={{ cursor: "pointer", border: "1px solid #ced4da" }}
+                            >
+                                {showPassword ? <EyeSlash /> : <Eye />}
+                            </InputGroup.Text>
+                            <Form.Control.Feedback type="invalid">
+                                {errors.password?.message}
+                            </Form.Control.Feedback>
+                        </InputGroup>
                     </Form.Group>
-                    <Button type="submit" className="w-100 mt-4" disabled={isSubmitting}
-                            style={{ backgroundColor: "#02590F", borderColor: "#02590F" }}>
-                        {isSubmitting ? "Signing in..." : "Sign in" }
+
+                    <Button type="submit" variant="dark" className="w-100 mt-3" disabled={isSubmitting}>
+                        {isSubmitting ? "Signing in..." : "Sign In"}
+                        {!isSubmitting && <ArrowRightShort />}
                     </Button>
                 </Form>
 
@@ -88,11 +104,10 @@ const LogInPage: React.FC = () =>{
                     <p className="text-danger mt-2">{errors.root.message}</p>
                 )}
 
-
                 <div className="d-flex align-items-center my-4">
-                    <hr className="flex-grow-1" />
+                    <hr className="flex-grow-1"/>
                     <span className="mx-2">or</span>
-                    <hr className="flex-grow-1" />
+                    <hr className="flex-grow-1"/>
                 </div>
 
                 <div className=" w-100 mt-3">
@@ -109,7 +124,7 @@ const LogInPage: React.FC = () =>{
                     />
                 </div>
                 <div className="mt-5">
-                    New to dndpa? <Link to="/sign-up" className="text-decoration-none"> Create an account </Link>
+                    New to DNDPA? <Link to="/sign-up" className="text-decoration-none"> Create an account </Link>
                 </div>
             </Col>
         </Container>
