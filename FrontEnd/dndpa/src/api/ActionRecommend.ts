@@ -1,18 +1,5 @@
 import axiosTokenInstance from "./AxiosTokenInstance";
-
-export type Recommendation = {
-    name : string;
-    prob : number;
-    eDam : number;
-    impact: number;
-    target : string[];
-    "probDisplay": number;
-    "probInit": number;
-    "probParts": unknown[];
-    "pareto": boolean;
-    "topsis": number;
-    "overallRank": number;
-}
+import type {Recommendation} from "../types/SimulationTypes.ts";
 
 export async function recommendationGet(
   eid: string,

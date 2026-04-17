@@ -95,6 +95,15 @@ export type MultiAttack = {
   split : MultiAttackSplit[];
 }
 
+//Describes both lingEffect and lingSave
+export type PreTurnEffect = {
+    name : string;
+    effect : {
+        action : SpellAction[];
+        resultID : string[];
+    }
+}
+
 export type PlayerStats = {
   statArray: StatArray;
   saveProfs: SaveProfs;
@@ -103,7 +112,7 @@ export type PlayerStats = {
   damVulns: string[];
   conImmunes: string[];
   activeConditions: string[];
-  activeStatusEffects: unknown[];
+  activeStatusEffects: (any | PreTurnEffect)[];
   hp: number | string;
   maxhp: number | string;
   position: GridCoord[];
@@ -131,7 +140,7 @@ export type MonsterCreature = {
   damVulns: string[];
   conImmunes: string[];
   activeConditions: string[];
-  activeStatusEffects: unknown[];
+  activeStatusEffects: any[];
   hp: number | string;
   maxhp: number | string;
   position: GridCoord[];

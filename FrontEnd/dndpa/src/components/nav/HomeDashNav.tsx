@@ -1,12 +1,15 @@
-import { CloudArrowDown, PersonGear, QuestionSquare, Archive, Journals } from 'react-bootstrap-icons';
+import { CloudArrowDown, PersonGear, QuestionSquare, Archive, Journals, BarChart, House, Bug } from 'react-bootstrap-icons';
 import Dock from '../../css/Dock';
 
 type ActivePanel =
+    | 'LANDING_PAGE'
     | 'SAVED_ENCOUNTERS'
     | 'LOAD_CHARACTERS'
     | 'CREATE_CHARACTER'
     | 'CREATE_ENCOUNTER'
-    | 'HOW_TO_USE';
+    | 'HOW_TO_USE'
+    | 'SURVEY'
+    | 'BUG_REPORT';
 
 type NavigationSignedInProps = {
     setActivePage: (page: ActivePanel) => void;
@@ -16,11 +19,14 @@ type NavigationSignedInProps = {
 
 function HomeDashNav({ setActivePage }: NavigationSignedInProps) {
     const items = [
+        { icon: <House size={18} />, label: 'Home', onClick: () => setActivePage('LANDING_PAGE') },
         { icon: <Archive size={18} />, label: 'Archive', onClick: () => setActivePage('SAVED_ENCOUNTERS') },
         { icon: <Journals size={18} />, label: 'Create Encounter', onClick: () => setActivePage('CREATE_ENCOUNTER') },
         { icon: <CloudArrowDown size={18} />, label: 'Load Players', onClick: () => setActivePage('LOAD_CHARACTERS') },
         { icon: <PersonGear size={18} />, label: 'Create Player', onClick: () => setActivePage('CREATE_CHARACTER') },
-        { icon: <QuestionSquare size={18} />, label: 'How To', onClick: () => setActivePage('HOW_TO_USE')},
+        { icon: <QuestionSquare size={18} />, label: 'User Guide', onClick: () => setActivePage('HOW_TO_USE')},
+        { icon: <BarChart size={18} />, label: 'Survey', onClick: () => setActivePage('SURVEY') },
+        { icon: <Bug size={18} />, label: 'Bug Report', onClick: () => setActivePage('BUG_REPORT') },
     ];
 
     return(

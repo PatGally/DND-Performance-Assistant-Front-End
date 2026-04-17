@@ -17,10 +17,9 @@ export const login = async (credentials: LoginPayload) => {
         credentials: "include",
     });
 
-    console.log("Status  ", res.status);
     if (!res.ok) {
         const error = await res.json();
-        console.log("BACKEND ERROR:", error);
+        console.error("BACKEND ERROR:", error);
         throw new Error("Login failed");
     }
 

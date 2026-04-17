@@ -21,7 +21,6 @@ export const SpellsGet = async (level: number, classid: string): Promise<Spell[]
             console.error("Unexpected response format:", response.data);
             return [];
         }
-        console.log("Your fetched data in SpellsGet", response.data);
         return response.data;
     } catch (error) {
         if (axios.isAxiosError(error)) {

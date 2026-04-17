@@ -1,7 +1,11 @@
 import {useMemo, useState} from "react";
-import type { Encounter, ActionExecutionSession, ActionRequestDraft } from "../../types/SimulationTypes.ts";
+import type {
+  Encounter,
+  ActionExecutionSession,
+  ActionRequestDraft
+} from "../../types/SimulationTypes.ts";
 import type { Creature} from "../../types/creature.ts";
-import {getCreatureName, getCreatureCid} from "../../utils/CreatureHelpers.ts";
+import {getCreatureName, getCreatureCid} from "../../utils/ActiveSimUtils/CreatureHelpers.ts";
 
 type PerTargetInput = {
   attackRoll: string;
@@ -14,7 +18,11 @@ type InputHandlerProps = {
   actionSession: ActionExecutionSession;
   setActionExecutionSession: React.Dispatch<React.SetStateAction<ActionExecutionSession | undefined>>;
   handleActionExecution: (draft: ActionRequestDraft) => void;
-  setManualLock : React.Dispatch<React.SetStateAction<boolean>>;
+  setManualLock: React.Dispatch<React.SetStateAction<boolean>>;
+  clearManualAoePreview: () => void;
+  aoePlacementStage: "pick_anchor" | "pick_direction" | "ready";
+  onExit?: () => void;
+
 };
 
 function getCurrentTimeString(): string {
@@ -30,8 +38,11 @@ export default function InputHandler({
   encounter,
   actionSession,
   setActionExecutionSession,
-    setManualLock,
+  setManualLock,
+  clearManualAoePreview,
   handleActionExecution,
+  aoePlacementStage,
+  onExit,
 }: InputHandlerProps) {
   const [localError, setLocalError] = useState<string>("");
   const allCreatures: Creature[] = useMemo(
@@ -45,6 +56,10 @@ export default function InputHandler({
   const targetCount = actionSession.action.targetCount ?? 0;
   const needsTargetSelection =
     targetCount > 0 && actionSession.draft.targets.length === 0;
+
+  const needsAoeSelection =
+      (targetCount === -1 || targetCount === -2) && actionSession.draft.targets.length === 0;
+
   const [selectedTargets, setSelectedTargets] = useState<string[]>(actionSession.draft.targets);
   const [perTargetInputs, setPerTargetInputs] = useState<Record<string, PerTargetInput>>(() => {
     const initial: Record<string, PerTargetInput> = {};
@@ -130,7 +145,6 @@ export default function InputHandler({
 
     let rollValue = "";
 
-    console.log("Checking actionSession", actionSession);
     if (
       (actionSession.action.rollMode === "toHit" || actionSession.action.rollMode === "onHit") &&
       entry.attackRoll.trim() === ""
@@ -149,7 +163,6 @@ export default function InputHandler({
       return;
     }
 
-    console.log("Checking rollMode ", actionSession.action.rollMode);
     if (actionSession.action.rollMode.toLowerCase() === "tohit" || actionSession.action.rollMode.toLowerCase() === "onhit") {
       rollValue = entry.attackRoll.trim();
     } else if (actionSession.action.rollMode.toLowerCase() === "save") {
@@ -159,11 +172,9 @@ export default function InputHandler({
     }
 
     if (rollValue !== "") {
-      console.log("Adding Roll", rollValue);
       rollResults.push(rollValue);
 
       if (actionSession.action.hasDamage) {
-        console.log("Adding Dam", entry.damageRoll);
         diceResults.push(Number(entry.damageRoll));
       } else {
         diceResults.push(0);
@@ -204,6 +215,12 @@ export default function InputHandler({
   handleActionExecution(finalDraft);
 }
   function handleExit() {
+    if (onExit) {
+      onExit();
+      return;
+    }
+
+    clearManualAoePreview();
     setActionExecutionSession(undefined);
     setManualLock(false);
   }
@@ -249,6 +266,20 @@ export default function InputHandler({
             Next
           </button>
         </>
+      ) : needsAoeSelection ? (
+          <>
+            <p className="mb-2">
+              {aoePlacementStage === "pick_direction"
+                ? "Move the cursor to choose a direction, then click the map to confirm."
+                : "Move the cursor to preview the area, then click the map to confirm placement."}
+            </p>
+
+            <p className="mb-0 text-secondary">
+              Targets will be filled automatically from the creatures inside the placed AOE.
+            </p>
+
+            {localError && <div className="text-danger mt-2">{localError}</div>}
+          </>
       ) : (
         <>
           <p className="mb-3">Enter results for each target.</p>

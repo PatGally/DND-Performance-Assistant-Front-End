@@ -1,22 +1,75 @@
-import { useEffect, useState } from "react";
 import {
-  recommendationGet,
-  type Recommendation as RecommendationType,
-} from "../../api/ActionRecommend";
+  useEffect,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
+import { recommendationGet } from "../../api/ActionRecommend";
+import type {
+  Recommendation as RecommendationType,
+  RecommendationAoeTarget,
+  RecommendationTarget,
+  AoeToken,
+} from "../../types/SimulationTypes.ts";
 
 type RecommendationProps = {
   eid: string;
   cid: string;
-  handlePASubmission: (name: string, prob: number,
-                       eDam: number, impact: number, targets: string[]) => void;
+  setAoeTokens: Dispatch<SetStateAction<AoeToken[]>>;
+  buildRecommendationAoeToken: (
+    recommendation: RecommendationType,
+    previewResultID: string
+  ) => AoeToken | null;
+  handlePASubmission: (
+    name: string,
+    prob: number,
+    eDam: number,
+    impact: number,
+    targets: RecommendationTarget,
+    previewResultID?: string
+  ) => void;
 };
 
-export default function Recommendation({ eid, cid, handlePASubmission }: RecommendationProps) {
+function isAoeTarget(
+  target: RecommendationTarget
+): target is RecommendationAoeTarget {
+  return (
+    !Array.isArray(target) &&
+    typeof target === "object" &&
+    target !== null &&
+    Array.isArray((target as RecommendationAoeTarget).targetsHit) &&
+    Array.isArray((target as RecommendationAoeTarget).positioning)
+  );
+}
+
+export default function Recommendation({
+  eid,
+  cid,
+  setAoeTokens,
+  buildRecommendationAoeToken,
+  handlePASubmission,
+}: RecommendationProps) {
   const [recommendations, setRecommendations] = useState<RecommendationType[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
-  const [showPassTurn, setShowPassTurn] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+
+  const previewPrefix = `preview:recommendation:${cid}:`;
+
+  const hasRecommendations = recommendations.length > 0;
+  const isPassTurnView = hasRecommendations && currentIndex === recommendations.length;
+  const currentRecommendation =
+    hasRecommendations && !isPassTurnView
+      ? recommendations[currentIndex]
+      : undefined;
+
+  const activePreviewResultID = currentRecommendation
+    ? `${previewPrefix}${currentIndex}`
+    : "";
+
+  const canGoLeft = hasRecommendations && currentIndex > 0;
+  const canGoRight = hasRecommendations && currentIndex < recommendations.length;
+  const canAccept = !!currentRecommendation;
 
   useEffect(() => {
     async function loadRecommendations() {
@@ -24,7 +77,6 @@ export default function Recommendation({ eid, cid, handlePASubmission }: Recomme
         setLoading(true);
         setError("");
         setCurrentIndex(0);
-        setShowPassTurn(false);
 
         const data = await recommendationGet(eid, cid);
         setRecommendations(Array.isArray(data) ? data : []);
@@ -43,123 +95,206 @@ export default function Recommendation({ eid, cid, handlePASubmission }: Recomme
     loadRecommendations();
   }, [eid, cid]);
 
-  function handleReject() {
-    if (currentIndex < recommendations.length - 1) {
-      setCurrentIndex((prev) => prev + 1);
-    } else {
-      setShowPassTurn(true);
+  useEffect(() => {
+    const clearRecommendationPreviews = () => {
+      setAoeTokens((prev) => {
+        const filtered = prev.filter(
+          (token) => !token.resultID.startsWith(previewPrefix)
+        );
+        return filtered.length === prev.length ? prev : filtered;
+      });
+    };
+
+    if (!currentRecommendation || !isAoeTarget(currentRecommendation.target)) {
+      clearRecommendationPreviews();
+      return;
     }
+
+    const previewToken = buildRecommendationAoeToken(
+      currentRecommendation,
+      activePreviewResultID
+    );
+
+    if (!previewToken) {
+      clearRecommendationPreviews();
+      return;
+    }
+
+    setAoeTokens((prev) => {
+      const withoutOldRecommendationPreviews = prev.filter(
+        (token) => !token.resultID.startsWith(previewPrefix)
+      );
+      return [...withoutOldRecommendationPreviews, previewToken];
+    });
+
+    return () => {
+      setAoeTokens((prev) => {
+        const filtered = prev.filter(
+          (token) => token.resultID !== activePreviewResultID
+        );
+        return filtered.length === prev.length ? prev : filtered;
+      });
+    };
+  }, [
+    currentRecommendation,
+    activePreviewResultID,
+    buildRecommendationAoeToken,
+    previewPrefix,
+    setAoeTokens,
+  ]);
+
+  function handleBack() {
+    if (!canGoLeft) return;
+    setCurrentIndex((prev) => prev - 1);
+  }
+
+  function handleForward() {
+    if (!canGoRight) return;
+    setCurrentIndex((prev) => prev + 1);
   }
 
   function handleAccept() {
-      const name = currentRecommendation.name;
-      const prob = currentRecommendation.prob;
-      const eDam = currentRecommendation.eDam;
-      const impact = currentRecommendation.impact;
-      const targets = currentRecommendation.target;
-    handlePASubmission(name, prob, eDam, impact, targets)
+    if (!currentRecommendation) return;
+
+    handlePASubmission(
+      currentRecommendation.name,
+      currentRecommendation.prob,
+      currentRecommendation.eDam,
+      currentRecommendation.impact,
+      currentRecommendation.target,
+      isAoeTarget(currentRecommendation.target) ? activePreviewResultID : undefined
+    );
   }
 
-  if (loading) {
-    return <div>Loading recommendations...</div>;
+  if (loading) return <div>Loading recommendations...</div>;
+  if (error) return <div>Error: {error}</div>;
+
+  let targetDisplay = "";
+
+  if (currentRecommendation) {
+
+    try {
+      targetDisplay = Array.isArray(currentRecommendation.target)
+        ? currentRecommendation.target.length > 0
+          ? currentRecommendation.target.join(", ")
+          : "None"
+        : currentRecommendation.target.targetsHit.length > 0
+            ? currentRecommendation.target.targetsHit.join(", ")
+            : "AOE placement";
+    } catch (e) {
+      console.error("Recommendation targetDisplay error", e);
+      targetDisplay = "None";
+    }
   }
 
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
 
-  if (showPassTurn || recommendations.length === 0 || currentIndex >= recommendations.length) {
-    return (
+  const buttonStyle: React.CSSProperties = {
+  width: "44px",
+  height: "44px",
+  minWidth: "44px",
+  minHeight: "44px",
+  border: "none",
+  borderRadius: "8px",
+  background: "rgba(255,255,255,0.10)",
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "18px",
+  color: "white",
+};
+
+return (
+  <div
+    style={{
+      width: "min(460px, calc(100vw - 32px))",
+      minHeight: "132px",
+      boxSizing: "border-box",
+      margin: "0 auto",
+      padding: "16px 18px",
+      color: "white",
+      display: "grid",
+      gridTemplateRows: "auto 44px",
+      rowGap: "14px",
+    }}
+  >
+    <div
+      style={{
+        width: "100%",
+        minWidth: 0,
+        overflow: "hidden",
+      }}
+    >
       <div
         style={{
-          border: "none",
-          padding: "10px 12px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          fontWeight: 700,
+          fontSize: "18px",
+          lineHeight: 1.25,
+          whiteSpace: "normal",
+          overflowWrap: "anywhere",
+          wordBreak: "break-word",
         }}
       >
-        <div><strong>Pass Turn</strong></div>
+        {currentRecommendation ? currentRecommendation.name : "No Viable Actions - Pass Turn"}
       </div>
-    );
-  }
 
-  const currentRecommendation = recommendations[currentIndex];
-
-  if (!currentRecommendation) {
-    return (
-        <div
-            style={{
-                border: "none",
-                padding: "10px 12px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                color: "white",
-            }}
-        >
-            <div>
-                <strong>Pass Turn</strong>
-            </div>
-        </div>
-    );
-  }
-
-  return (
       <div
-          style={{
-              border: "none",
-              padding: "10px 12px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: "12px",
-              color: "white",
-          }}
+        style={{
+          marginTop: "6px",
+          opacity: 0.9,
+          fontSize: "16px",
+          lineHeight: 1.35,
+          whiteSpace: "normal",
+          overflowWrap: "anywhere",
+          wordBreak: "break-word",
+        }}
       >
-          <div style={{ flex: 1 }}>
-              <div><strong>{currentRecommendation.name}</strong></div>
-              <div style={{ opacity: 0.8 }}>
-                  Target:{" "}
-                  {Array.isArray(currentRecommendation.target) && currentRecommendation.target.length > 0
-                      ? currentRecommendation.target.join(", ")
-                      : "None"}
-              </div>
-          </div>
-
-          <div style={{ display: "flex", gap: "8px" }}>
-              <button
-                  type="button"
-                  onClick={handleAccept}
-                  style={{
-                      border: "none",
-                      background: "rgba(255,255,255,0.1)",
-                      cursor: "pointer",
-                      padding: "6px 10px",
-                      borderRadius: "6px",
-                      backdropFilter: "blur(4px)",
-                  }}
-                  aria-label="Accept recommendation"
-              >
-                  ✅
-              </button>
-
-              <button
-                  type="button"
-                  onClick={handleReject}
-                  style={{
-                      border: "none",
-                      background: "rgba(255,255,255,0.1)",
-                      cursor: "pointer",
-                      padding: "6px 10px",
-                      borderRadius: "6px",
-                      backdropFilter: "blur(4px)",
-                  }}
-                  aria-label="Reject recommendation"
-              >
-                  ❌
-              </button>
-          </div>
+        Target: {targetDisplay}
       </div>
-  );
+    </div>
+
+    <div
+      style={{
+        height: "44px",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: "14px",
+      }}
+    >
+      {canGoLeft && (
+        <button
+          type="button"
+          onClick={handleBack}
+          style={buttonStyle}
+          aria-label="Previous recommendation"
+        >
+          ◀
+        </button>
+      )}
+
+      {canAccept && (
+        <button
+          type="button"
+          onClick={handleAccept}
+          style={buttonStyle}
+          aria-label="Accept recommendation"
+        >
+          ✅
+        </button>
+      )}
+
+      {canGoRight && (
+        <button
+          type="button"
+          onClick={handleForward}
+          style={buttonStyle}
+          aria-label="Next recommendation"
+        >
+          ▶
+        </button>
+      )}
+    </div>
+  </div>
+);
 }

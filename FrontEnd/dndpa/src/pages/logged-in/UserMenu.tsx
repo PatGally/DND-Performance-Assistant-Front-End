@@ -51,7 +51,7 @@ const UserMenu = () => {
                         position: "absolute",
                         top: "calc(100% + 8px)",
                         right: 0,
-                        background: "#1a1a2e",
+                        backgroundColor: "rgba(15, 24, 40, 0.85)",
                         border: "1px solid rgba(255,255,255,0.1)",
                         borderRadius: "10px",
                         boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
@@ -98,7 +98,7 @@ const UserMenu = () => {
                     <div className="menu-divider" />
 
                     <button className="menu-item logout-item" onClick={handleLogout}>
-                        <BoxArrowRight size={16} />
+                        <BoxArrowRight size={'1.4rem'} />
                         <span>Sign Out</span>
                     </button>
                 </div>

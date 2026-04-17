@@ -1,6 +1,6 @@
 import type { EncounterFormData } from "./CreateEncounter";
 import { Form, Row, Col } from "react-bootstrap";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 
 type Props = {
     formData: EncounterFormData;
@@ -13,6 +13,13 @@ function AddGridSize({ formData, updateFormData }: Props) {
     const colsInvalid = formData.gridSize.cols !== 0 && formData.gridSize.cols < 10;
     const rowsEmpty = formData.gridSize.rows === 0;
     const colsEmpty = formData.gridSize.cols === 0;
+
+    const [offsetX, setOffsetX] = useState(0);
+    const [offsetY, setOffsetY] = useState(0);
+    const [scaleX, setScaleX] = useState(1);
+    const [scaleY, setScaleY] = useState(1);
+
+    const[lineWidth, setLineWidth] = useState(1);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -27,40 +34,41 @@ function AddGridSize({ formData, updateFormData }: Props) {
             canvas.width = img.width;
             canvas.height = img.height;
 
-            // Draw image
             ctx.drawImage(img, 0, 0);
 
             const rows = formData.gridSize.rows;
             const cols = formData.gridSize.cols;
 
             if (rows >= 10 && cols >= 10) {
-                const cellWidth = img.width / cols;
-                const cellHeight = img.height / rows;
+                const cellWidth  = (img.width  / cols) * scaleX;
+                const cellHeight = (img.height / rows) * scaleY;
 
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)' ; //'rgba(255, 255, 255, 0.5)'
-                ctx.lineWidth = 1;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.lineWidth = lineWidth;
 
-                // Draw vertical lines
                 for (let c = 0; c <= cols; c++) {
+                    const x = offsetX + c * cellWidth;
                     ctx.beginPath();
-                    ctx.moveTo(c * cellWidth, 0);
-                    ctx.lineTo(c * cellWidth, img.height);
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, img.height);
                     ctx.stroke();
                 }
 
-                // Draw horizontal lines
                 for (let r = 0; r <= rows; r++) {
+                    const y = offsetY + r * cellHeight;
                     ctx.beginPath();
-                    ctx.moveTo(0, r * cellHeight);
-                    ctx.lineTo(img.width, r * cellHeight);
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(img.width, y);
                     ctx.stroke();
                 }
             }
         };
-    }, [formData.maplink, formData.gridSize.rows, formData.gridSize.cols]);
+    }, [formData.maplink, formData.gridSize.rows, formData.gridSize.cols, offsetX, offsetY, scaleX, scaleY,lineWidth]);
+
+    const gridReady = formData.gridSize.rows >= 10 && formData.gridSize.cols >= 10;
 
     return (
-        <div className="p-3">
+        <div className="p-3" style={{backgroundColor: "rgba(15, 24, 40, 0.85)"}}>
             <Form>
                 <Row>
                     <Col>
@@ -96,12 +104,101 @@ function AddGridSize({ formData, updateFormData }: Props) {
                         </Form.Group>
                     </Col>
                 </Row>
+
+                {gridReady && (
+                    <>
+                        <hr style={{ borderColor: '#ffffff22', margin: '1.25rem 0 1rem' }} />
+                        <Row>
+                            <Col>
+                                <Form.Group>
+                                    <Form.Label className="text-white d-flex justify-content-between">
+                                        <span>Grid Line Weight</span>
+                                        <span className="text-white-50" style={{ fontSize: '0.8rem' }}>{lineWidth}px</span>
+                                    </Form.Label>
+                                    <Form.Range
+                                        min={1}
+                                        max={6}
+                                        value={lineWidth}
+                                        onChange={(e) => setLineWidth(Number(e.target.value))}
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col>
+                                <Form.Group>
+                                    <Form.Label className="text-white d-flex justify-content-between">
+                                        <span>X Offset</span>
+                                        <span className="text-white-50" style={{ fontSize: '0.8rem' }}>{offsetX}px</span>
+                                    </Form.Label>
+                                    <Form.Range
+                                        min={-100}
+                                        max={100}
+                                        value={offsetX}
+                                        onChange={(e) => setOffsetX(Number(e.target.value))}
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col>
+                                <Form.Group>
+                                    <Form.Label className="text-white d-flex justify-content-between">
+                                        <span>Y Offset</span>
+                                        <span className="text-white-50" style={{ fontSize: '0.8rem' }}>{offsetY}px</span>
+                                    </Form.Label>
+                                    <Form.Range
+                                        min={-100}
+                                        max={100}
+                                        value={offsetY}
+                                        onChange={(e) => setOffsetY(Number(e.target.value))}
+                                    />
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                        <Row>
+                            <Col>
+                                <Form.Group>
+                                    <Form.Label className="text-white d-flex justify-content-between">
+                                        <span>X Cell Size</span>
+                                        <span className="text-white-50" style={{ fontSize: '0.8rem' }}>{scaleX.toFixed(2)}x</span>
+                                    </Form.Label>
+                                    <Form.Range
+                                        min={50}
+                                        max={150}
+                                        value={Math.round(scaleX * 100)}
+                                        onChange={(e) => setScaleX(Number(e.target.value) / 100)}
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col>
+                                <Form.Group>
+                                    <Form.Label className="text-white d-flex justify-content-between">
+                                        <span>Y Cell Size</span>
+                                        <span className="text-white-50" style={{ fontSize: '0.8rem' }}>{scaleY.toFixed(2)}x</span>
+                                    </Form.Label>
+                                    <Form.Range
+                                        min={50}
+                                        max={150}
+                                        value={Math.round(scaleY * 100)}
+                                        onChange={(e) => setScaleY(Number(e.target.value) / 100)}
+                                    />
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                        <div className="text-end">
+                            <small
+                                className="text-white-50"
+                                style={{ cursor: 'pointer', textDecoration: 'underline', fontSize: '0.75rem' }}
+                                onClick={() => { setOffsetX(0); setOffsetY(0); setScaleX(1); setScaleY(1); }}
+                            >
+                                Reset alignment
+                            </small>
+                        </div>
+                    </>
+                )}
             </Form>
 
             {formData.maplink ? (
                 <div className="mt-3">
                     <Form.Label className="text-white">
-                        Grid Preview {formData.gridSize.rows >= 10 && formData.gridSize.cols >= 10
+                        Grid Preview {gridReady
                         ? `— ${formData.gridSize.cols} x ${formData.gridSize.rows}`
                         : '— enter valid grid size to see overlay'}
                     </Form.Label>

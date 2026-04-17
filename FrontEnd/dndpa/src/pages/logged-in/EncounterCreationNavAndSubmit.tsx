@@ -8,7 +8,6 @@ import { EncounterPost } from "../../api/EncounterPost.ts";
 import { normalizePlayer } from "../../utils/normalizePlayer.ts";
 import { normalizeMonster } from "../../utils/normalizeMonster";
 
-// Player token imports
 import {
     ArtificerToken,
     BarbarianToken,
@@ -54,6 +53,7 @@ type EncounterCreationNavProps = {
     setActivePanel: (panel: ActivePanel) => void;
     formData: EncounterFormData;
     onSuccess: () => void;
+    encounterLimitReached: boolean;
 };
 
 const panelOrder: ActivePanel[] = [
@@ -119,7 +119,7 @@ function isPanelValid(panel: ActivePanel, formData: EncounterFormData): boolean 
             return formData.monsters.length >= 1;
 
         case "ADD_INITIATIVE": {
-            const entries = formData.initiative;
+            const entries = formData.initiative.filter((e) => e.turnType !== "lairAction");
             const totalParticipants = formData.characters.length + formData.monsters.length;
             if (entries.length !== totalParticipants) return false;
             if (entries.some((e) => e.iValue <= 0)) return false;
@@ -141,7 +141,7 @@ function EncounterCreationNavAndSubmit({
                                            activePanel,
                                            setActivePanel,
                                            formData,
-                                           onSuccess,
+                                           onSuccess, encounterLimitReached
                                        }: EncounterCreationNavProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -168,7 +168,10 @@ function EncounterCreationNavAndSubmit({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
+        if (encounterLimitReached){
+            console.log("Limit Test for Encounters ",encounterLimitReached);
+            return
+        }
         if (isSubmitting) return;
         setIsSubmitting(true);
 
@@ -229,8 +232,6 @@ function EncounterCreationNavAndSubmit({
                 mapdata,
                 completed: false,
             };
-
-            console.log(payload);
 
             await EncounterPost(payload);
             onSuccess();

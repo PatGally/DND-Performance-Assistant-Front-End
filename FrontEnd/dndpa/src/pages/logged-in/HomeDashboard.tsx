@@ -1,24 +1,31 @@
-import HomeDashNav from '../../components/nav/HomeDashNav.tsx';
-import LoadCharacter from "../../components/Home-Dashboard/LoadCharacter.tsx";
+import HomeDashNav from '../../components/nav/HomeDashNav';
+import LoadCharacter from "../../components/Home-Dashboard/LoadCharacter";
 import EncounterView from "../../components/Home-Dashboard/EncounterView";
 import CreateEncounter from "../../components/Home-Dashboard/CreateEncounter";
 import UserMenu from "./UserMenu.tsx";
 import { useEffect, useState } from 'react';
-import CharCreation from "../../components/Home-Dashboard/CharCreation.tsx";
-import { getMonsters} from "../../api/MonstersGet.ts";
-import type {MonsterCreature} from "../../types/creature.ts";
+import CharCreation from "../../components/Home-Dashboard/CharCreation";
+import { getMonsters} from "../../api/MonstersGet";
+import type {MonsterCreature} from "../../types/creature";
 import { getEncounters } from "../../api/EncountersGet";
 import creaturePacketGet from "../../api/CreaturePacketGet";
-import type { EncounterWithPacket, EncounterDash } from "../../types/encounter.ts";
-import {deleteEncounter} from "../../api/DeleteEncounter.ts"
-import {deletePlayer} from "../../api/DeletePlayer.ts";
-//TODO remove creaturePacket - since you most likely will not display how many creatures are in an encounter
-// for encounter view component - it's unnecessary and may be slowing down loading time for image on encounter
+import type { EncounterWithPacket, EncounterDash } from "../../types/encounter";
+import {deleteEncounter} from "../../api/DeleteEncounter"
+import {deletePlayer} from "../../api/DeletePlayer";
+import UserGuide from "../../components/Home-Dashboard/UserGuide.tsx";
+import Survey from "../../components/Home-Dashboard/Survey"
+import LandingPage from "../../components/Home-Dashboard/LandingPage.tsx";
+import BugReport from "../../components/Home-Dashboard/BugReport.tsx";
+
+import PixelBlast from '../../css/PixelBlast';
+
 function HomeDashboard() {
-    const [activePage, setActivePage] = useState('SAVED_ENCOUNTERS');
+    const [activePage, setActivePage] = useState('LANDING_PAGE');
     const [monsters, setMonsters] = useState<MonsterCreature[]>([]);
     const [encounters, setEncounters] = useState<EncounterWithPacket[]>([]);
     const [loadingEncounter, setLoadingEncounter] = useState<boolean>(false);
+    const [encounterLimitReached, setEncounterLimitReached] = useState(false);
+    const MAX_ENCOUNTERS = 5;
 
     useEffect(() => {
         const fetchMonsters = async () => {
@@ -54,13 +61,9 @@ function HomeDashboard() {
                 ...enc,
                 packet: undefined,
             }));
-            // await Promise.all(
-            //     encountersWithPackets
-            //         .map(e => e.mapdata?.map?.mapLink)
-            //         .filter(Boolean)
-            //         .map(link => warmDriveImageCache(link))
-            // );
             setEncounters(encountersWithPackets);
+
+            setEncounterLimitReached(encountersWithPackets.length >= MAX_ENCOUNTERS);
 
             for (const encounterItem of encountersWithPackets) {
                 try {
@@ -89,36 +92,65 @@ function HomeDashboard() {
         await fetchEncounters();
         setActivePage("SAVED_ENCOUNTERS");
     };
+    const handleCharacterCreated = async() => {
+        setActivePage("LOAD_CHARACTERS");
+    }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100vh',
+            overflow: 'hidden',
+            background: "black"
+        }}>
+
+            <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+                <PixelBlast
+                    variant="square"
+                    pixelSize={3}
+                    color="#ccc"
+                    patternScale={3}
+                    patternDensity={1}
+                    pixelSizeJitter={0}
+                    enableRipples
+                    rippleSpeed={0.3}
+                    rippleThickness={0.12}
+                    rippleIntensityScale={1.5}
+                    liquid={false}
+                    liquidStrength={0.12}
+                    liquidRadius={1.2}
+                    liquidWobbleSpeed={5}
+                    speed={0.5}
+                    edgeFade={0.25}
+                    transparent
+                />
+            </div>
 
             <div
                 className="text-white px-3 d-flex align-items-center justify-content-between"
-                style={{ flexShrink: 0, height: '56px', zIndex: 1000, backgroundColor: "rgba(15, 24, 40, 0.85)", }}
+                style={{ flexShrink: 0, height: '56px', zIndex: 1000, backgroundColor: "rgba(15, 24, 40, 0.85)" }}
             >
-                <h3 className="mb-0">dndpa</h3>
+                <h3 className="mb-0">DNDPA</h3>
                 <UserMenu />
             </div>
 
-            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-
-                <div
-                    className="p-2"
-                    style={{ width: '70px',
-                        backgroundColor: "rgba(15, 24, 40, 0.85)"}}
+            <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative', zIndex: 1 }}>
+                <div className="p-2" style={{ width: '70px', backgroundColor: "rgba(15, 24, 40, 0.85)" }}
                 >
                     <HomeDashNav setActivePage={setActivePage} />
                 </div>
 
                 <div style={{ flex: 1, overflowY: 'auto' }}>
+                    {activePage === 'LANDING_PAGE' && <LandingPage />}
                     {activePage === 'SAVED_ENCOUNTERS' && <EncounterView encounters={encounters} loadingEncounter={loadingEncounter} onDeleteEncounter={handleDeleteEncounter} />}
-                    {activePage === 'CREATE_ENCOUNTER' && <CreateEncounter monsters={monsters} onEncounterCreated={handleEncounterCreated} />}
+                    {activePage === 'CREATE_ENCOUNTER' && <CreateEncounter
+                        monsters={monsters} onEncounterCreated={handleEncounterCreated}
+                        encounterLimitReached={encounterLimitReached}
+                    />}
                     {activePage === 'LOAD_CHARACTERS' && <LoadCharacter onDeletePlayer={onDeletePlayer} />}
-                    {activePage === 'CREATE_CHARACTER' && <CharCreation />}
-                    {activePage === 'HOW_TO_USE' && <div>How To Use</div>}
+                    {activePage === 'CREATE_CHARACTER' && <CharCreation onCharacterCreated={handleCharacterCreated}/>}
+                    {activePage === 'HOW_TO_USE' && <UserGuide />}
+                    {activePage === 'SURVEY' && <Survey />}
+                    {activePage === 'BUG_REPORT' && <BugReport />}
                 </div>
-
             </div>
         </div>
     );

@@ -3,10 +3,10 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import {Link, NavLink} from "react-router-dom";
 import logo from '../components/nav/logo1.png'
-import HomePageUI1 from "../components/ComplexUI/Homepageui1.tsx";
-import HomePageUI2 from "../components/ComplexUI/Homepageui2.tsx";
+import HomePageUI1 from "../components/ComplexUI/Homepageui1";
+import HomePageUI2 from "../components/ComplexUI/Homepageui2";
 
-import LogoLoop from '../components/ComplexUI/LogoLoop.tsx';
+import LogoLoop from '../components/ComplexUI/LogoLoop';
 import { SiReact, SiNextdotjs, SiTypescript } from 'react-icons/si';
 
 
@@ -17,6 +17,12 @@ const techLogos = [
     { node: <SiNextdotjs />, title: "Next.js", href: "https://nextjs.org" },
     { node: <SiTypescript />, title: "TypeScript", href: "https://www.typescriptlang.org" },
 ];
+//TODO this component is the main component of page - first thing users see
+// Should be a call to action for users to sign up for DNDPA
+// Brief to the point description of PA assistant
+// Should have a panel that is cut at the edges
+// cool open source image in the background with panel blurring it
+// Show a cool monster at right side or the ORB that we have to describe the PA being an entity
 
 function homePage(){
     return (
