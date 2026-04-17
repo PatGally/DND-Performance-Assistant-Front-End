@@ -1,0 +1,145 @@
+.pa-404 {
+    --pa-404-bg-base: #0b0b0b;
+    --pa-404-bg-tint: rgba(15, 24, 40, 0.85);
+
+    --pa-404-text: #ffffff;
+    --pa-404-text-dim: rgba(255, 255, 255, 0.7);
+    --pa-404-text-muted: rgba(255, 255, 255, 0.45);
+
+    --pa-404-ink: #0F1828;               /* solid form of the rgba tint */
+    --pa-404-surface: rgba(255, 255, 255, 0.06);
+    --pa-404-border: rgba(255, 255, 255, 0.12);
+
+    --pa-404-cta-bg: #ffffff;
+    --pa-404-cta-text: var(--pa-404-ink);
+
+    --pa-404-transition: 220ms ease;
+
+    --pa-404-gutter: 48px;
+    --pa-404-radius-sm: 6px;
+    --pa-404-radius-pill: 999px;
+}
+
+/* ---------- Page shell ----------
+   Two-layer background: a solid near-black base + the specified rgba tint
+   on top. This way the 0.85-alpha color reads correctly against a known
+   backdrop rather than whatever might be behind the page. */
+.pa-404 {
+    min-height: 100vh;
+    width: 100%;
+    background-color: var(--pa-404-bg-base);
+    background-image: linear-gradient(var(--pa-404-bg-tint), var(--pa-404-bg-tint));
+    color: var(--pa-404-text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px var(--pa-404-gutter);
+    box-sizing: border-box;
+}
+
+.pa-404 *,
+.pa-404 *::before,
+.pa-404 *::after {
+    box-sizing: border-box;
+}
+
+.pa-404__inner {
+    width: 100%;
+    max-width: 640px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 24px;
+}
+
+
+
+.pa-404__code {
+    font-size: 140px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: var(--pa-404-text);
+    margin: 8px 0 0 0;
+    background: linear-gradient(180deg, var(--pa-404-text) 0%, var(--pa-404-text-dim) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.pa-404__headline {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    margin: 0;
+    color: var(--pa-404-text);
+}
+
+.pa-404__subtitle {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--pa-404-text-dim);
+    margin: 0;
+    max-width: 520px;
+}
+
+.pa-404__actions {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 16px;
+}
+
+.pa-404__cta {
+    display: inline-block;
+    background: var(--pa-404-cta-bg);
+    color: var(--pa-404-cta-text);
+    padding: 14px 36px;
+    border-radius: var(--pa-404-radius-pill);
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    transition: opacity var(--pa-404-transition), transform var(--pa-404-transition);
+}
+
+.pa-404__cta:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.pa-404__link {
+    color: var(--pa-404-text);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    font-size: 14px;
+    transition: opacity var(--pa-404-transition);
+}
+
+.pa-404__link:hover {
+    opacity: 0.7;
+}
+
+@media (max-width: 600px) {
+    .pa-404 {
+        padding: 60px 24px;
+    }
+
+    .pa-404__code {
+        font-size: 96px;
+    }
+
+    .pa-404__headline {
+        font-size: 26px;
+    }
+
+    .pa-404__subtitle {
+        font-size: 15px;
+    }
+}

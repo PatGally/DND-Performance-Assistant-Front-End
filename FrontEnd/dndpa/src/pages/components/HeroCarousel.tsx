@@ -10,7 +10,6 @@ interface HeroSlide {
     headline: string;
     description: string;
     ctaLabel: string;
-    // ctaHref: string;
 }
 
 /**
@@ -35,21 +34,12 @@ const HeroCarousel: React.FC = () => {
             id: 'slide-1',
             backgroundImage: '/placeholder-hero-1.jpg',
             titleImage: '/placeholder-title-1.png',
-            headline: 'Lorem Ipsum Dolor Sit Amet',
+            headline: 'WELCOME TO DNDPA!',
             description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.',
+                'Take the guesswork out of every turn with DNDPA’s real-time ' +
+                'action recommendations, designed to help you make smarter decisions instantly. Streamline ' +
+                'encounter management and focus on the game—sign in to start running faster, smoother D&D combat.',
             ctaLabel: 'Get Started Now!',
-            // ctaHref: '#play',
-        },
-        {
-            id: 'slide-2',
-            backgroundImage: '/placeholder-hero-2.jpg',
-            titleImage: '/placeholder-title-2.png',
-            headline: 'Lorem Ipsum Consectetur',
-            description:
-                'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.',
-            ctaLabel: 'Learn More',
-            // ctaHref: '#learn',
         },
     ];
 
@@ -58,23 +48,20 @@ const HeroCarousel: React.FC = () => {
 
     return (
         <section className="pa-hero" aria-label="Featured content">
-            {/* Background image — replace src with your asset */}
             <div
                 className="pa-hero__bg"
                 style={{ backgroundImage: `url(${active.backgroundImage})` }}
                 role="img"
                 aria-label="Hero background"
             />
-            {/* Subtle gradient so left-aligned text stays legible */}
             <div className="pa-hero__overlay" />
 
             <div className="pa-hero__content">
-                {active.titleImage && (
-                    <div className="pa-hero__title-image">
-                        {/* Replace with <img src={active.titleImage} alt="" /> */}
-                        <div className="pa-hero__title-image-placeholder">TITLE ART</div>
-                    </div>
-                )}
+                {/*{active.titleImage && (*/}
+                {/*    <div className="pa-hero__title-image">*/}
+                {/*        <div className="pa-hero__title-image-placeholder">TITLE ART</div>*/}
+                {/*    </div>*/}
+                {/*)}*/}
 
                 <h1 className="pa-hero__headline">{active.headline}</h1>
                 <p className="pa-hero__description">{active.description}</p>
@@ -87,7 +74,6 @@ const HeroCarousel: React.FC = () => {
                 {/*</a>*/}
             </div>
 
-            {/* Pagination dots */}
             <div className="pa-hero__pagination" role="tablist" aria-label="Slide navigation">
                 {slides.map((slide, idx) => (
                     <button

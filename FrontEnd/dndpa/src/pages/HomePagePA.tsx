@@ -39,7 +39,7 @@ const HomePagePA: React.FC = () => {
                 <HeroCarousel />
                 <PASection />
                 {/*<HowToUseHome />*/}
-                <OpenSource />
+                {/*<OpenSource />*/}
                 <AboutUs />
             </main>
 
