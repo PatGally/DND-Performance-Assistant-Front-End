@@ -1,9 +1,10 @@
 import React, { useRef } from 'react';
 
-interface EsportsCard {
+interface OpenSourceCard {
     id: string;
     image: string;
     alt: string;
+    title: string;
 }
 
 /**
@@ -19,12 +20,12 @@ interface EsportsCard {
 const OpenSource: React.FC = () => {
     const scrollRef = useRef<HTMLDivElement | null>(null);
 
-    const cards: EsportsCard[] = [
-        { id: 'e1', image: '/placeholder-esports-1.jpg', alt: 'Esports card 1' },
-        { id: 'e2', image: '/placeholder-esports-2.jpg', alt: 'Esports card 2' },
-        { id: 'e3', image: '/placeholder-esports-3.jpg', alt: 'Esports card 3' },
-        { id: 'e4', image: '/placeholder-esports-4.jpg', alt: 'Esports card 4' },
-        { id: 'e5', image: '/placeholder-esports-5.jpg', alt: 'Esports card 5' },
+    const cards: OpenSourceCard[] = [
+        { id: 'e1', image: '/placeholder-open-1.jpg', alt: 'open card 1', title: 'hello' },
+        { id: 'e2', image: '/placeholder-open-2.jpg', alt: 'open card 2', title: 'hello' },
+        { id: 'e3', image: '/placeholder-open-3.jpg', alt: 'open card 3', title: 'hello' },
+        { id: 'e4', image: '/placeholder-open-4.jpg', alt: 'open card 4', title: 'hello' },
+        { id: 'e5', image: '/placeholder-open-5.jpg', alt: 'open card 5', title: 'hello' },
     ];
 
     const scroll = (direction: 'left' | 'right'): void => {
@@ -39,13 +40,13 @@ const OpenSource: React.FC = () => {
     };
 
     return (
-        <section className="pa-esports" aria-labelledby="esports-heading">
-            <div className="pa-esports__header">
-                <h2 id="esports-heading" className="pa-section-title"> We Are Open Source! </h2>
+        <section className="pa-open" aria-labelledby="OpenSource-heading">
+            <div className="pa-open__header">
+                <h2 id="OpenSource-heading" className="pa-section-title"> We Are Open Source! </h2>
                 <div className="pa-esports__controls">
                     <button
                         type="button"
-                        className="pa-esports__arrow"
+                        className="pa-open__arrow "
                         aria-label="Scroll left"
                         onClick={() => scroll('left')}
                     >
@@ -54,7 +55,7 @@ const OpenSource: React.FC = () => {
                     <div className="pa-esports__divider" aria-hidden="true" />
                     <button
                         type="button"
-                        className="pa-esports__arrow"
+                        className="pa-open__arrow"
                         aria-label="Scroll right"
                         onClick={() => scroll('right')}
                     >
@@ -63,9 +64,12 @@ const OpenSource: React.FC = () => {
                 </div>
             </div>
 
-            <div className="pa-esports__scroller" ref={scrollRef}>
+            <div className="pa-open__scroller" ref={scrollRef}>
                 {cards.map((card) => (
+
+
                     <article key={card.id} className="pa-esports__card">
+                        <div className="text-dark bg-light">{card.title}</div>
                         {/* Replace inner div with <img src={card.image} alt={card.alt} /> */}
                         <div
                             className="pa-esports__card-image"
@@ -73,6 +77,8 @@ const OpenSource: React.FC = () => {
                             role="img"
                             aria-label={card.alt}
                         />
+
+
                     </article>
                 ))}
             </div>

@@ -56,15 +56,15 @@ const LogInPage: React.FC = () => {
                 <h4> Sign in to DNDPA</h4>
                 <Form onSubmit={handleSubmit(onSubmit)}>
                     <Form.Group className="mt-3 text-start">
-                        <Form.Label>Email*</Form.Label>
+                        <Form.Label>User Name*</Form.Label>
                         <Form.Control
-                            isInvalid={!!errors.email}
-                            {...register("email")}
+                            isInvalid={!!errors.username}
+                            {...register("username")}
                             type="text"
-                            placeholder="Email"
+                            placeholder="User Name"
                         />
                         <Form.Control.Feedback type="invalid">
-                            {errors.email?.message}
+                            {errors.username?.message}
                         </Form.Control.Feedback>
                     </Form.Group>
 

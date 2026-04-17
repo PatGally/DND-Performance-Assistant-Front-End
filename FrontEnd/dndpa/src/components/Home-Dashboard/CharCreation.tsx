@@ -179,8 +179,6 @@ const CharCreation: React.FC = () => {
             ...attributes
         };
 
-        console.log(JSON.stringify(payload, null, 2));
-
         try{
             await createCharacter( payload );
             reset();

@@ -28,7 +28,7 @@ const AboutUs: React.FC = () => {
                     <p className="pa-hiring__subtitle">
                         DNDPA is a capstone project developed by a team of three students, designed to
                         streamline Dungeons & Dragons 5e combat through encounter management,
-                        interactive mapping, and real-time action recommendations. It helps players and
+                        interactive mapping, and <strong>real-time action recommendations.</strong> It helps players and
                         Dungeon Masters run encounters more efficiently while staying aligned with
                         Dungeons & Dragons 5th Edition (2014 Core Ruleset)
                     </p>
