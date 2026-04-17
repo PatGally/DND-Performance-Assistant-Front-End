@@ -77,10 +77,11 @@ function renderSpellDetails(action: SpellAction) {
             <DetailRow label="Level" value={action.level} />
             {target && (
                 <>
-                    <DetailRow label="Targets" value={target.number} />
+                    <DetailRow label="Targets" value={target.number === "-2" ? "Self-origin AOE" :
+                        target.number === "-1" ? "AOE" : target.number === "0" ? "Self" : target.number} />
                     <DetailRow label="Range" value={target.actionRange} />
                     <DetailRow label="Shape" value={target.shape || "None"} />
-                    <DetailRow label="Radius" value={target.radius || "None"} />
+                    {target.radius !== "0" && (<DetailRow label="Radius" value={target.radius || "None"} />)}
                     <DetailRow label="Roll Type" value={target.rolls?.rollType || "None"} />
                     <DetailRow label="Save Type" value={target.rolls?.saveType || "None"} />
                     <DetailRow label="Half Save" value={String(target.rolls?.halfSave ?? false)} />
@@ -112,7 +113,8 @@ function renderMonsterDetails(action: MonsterAction) {
         <>
             <span className="action-type-badge">Monster Action</span>
             <ExpandableDescriptionSection description={action.desc} />
-            <DetailRow label="Targets" value={action.number} />
+            <DetailRow label="Targets" value={action.number === "-2" ? "Self-origin AOE" :
+                                            action.number === "-1" ? "AOE" : action.number === "0" ? "Self" : action.number} />
             <DetailRow label="Range" value={action.actionRange} />
             <DetailRow label="Shape" value={action.shape || "None"} />
             <DetailRow label="Roll Type" value={action.rolls?.rollType || "None"} />

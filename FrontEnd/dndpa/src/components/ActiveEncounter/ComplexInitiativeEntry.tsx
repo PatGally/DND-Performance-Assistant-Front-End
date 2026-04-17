@@ -260,7 +260,6 @@ function renderPlayer(creature: PlayerCreature, onToggle?: () => void) {
 
 function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
     const activeConditions = creature.activeConditions ?? creature.activeCons ?? [];
-    console.log("Test Creautre",creature)
 
     const statAbbrev: Record<string, string> = {
         strength: "STR", dexterity: "DEX", constitution: "CON",

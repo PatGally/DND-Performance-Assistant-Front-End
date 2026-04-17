@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { EncounterFormData } from "./CreateEncounter";
 import AnimatedList from "../../css/AnimatedList.tsx";
 import { Form, Row, Col } from "react-bootstrap";
@@ -15,10 +15,6 @@ function AddCharacters({ formData, updateFormData, characters }: Props) {
     const [search, setSearch] = useState("");
     const [filterClass, setFilterClass] = useState("");
     const [filterLevel, setFilterLevel] = useState("");
-
-    useEffect(() => {
-        console.log("characters updated:", formData.characters);
-    }, [formData.characters]);
 
     const filteredCharacters = characters.filter((c) => {
         const matchesName = c.stats.name.toLowerCase().includes(search.toLowerCase());

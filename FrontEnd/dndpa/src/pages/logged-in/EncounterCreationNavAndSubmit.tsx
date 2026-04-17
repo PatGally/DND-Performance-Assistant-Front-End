@@ -229,9 +229,6 @@ function EncounterCreationNavAndSubmit({
                 completed: false,
             };
 
-            console.log(payload);
-            console.log(JSON.stringify(payload, null, 2));
-
             await EncounterPost(payload);
             onSuccess();
 

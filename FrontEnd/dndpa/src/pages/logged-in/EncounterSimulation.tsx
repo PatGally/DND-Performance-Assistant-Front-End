@@ -31,7 +31,7 @@ import type {
 
 import ExitSimulation from "../../components/ActiveEncounter/ExitSimulation.tsx";
 import { Card } from "react-bootstrap";
-import Orb from '../../css/Orb.tsx';
+// import Orb from '../../css/Orb.tsx';
 import {
     buildPreTurnSession,
     syncPreTurnQueueFromCreature
@@ -124,7 +124,6 @@ function EncounterSimulation() {
                 setEncounterError(null);
 
                 const data = await getEncounter(eid);
-                console.log(data);
                 if (!data) {
                     setEncounterError("Encounter was not found.");
                     setEncounterData(undefined);
@@ -215,8 +214,6 @@ function EncounterSimulation() {
       didHydrateInitialPreTurnRef.current = false;
     }, [eid]);
     useEffect(() => {
-        console.log("currentTurnCreature changed:", currentTurnCreature);
-        console.log("_isLairAction flag:", (currentTurnCreature as any)?._isLairAction);
 
         if (!currentTurnCreature) return;
         if ((currentTurnCreature as any)._isLairAction) {
@@ -247,7 +244,6 @@ function EncounterSimulation() {
 
       const nextItem = preTurnQueue[0];
       if (!nextItem) return;
-      console.log("Turn queue of", preTurnQueue);
 
       setManualLock(true);
       setActionExecutionSession(buildPreTurnSession(nextItem, currentTurnCreature));
@@ -572,15 +568,15 @@ function EncounterSimulation() {
                         >
                             <Card.Body>
                                 <Row>
-                                    <Col lg={2}>
-                                        <Orb
-                                            hoverIntensity={2}
-                                            rotateOnHover={false}
-                                            hue={0}
-                                            forceHoverState={false}
-                                            backgroundColor="#100000"
-                                        />
-                                    </Col>
+                                    {/*<Col lg={2}>*/}
+                                    {/*    <Orb*/}
+                                    {/*        hoverIntensity={2}*/}
+                                    {/*        rotateOnHover={false}*/}
+                                    {/*        hue={0}*/}
+                                    {/*        forceHoverState={false}*/}
+                                    {/*        backgroundColor="#100000"*/}
+                                    {/*    />*/}
+                                    {/*</Col>*/}
                                     <Col xs="auto" >
                                         {hasPreTurnQueue && encounterData && !endOfEncounter && actionExecutionSession ? (
                                           <>

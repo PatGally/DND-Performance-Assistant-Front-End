@@ -15,7 +15,7 @@ export const googleLogin = async (idToken: string) => {
 
     if (!res.ok) {
         const error = await res.json();
-        console.log("BACKEND ERROR:", error);
+        console.error("BACKEND ERROR:", error);
         throw new Error("Google login failed");
     }
 

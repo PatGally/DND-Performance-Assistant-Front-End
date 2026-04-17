@@ -61,9 +61,7 @@ function flattenPreTurnEffects(effects: PreTurnEffect[]): PendingPreTurnResoluti
 export function syncPreTurnQueueFromCreature(setPreTurnQueue : React.Dispatch<React.SetStateAction<PendingPreTurnResolution[]>>,
                                              creature?: Creature) {
   const raw = extractRawPreTurnEffects(creature);
-  console.log("raw", raw);
   const flattened = flattenPreTurnEffects(raw);
-  console.log("flattened", flattened);
   setPreTurnQueue(flattened);
 }
 
@@ -71,7 +69,6 @@ export function buildPreTurnSession(
   item: PendingPreTurnResolution,
   targetCreature: Creature
 ): ActionExecutionSession {
-  console.log("In buildPreTurnSession with item", item);
   const base = normalizeAction(item.spell);
   const normalized: NormalizedAction = {
     ...base,
@@ -139,11 +136,8 @@ export function getActorByConcentrationID(
 ): string {
   const normalizedResultID = String(resultID).trim();
 
-  console.log("In getActorByConcID");
   for (const creature of allCreatures) {
     const statEffects = getPotentialPreTurnEffectsForCreature(creature);
-    console.log(creature, "StatusEffects");
-    console.log(statEffects);
 
     const hasMatchingConcentration = statEffects.some((eff) => {
       const effectName =
@@ -154,7 +148,6 @@ export function getActorByConcentrationID(
       const idArray = eff?.effect?.resultID
         ? eff.effect.resultID
         : [];
-      console.log("idArray", idArray);
 
       if (Array.isArray(idArray)) {
         return idArray.some((id) => String(id).trim() === normalizedResultID);

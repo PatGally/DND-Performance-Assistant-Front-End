@@ -54,16 +54,11 @@ export default function InputHandler({
     [allCreatures]
   );
   const targetCount = actionSession.action.targetCount ?? 0;
-  console.log("targetCount", targetCount);
-  console.log("draft targets", actionSession.draft.targets);
-  console.log("len", actionSession.draft.targets.length);
   const needsTargetSelection =
     targetCount > 0 && actionSession.draft.targets.length === 0;
 
   const needsAoeSelection =
       (targetCount === -1 || targetCount === -2) && actionSession.draft.targets.length === 0;
-  console.log("needsAOE", needsAoeSelection);
-  console.log("needsTarget", needsTargetSelection);
 
   const [selectedTargets, setSelectedTargets] = useState<string[]>(actionSession.draft.targets);
   const [perTargetInputs, setPerTargetInputs] = useState<Record<string, PerTargetInput>>(() => {
@@ -150,7 +145,6 @@ export default function InputHandler({
 
     let rollValue = "";
 
-    console.log("Checking actionSession", actionSession);
     if (
       (actionSession.action.rollMode === "toHit" || actionSession.action.rollMode === "onHit") &&
       entry.attackRoll.trim() === ""
@@ -169,7 +163,6 @@ export default function InputHandler({
       return;
     }
 
-    console.log("Checking rollMode ", actionSession.action.rollMode);
     if (actionSession.action.rollMode.toLowerCase() === "tohit" || actionSession.action.rollMode.toLowerCase() === "onhit") {
       rollValue = entry.attackRoll.trim();
     } else if (actionSession.action.rollMode.toLowerCase() === "save") {
@@ -179,11 +172,9 @@ export default function InputHandler({
     }
 
     if (rollValue !== "") {
-      console.log("Adding Roll", rollValue);
       rollResults.push(rollValue);
 
       if (actionSession.action.hasDamage) {
-        console.log("Adding Dam", entry.damageRoll);
         diceResults.push(Number(entry.damageRoll));
       } else {
         diceResults.push(0);
@@ -224,9 +215,6 @@ export default function InputHandler({
   handleActionExecution(finalDraft);
 }
   function handleExit() {
-      console.log("Handle Exit");
-    console.log(actionSession);
-    console.log(aoePlacementStage);
     if (onExit) {
       onExit();
       return;

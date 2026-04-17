@@ -100,7 +100,6 @@ const CharCreation: React.FC = () => {
         try {
             loadingSetCid(true);
             characterId = await fetchUUID();
-            // console.log("Character ID ",characterId);
         } catch (err) {
             console.error("Failed to fetch CID", err);
             return;
@@ -125,8 +124,6 @@ const CharCreation: React.FC = () => {
 
                 return [w.name];
             });
-        console.log("Checking weapons", selectedWeapons);
-        console.log("Checking ALL weapons", allWeapons);
 
         const attributes = calcAttributes(data.level, data.characterClass);
         const spellSlots = calcSpellSlots(data.level, data.characterClass);
@@ -182,7 +179,6 @@ const CharCreation: React.FC = () => {
         try{
             await createCharacter( payload );
             reset();
-            console.log("Form cleared and ready for the next character!");
 
         } catch (error) {
         console.error("Submission failed, keeping data in form", error);

@@ -19,7 +19,6 @@ function AddMonsters({ formData, updateFormData, monsters }: Props) {
 
 
     useEffect(() => {
-        console.log("monsters updated:", formData.monsters);
     }, [formData.monsters]);
 
     const filteredMonsters = monsters.filter((m) => {

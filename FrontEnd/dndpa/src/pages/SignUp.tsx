@@ -74,7 +74,6 @@ const SignUpPage: React.FC = () => {
         }
         try {
             await signup(payload);
-            console.log(userData);
             reset();
             navigate("/user-dashboard")
         } catch (error) {

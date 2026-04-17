@@ -504,7 +504,6 @@ export async function buildManualAoePositioning({
   cursor?: [number, number] | null;
   lineWidthCells?: number;
 }): Promise<[number, number][]> {
-  console.log("Building manualAoePositioning...");
   const response = await axiosTokenInstance.get("/aoe/template-masks", {
     params: {
       shape,
@@ -512,7 +511,6 @@ export async function buildManualAoePositioning({
       lineWidthCells,
     },
   });
-  console.log("Masks", response.data);
 
   const masks = response.data.masks as {
     orientation: string;

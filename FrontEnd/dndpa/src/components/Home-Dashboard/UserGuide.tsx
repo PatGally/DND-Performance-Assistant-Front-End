@@ -356,13 +356,6 @@ function UserGuide() {
                             <li>This prevents creatures from exceeding their allowed action economy</li>
                         </ul>
 
-                        <p><strong>Movement Speed Limits</strong></p>
-                        <ul>
-                            <li>Creatures cannot move farther than their maximum movement speed per turn</li>
-                            <li>The system tracks movement distance in real time during encounters</li>
-                            <li>Prevents unintended positional advantages or rule-breaking movement</li>
-                        </ul>
-
                         <p><strong>Concentration Rules</strong></p>
                         <ul>
                             <li>A creature can only maintain one concentration spell at a time</li>
@@ -562,11 +555,6 @@ function UserGuide() {
                             <li>Set the <strong>initiative order manually</strong></li>
                         </ul>
 
-                        <p><strong>Lair Actions:</strong></p>
-                        <ul>
-                            <li>One <strong>lair action slot</strong> (If Applicable) is included for convenience</li>
-                        </ul>
-
                         <p><strong>Map Setup:</strong></p>
                         <ul>
                             <li>Paste your <strong>Google Drive image link</strong></li>
@@ -636,24 +624,20 @@ function UserGuide() {
 
                 <section id="action-list">
                     <h2>Using Action List</h2>
-                    <p className="description-bg">Explain actions...</p>
+                    <p className="description-bg">Actions on the right hand side are executable as well, regardless of
+                    ruleset implementation. Each action has a button for execution, allowing for you to select targets
+                    regardless of PA recommendation, and enter input values from actual rolls in real time. If the action
+                    is not implemented, then manual mode allows you to change the values according to the action's execution.</p>
+
+                    <p className="description-bg">Any changes made from action execution can be seen from the Initiative list on
+                    the left hand side. Take a peek at the various creatures in their encounter, and see the stats change in real time.</p>
                 </section>
 
 
                 <section id="lair">
-                    <h2>Lair Actions</h2>
+                    <h2>Manual Mode</h2>
                     <div className="description-bg">
-                        <p>
-                            Lair actions are special abilities tied to certain monsters and always occur at an initiative count of <strong>20</strong>.
-                        </p>
-
                         <p><strong>Current System Behavior:</strong></p>
-                        <ul>
-                            <li>You are given <strong>one lair action slot</strong> in the initiative order.</li>
-                            <li>Entering a lair action will automatically place you into <strong>manual mode</strong>.</li>
-                            <li>This is required since all lair actions resolve at initiative 20.</li>
-                            <li>While in <strong>manual mode</strong> make changes to creatures accordingly.</li>
-                        </ul>
 
                         <p><strong>While in Manual Mode, you can modify the following for a player:</strong></p>
                         <ul>
@@ -684,12 +668,6 @@ function UserGuide() {
                             <li>Damage Resistances</li>
                             <li>Damage Immunities</li>
                             <li>Damage Vulnerabilities</li>
-                        </ul>
-
-                        <p><strong>Exiting a Lair Action:</strong></p>
-                        <ul>
-                            <li>Click <strong>"Submit"</strong> at the top of the Encounter Simulation page</li>
-                            <li>Then click <strong>"Next"</strong> to proceed to the next creature</li>
                         </ul>
 
                         <p><strong>Troubleshooting:</strong></p>

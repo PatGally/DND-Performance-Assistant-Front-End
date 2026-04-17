@@ -15,6 +15,7 @@ import {deletePlayer} from "../../api/DeletePlayer";
 import UserGuide from "../../components/Home-Dashboard/UserGuide.tsx";
 import Survey from "../../components/Home-Dashboard/Survey"
 import LandingPage from "../../components/Home-Dashboard/LandingPage.tsx";
+import BugReport from "../../components/Home-Dashboard/BugReport.tsx";
 
 
 import PixelBlast from '../../css/PixelBlast';
@@ -146,6 +147,7 @@ function HomeDashboard() {
                     {activePage === 'CREATE_CHARACTER' && <CharCreation />}
                     {activePage === 'HOW_TO_USE' && <UserGuide />}
                     {activePage === 'SURVEY' && <Survey />}
+                    {activePage === 'BUG_REPORT' && <BugReport />}
                 </div>
             </div>
         </div>

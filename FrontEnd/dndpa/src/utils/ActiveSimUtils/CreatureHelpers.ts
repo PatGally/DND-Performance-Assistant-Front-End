@@ -37,8 +37,6 @@ export function getCurrentTurnCreatureFromEncounter(encounter: Encounter): Creat
         if (!currentTurnEntry) return undefined;
     if (currentTurnEntry.turnType === "lairAction") {
         const sentinel = { _isLairAction: true } as unknown as Creature;
-        // console.log("Sentinel built:", sentinel);
-        // console.log("Sentinel _isLairAction:", (sentinel as any)._isLairAction);
         return sentinel;
     }
 
