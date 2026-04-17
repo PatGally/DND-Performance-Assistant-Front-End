@@ -12,24 +12,24 @@ import d20 from "../../assets/d20.png";
  * The back-to-top control uses window.scrollTo — no library needed.
  */
 const SiteFooter: React.FC = () => {
-    const primaryLinks: string[] = [
-        'PRESS',
-        'SECURITY',
-        'LEGAL',
-        'LEADERSHIP',
-        'CANDIDATE PRIVACY',
-        'TERMS OF SERVICE',
-        'PRIVACY NOTICE',
-        'PLAYER SUPPORT',
-        'E-VERIFY',
-        'ACCESSIBILITY',
-    ];
-
-    const secondaryLinks: string[] = [
-        'ANNUAL REPORTS',
-        'PEERING INFORMATION',
-        'COMMUNITY PACT',
-    ];
+    // const primaryLinks: string[] = [
+    //     'PRESS',
+    //     'SECURITY',
+    //     'LEGAL',
+    //     'LEADERSHIP',
+    //     'CANDIDATE PRIVACY',
+    //     'TERMS OF SERVICE',
+    //     'PRIVACY NOTICE',
+    //     'PLAYER SUPPORT',
+    //     'E-VERIFY',
+    //     'ACCESSIBILITY',
+    // ];
+    //
+    // const secondaryLinks: string[] = [
+    //     'ANNUAL REPORTS',
+    //     'PEERING INFORMATION',
+    //     'COMMUNITY PACT',
+    // ];
 
     const socials: { id: string; label: string }[] = [
         { id: 'x', label: 'X' },

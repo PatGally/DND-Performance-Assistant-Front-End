@@ -1,10 +1,5 @@
 import React from 'react';
 
-interface HiringStat {
-    value: string;
-    label: string;
-}
-
 /**
  * AboutUs
  * -------------
@@ -14,11 +9,6 @@ interface HiringStat {
  * diagonal cut (created with `clip-path` in CSS).
  */
 const AboutUs: React.FC = () => {
-    const stats: HiringStat[] = [
-        { value: '000', label: 'Lorem positions' },
-        { value: '00', label: 'Lorem offices' },
-    ];
-
     return (
         <section className="pa-hiring" aria-labelledby="hiring-heading">
             {/* LEFT PANEL — light background */}
@@ -32,22 +22,9 @@ const AboutUs: React.FC = () => {
                         Dungeon Masters run encounters more efficiently while staying aligned with
                         Dungeons & Dragons 5th Edition (2014 Core Ruleset)
                     </p>
-
-                    {/*<div className="pa-hiring__stats">*/}
-                    {/*    {stats.map((s) => (*/}
-                    {/*        <div key={s.label} className="pa-hiring__stat">*/}
-                    {/*            <div className="pa-hiring__stat-value">{s.value}</div>*/}
-                    {/*            <div className="pa-hiring__stat-label">{s.label}</div>*/}
-                    {/*        </div>*/}
-                    {/*    ))}*/}
-                    {/*</div>*/}
-
-                    {/*<a href="#careers" className="pa-hiring__cta">Explore Careers</a>*/}
                 </div>
             </div>
 
-            {/* RIGHT IMAGE — replace background with <img> if preferred */}
-            {/*TODO remove or rename unused hiring styles*/}
             <div
                 className="pa-hiring__image"
                 style={{ backgroundImage: 'url(/placeholder-hiring.jpg)' }}

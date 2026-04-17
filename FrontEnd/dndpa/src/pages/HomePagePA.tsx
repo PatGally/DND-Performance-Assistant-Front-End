@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import NavBar from '../components/homeComponents/NavBar';
 import HeroCarousel from '../components/homeComponents/HeroCarousel';
-import PASection from '../components/homeComponents/PASection.tsx';
+// import PASection from '../components/homeComponents/PASection.tsx';
 // import HowToUseHome from './homeComponents/HowToUseHome.tsx';
 // import OpenSource from './homeComponents/OpenSource.tsx';
 import AboutUs from '../components/homeComponents/AboutUs.tsx';
@@ -27,7 +27,7 @@ const HomePagePA: React.FC = () => {
 
             <main className="pa-main">
                 <HeroCarousel />
-                <PASection />
+                {/*<PASection />*/}
                 {/*<HowToUseHome />*/}
                 {/*<OpenSource />*/}
                 <AboutUs />
