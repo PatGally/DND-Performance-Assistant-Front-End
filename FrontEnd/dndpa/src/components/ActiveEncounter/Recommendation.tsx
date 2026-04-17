@@ -4,11 +4,13 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
-import {
-  recommendationGet,
-} from "../../api/ActionRecommend";
-import type {Recommendation as RecommendationType, RecommendationAoeTarget,
-    RecommendationTarget, AoeToken} from "../../types/SimulationTypes.ts";
+import { recommendationGet } from "../../api/ActionRecommend";
+import type {
+  Recommendation as RecommendationType,
+  RecommendationAoeTarget,
+  RecommendationTarget,
+  AoeToken,
+} from "../../types/SimulationTypes.ts";
 
 type RecommendationProps = {
   eid: string;
@@ -28,8 +30,9 @@ type RecommendationProps = {
   ) => void;
 };
 
-function isAoeTarget(target: RecommendationTarget): target is RecommendationAoeTarget {
-  console.log("Checking isAOE");
+function isAoeTarget(
+  target: RecommendationTarget
+): target is RecommendationAoeTarget {
   return (
     !Array.isArray(target) &&
     typeof target === "object" &&
@@ -48,15 +51,25 @@ export default function Recommendation({
 }: RecommendationProps) {
   const [recommendations, setRecommendations] = useState<RecommendationType[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
-  const [showPassTurn, setShowPassTurn] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
 
   const previewPrefix = `preview:recommendation:${cid}:`;
-  const currentRecommendation = recommendations[currentIndex];
+
+  const hasRecommendations = recommendations.length > 0;
+  const isPassTurnView = hasRecommendations && currentIndex === recommendations.length;
+  const currentRecommendation =
+    hasRecommendations && !isPassTurnView
+      ? recommendations[currentIndex]
+      : undefined;
+
   const activePreviewResultID = currentRecommendation
     ? `${previewPrefix}${currentIndex}`
     : "";
+
+  const canGoLeft = hasRecommendations && currentIndex > 0;
+  const canGoRight = hasRecommendations && currentIndex < recommendations.length;
+  const canAccept = !!currentRecommendation;
 
   useEffect(() => {
     async function loadRecommendations() {
@@ -64,10 +77,8 @@ export default function Recommendation({
         setLoading(true);
         setError("");
         setCurrentIndex(0);
-        setShowPassTurn(false);
 
         const data = await recommendationGet(eid, cid);
-        console.log("Recommends: ", data);
         setRecommendations(Array.isArray(data) ? data : []);
       } catch (err) {
         if (err instanceof Error) {
@@ -83,13 +94,13 @@ export default function Recommendation({
 
     loadRecommendations();
   }, [eid, cid]);
+
   useEffect(() => {
     const clearRecommendationPreviews = () => {
       setAoeTokens((prev) => {
         const filtered = prev.filter(
           (token) => !token.resultID.startsWith(previewPrefix)
         );
-
         return filtered.length === prev.length ? prev : filtered;
       });
     };
@@ -103,7 +114,7 @@ export default function Recommendation({
       currentRecommendation,
       activePreviewResultID
     );
-    console.log("previewToken", previewToken);
+
     if (!previewToken) {
       clearRecommendationPreviews();
       return;
@@ -113,19 +124,6 @@ export default function Recommendation({
       const withoutOldRecommendationPreviews = prev.filter(
         (token) => !token.resultID.startsWith(previewPrefix)
       );
-
-      const existing = withoutOldRecommendationPreviews.find(
-        (token) => token.resultID === activePreviewResultID
-      );
-
-      if (
-        existing &&
-        JSON.stringify(existing) === JSON.stringify(previewToken) &&
-        withoutOldRecommendationPreviews.length === prev.length
-      ) {
-        return prev;
-      }
-
       return [...withoutOldRecommendationPreviews, previewToken];
     });
 
@@ -134,7 +132,6 @@ export default function Recommendation({
         const filtered = prev.filter(
           (token) => token.resultID !== activePreviewResultID
         );
-
         return filtered.length === prev.length ? prev : filtered;
       });
     };
@@ -146,16 +143,14 @@ export default function Recommendation({
     setAoeTokens,
   ]);
 
-  function handleReject() {
-    if (currentIndex < recommendations.length - 1) {
-      setCurrentIndex((prev) => prev + 1);
-      return;
-    }
+  function handleBack() {
+    if (!canGoLeft) return;
+    setCurrentIndex((prev) => prev - 1);
+  }
 
-    setAoeTokens((prev) =>
-      prev.filter((token) => !token.resultID.startsWith(previewPrefix))
-    );
-    setShowPassTurn(true);
+  function handleForward() {
+    if (!canGoRight) return;
+    setCurrentIndex((prev) => prev + 1);
   }
 
   function handleAccept() {
@@ -171,122 +166,135 @@ export default function Recommendation({
     );
   }
 
-  if (loading) {
-    return <div>Loading recommendations...</div>;
-  }
+  if (loading) return <div>Loading recommendations...</div>;
+  if (error) return <div>Error: {error}</div>;
 
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
+  let targetDisplay = "";
 
-  if (
-    showPassTurn ||
-    recommendations.length === 0 ||
-    currentIndex >= recommendations.length
-  ) {
-    return (
-      <div
-        style={{
-          border: "none",
-          padding: "10px 12px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <div>
-          <strong>No viable actions - Pass Turn</strong>
-        </div>
-      </div>
-    );
-  }
+  if (currentRecommendation) {
 
-  if (!currentRecommendation) {
-    return (
-      <div
-        style={{
-          border: "none",
-          padding: "10px 12px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          color: "white",
-        }}
-      >
-        <div>
-          <strong>Pass Turn</strong>
-        </div>
-      </div>
-    );
-  }
-
-  let targetDisplay;
-  try {
+    try {
       targetDisplay = Array.isArray(currentRecommendation.target)
-    ? currentRecommendation.target.length > 0
-      ? currentRecommendation.target.join(", ")
-      : "None"
-    : currentRecommendation.target.targetsHit.length > 0
-      ? currentRecommendation.target.targetsHit.join(", ")
-      : "AOE placement";
-  }
-  catch(e) {
-    console.error("Recommendation targetDisplay error", e);
-    targetDisplay = "None";
+        ? currentRecommendation.target.length > 0
+          ? currentRecommendation.target.join(", ")
+          : "None"
+        : currentRecommendation.target.targetsHit.length > 0
+            ? currentRecommendation.target.targetsHit.join(", ")
+            : "AOE placement";
+    } catch (e) {
+      console.error("Recommendation targetDisplay error", e);
+      targetDisplay = "None";
+    }
   }
 
-  return (
+
+  const buttonStyle: React.CSSProperties = {
+  width: "44px",
+  height: "44px",
+  minWidth: "44px",
+  minHeight: "44px",
+  border: "none",
+  borderRadius: "8px",
+  background: "rgba(255,255,255,0.10)",
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "18px",
+  color: "white",
+};
+
+return (
+  <div
+    style={{
+      width: "min(460px, calc(100vw - 32px))",
+      minHeight: "132px",
+      boxSizing: "border-box",
+      margin: "0 auto",
+      padding: "16px 18px",
+      color: "white",
+      display: "grid",
+      gridTemplateRows: "auto 44px",
+      rowGap: "14px",
+    }}
+  >
     <div
       style={{
-        border: "none",
-        padding: "10px 12px",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: "12px",
-        color: "white",
+        width: "100%",
+        minWidth: 0,
+        overflow: "hidden",
       }}
     >
-      <div style={{ flex: 1 }}>
-        <div>
-          <strong>{currentRecommendation.name}</strong>
-        </div>
-        <div style={{ opacity: 0.8 }}>Target: {targetDisplay}</div>
+      <div
+        style={{
+          fontWeight: 700,
+          fontSize: "18px",
+          lineHeight: 1.25,
+          whiteSpace: "normal",
+          overflowWrap: "anywhere",
+          wordBreak: "break-word",
+        }}
+      >
+        {currentRecommendation ? currentRecommendation.name : "No Viable Actions - Pass Turn"}
       </div>
 
-      <div style={{ display: "flex", gap: "8px" }}>
+      <div
+        style={{
+          marginTop: "6px",
+          opacity: 0.9,
+          fontSize: "16px",
+          lineHeight: 1.35,
+          whiteSpace: "normal",
+          overflowWrap: "anywhere",
+          wordBreak: "break-word",
+        }}
+      >
+        Target: {targetDisplay}
+      </div>
+    </div>
+
+    <div
+      style={{
+        height: "44px",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: "14px",
+      }}
+    >
+      {canGoLeft && (
+        <button
+          type="button"
+          onClick={handleBack}
+          style={buttonStyle}
+          aria-label="Previous recommendation"
+        >
+          ◀
+        </button>
+      )}
+
+      {canAccept && (
         <button
           type="button"
           onClick={handleAccept}
-          style={{
-            border: "none",
-            background: "rgba(255,255,255,0.1)",
-            cursor: "pointer",
-            padding: "6px 10px",
-            borderRadius: "6px",
-            backdropFilter: "blur(4px)",
-          }}
+          style={buttonStyle}
           aria-label="Accept recommendation"
         >
           ✅
         </button>
+      )}
 
+      {canGoRight && (
         <button
           type="button"
-          onClick={handleReject}
-          style={{
-            border: "none",
-            background: "rgba(255,255,255,0.1)",
-            cursor: "pointer",
-            padding: "6px 10px",
-            borderRadius: "6px",
-            backdropFilter: "blur(4px)",
-          }}
-          aria-label="Reject recommendation"
+          onClick={handleForward}
+          style={buttonStyle}
+          aria-label="Next recommendation"
         >
-          ❌
+          ▶
         </button>
-      </div>
+      )}
     </div>
-  );
+  </div>
+);
 }
