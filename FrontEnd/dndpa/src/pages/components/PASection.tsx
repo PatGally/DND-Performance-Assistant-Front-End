@@ -25,7 +25,7 @@ const PASection: React.FC = () => {
         id: 'featured',
         image: '/placeholder-news-featured.jpg',
         title: 'Lorem Ipsum Dolor Sit Amet',
-        categoryIcon: performanceIcon,
+        categoryIcon: '/placeholder-icon.png',
         category: 'NEWS',
     };
 
