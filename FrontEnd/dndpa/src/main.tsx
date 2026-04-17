@@ -9,14 +9,17 @@ import NotFoundPage from "./pages/NotFoundPage.tsx";
 import Encounter from "./pages/logged-in/Encounter.tsx";
 import EncounterSimulation from "./pages/logged-in/EncounterSimulation.tsx";
 import 'bootstrap/dist/css/bootstrap.min.css';
-import HomePage from "./pages/HomePage.tsx";
+import HomePagePA from "./pages/HomePagePA.tsx";
 import SignUp from "./pages/SignUp.tsx";
 import SignIn from "./pages/SignIn.tsx";
-
+//TODO
+// Add restyled page that redirects specific to where you are in the website
+// If you logged in and type a messed up link it should put you in the HomeDashboard
+// else HomePagePA
 const router = createBrowserRouter(
 
     [
-        {path: '/', element: <HomePage />, errorElement: <NotFoundPage />},
+        {path: '/', element: <HomePagePA />, errorElement: <NotFoundPage />},
         {
             path: 'user-dashboard',
             element: <ProtectedRoute><HomeDashboard /></ProtectedRoute>,

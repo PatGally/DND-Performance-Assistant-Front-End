@@ -15,9 +15,6 @@ import { uuidPolyfill } from '../api/uuidPolyfill.ts';
 
 import { GoogleLogin } from '@react-oauth/google';
 
-// Todo Add api to send user credentials
-// Todo Add redirect to user dashboard
-
 uuidPolyfill();
 
 const schema= z.object({
@@ -75,7 +72,7 @@ const SignUpPage: React.FC = () => {
 
     return (
         <>
-            <Container fluid className="d-flex flex-column min-vh-100 p-0">
+            <Container fluid className="d-flex flex-column min-vh-100 p-0 text-dark">
                 <Row>
                     <Col md={6} lg={6} xl={6} xxl={6} className="text-center align-items-center bg-dark bg-gradient text-light min-vh-50 min-vh-md-100">
                         <Row className="m-3 ">
@@ -163,6 +160,23 @@ const SignUpPage: React.FC = () => {
                                     {isSubmitting ? "Creating..." : "Create Account" }
                                     {!isSubmitting && <ArrowRightShort  />}
                                 </Button>
+                                <h5 className="mt-5 text-center">Privacy & Data Protection</h5>
+
+                                <p>
+                                    Your privacy matters to us. We are committed to protecting your personal information and being transparent about how it is handled.
+                                </p>
+
+                                <ul>
+                                    <li>We <strong>do not sell, trade, or rent</strong> your personal information to third parties.</li>
+                                    <li>Your data is used solely to provide and improve our services.</li>
+                                    <li>We implement appropriate security measures to help protect your information from unauthorized access, alteration, or disclosure.</li>
+                                    <li>Any data collected is limited to what is necessary for functionality and user experience.</li>
+                                    <li>We do not share your information unless required by law or with your explicit consent.</li>
+                                </ul>
+
+                                <p>
+                                    By using our platform, you can trust that your data is handled responsibly and with care.
+                                </p>
                             </Form>
                         </Row>
                     </Col>

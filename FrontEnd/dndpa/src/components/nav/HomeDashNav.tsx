@@ -21,7 +21,7 @@ function HomeDashNav({ setActivePage }: NavigationSignedInProps) {
         { icon: <Journals size={18} />, label: 'Create Encounter', onClick: () => setActivePage('CREATE_ENCOUNTER') },
         { icon: <CloudArrowDown size={18} />, label: 'Load Players', onClick: () => setActivePage('LOAD_CHARACTERS') },
         { icon: <PersonGear size={18} />, label: 'Create Player', onClick: () => setActivePage('CREATE_CHARACTER') },
-        { icon: <QuestionSquare size={18} />, label: 'How To', onClick: () => setActivePage('HOW_TO_USE')},
+        { icon: <QuestionSquare size={18} />, label: 'User Guide', onClick: () => setActivePage('HOW_TO_USE')},
         { icon: <BarChart size={18} />, label: 'Survey', onClick: () => setActivePage('SURVEY') },
     ];
 
