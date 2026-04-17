@@ -14,6 +14,8 @@ import {deleteEncounter} from "../../api/DeleteEncounter"
 import {deletePlayer} from "../../api/DeletePlayer";
 import UserGuide from "../../components/Home-Dashboard/UserGuide.tsx";
 import Survey from "../../components/Home-Dashboard/Survey"
+import LandingPage from "../../components/Home-Dashboard/LandingPage.tsx";
+
 
 import PixelBlast from '../../css/PixelBlast';
 
@@ -25,7 +27,7 @@ import PixelBlast from '../../css/PixelBlast';
 
 //TODO add username to account when they pull the drop down. They should see that
 function HomeDashboard() {
-    const [activePage, setActivePage] = useState('SAVED_ENCOUNTERS');
+    const [activePage, setActivePage] = useState('LANDING_PAGE');
     const [monsters, setMonsters] = useState<MonsterCreature[]>([]);
     const [encounters, setEncounters] = useState<EncounterWithPacket[]>([]);
     const [loadingEncounter, setLoadingEncounter] = useState<boolean>(false);
@@ -137,6 +139,7 @@ function HomeDashboard() {
                 </div>
 
                 <div style={{ flex: 1, overflowY: 'auto' }}>
+                    {activePage === 'LANDING_PAGE' && <LandingPage />}
                     {activePage === 'SAVED_ENCOUNTERS' && <EncounterView encounters={encounters} loadingEncounter={loadingEncounter} onDeleteEncounter={handleDeleteEncounter} />}
                     {activePage === 'CREATE_ENCOUNTER' && <CreateEncounter monsters={monsters} onEncounterCreated={handleEncounterCreated} />}
                     {activePage === 'LOAD_CHARACTERS' && <LoadCharacter onDeletePlayer={onDeletePlayer} />}

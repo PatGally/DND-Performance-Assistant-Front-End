@@ -1,7 +1,8 @@
-import { CloudArrowDown, PersonGear, QuestionSquare, Archive, Journals, BarChart } from 'react-bootstrap-icons';
+import { CloudArrowDown, PersonGear, QuestionSquare, Archive, Journals, BarChart, House } from 'react-bootstrap-icons';
 import Dock from '../../css/Dock';
 
 type ActivePanel =
+    | 'LANDING_PAGE'
     | 'SAVED_ENCOUNTERS'
     | 'LOAD_CHARACTERS'
     | 'CREATE_CHARACTER'
@@ -17,6 +18,7 @@ type NavigationSignedInProps = {
 
 function HomeDashNav({ setActivePage }: NavigationSignedInProps) {
     const items = [
+        { icon: <House size={18} />, label: 'Home', onClick: () => setActivePage('LANDING_PAGE') },
         { icon: <Archive size={18} />, label: 'Archive', onClick: () => setActivePage('SAVED_ENCOUNTERS') },
         { icon: <Journals size={18} />, label: 'Create Encounter', onClick: () => setActivePage('CREATE_ENCOUNTER') },
         { icon: <CloudArrowDown size={18} />, label: 'Load Players', onClick: () => setActivePage('LOAD_CHARACTERS') },

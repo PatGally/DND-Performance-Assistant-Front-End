@@ -1,6 +1,4 @@
 import React from 'react';
-// import performanceIcon from '../../assets/performance-assistant.svg'
-import performanceIcon from "../../assets/d20.png";
 
 interface NewsItem {
     id: string;
@@ -27,7 +25,7 @@ const PASection: React.FC = () => {
         id: 'featured',
         image: '/placeholder-news-featured.jpg',
         title: 'Lorem Ipsum Dolor Sit Amet',
-        categoryIcon: performanceIcon,
+        categoryIcon: '/placeholder-icon.png',
         category: 'NEWS',
     };
 
@@ -58,7 +56,7 @@ const PASection: React.FC = () => {
             image: '/placeholder-news-4.jpg',
             title: 'Dynamic Weighting',
             categoryIcon: '/placeholder-icon.png',
-            category: 'ADAPTS AND IMPROVES BASED ON REAL GAMEPLAY',
+            category: 'ADAPTS AND IMPROVES PERFORMANCE ASSISTANT BASED ON REAL GAMEPLAY',
         },
     ];
 
