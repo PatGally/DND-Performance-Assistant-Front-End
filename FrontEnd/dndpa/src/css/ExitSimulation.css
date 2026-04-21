@@ -95,7 +95,6 @@
 }
 
 .pa-exit__item--danger:hover {
-    background: rgba(248, 113, 113, 0.12);
     color: var(--pa-exit-danger);
 }
 
