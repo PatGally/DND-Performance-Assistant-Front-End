@@ -277,14 +277,27 @@ export function useEncounterSimulationCallbacks({
     prob: number,
     eDam: number,
     impact: number,
+    overallRank : number,
+    base_weight : number,
+    ml_weight: number,
+    useML: boolean,
+    final_weight: number,
+    candidateCount: number,
     targets: RecommendationTarget,
     previewResultID?: string
   ) => {
+    console.log("Hooking PA Submit with", overallRank, base_weight, ml_weight, useML, final_weight, candidateCount);
     void handlePASubmission({
       name,
       prob,
       eDam,
       impact,
+      overallRank,
+      base_weight,
+      ml_weight,
+      useML,
+      final_weight,
+      candidateCount,
       targets,
       previewResultID,
       currentTurnCreature,
@@ -303,8 +316,9 @@ export function useEncounterSimulationCallbacks({
     setActionExecutionSession,
   ]);
 
-  const handleExecuteAction = useCallback((finalDraft: ActionRequestDraft) => {
-    void handleActionExecution({
+  const handleExecuteAction = useCallback(
+  (finalDraft: ActionRequestDraft): Promise<void | string> =>
+    handleActionExecution({
       finalDraft,
       eid,
       currentTurnCreature,
@@ -317,8 +331,8 @@ export function useEncounterSimulationCallbacks({
       setActionExecutionSession,
       setManualLock,
       setInitiativeRefreshKey,
-    });
-  }, [
+    }),
+  [
     eid,
     currentTurnCreature,
     encounterData,
@@ -330,10 +344,12 @@ export function useEncounterSimulationCallbacks({
     setActionExecutionSession,
     setManualLock,
     setInitiativeRefreshKey,
-  ]);
+  ]
+);
 
-  const handleExecutePreTurn = useCallback((finalDraft: ActionRequestDraft) => {
-    void handlePreTurnExecution({
+  const handleExecutePreTurn = useCallback(
+  (finalDraft: ActionRequestDraft): Promise<void | string> =>
+      handlePreTurnExecution({
       finalDraft,
       eid,
       currentTurnCreature,
@@ -345,8 +361,8 @@ export function useEncounterSimulationCallbacks({
       setEncounterData,
       setCurrentTurnCreature,
       setInitiativeRefreshKey,
-    });
-  }, [
+    }),
+  [
     eid,
     currentTurnCreature,
     encounterData,

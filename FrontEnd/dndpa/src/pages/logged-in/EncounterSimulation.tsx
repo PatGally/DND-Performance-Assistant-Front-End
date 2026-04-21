@@ -50,12 +50,12 @@ function EncounterSimulation() {
     const eid = location.state?.eid;
 
     //Side homeComponents
-    const [initiativeOpen, setInitiativeOpen] = useState(false);
+    const [initiativeOpen, setInitiativeOpen] = useState(true);
     const [initiativeRefreshKey, setInitiativeRefreshKey] = useState(0);
     const [recommendRefreshKey, setRecommendRefreshKey] = useState(0);
     const latestHoverRequestRef = useRef(0);
     const didHydrateInitialPreTurnRef = useRef(false);
-    const [actionOpen, setActionOpen] = useState(false);
+    const [actionOpen, setActionOpen] = useState(true);
 
     //Pre/post enc logic
     const [encStart, setEncStart] = useState(false);
@@ -115,6 +115,26 @@ function EncounterSimulation() {
       setRecommendRefreshKey, setInitiativeRefreshKey, setEncStart, setActiveEncounter, setHandlingNextTurn,
     });
 
+    const loadEndOfEncounter = async (): Promise<void> => {
+            try {
+                const response = await axiosTokenInstance.get(`/encounter/${eid}/completed`)
+                if (response.data.isEnd) {
+                    if (encounterData && !encounterData.completed) {
+                        try {
+                            await axiosTokenInstance.get(`/encounter/${eid}/setcompleted`);
+                        }
+                        catch(e) {
+                            console.error(e);
+                        }
+                    }
+                    setEndOfEncounter(true);
+            }
+            }
+            catch(e) {
+                console.error(e);
+            }
+        }
+
     //ONLOAD EFFECTS
     useEffect(() => {
         //Loads the encounter from the DB
@@ -124,6 +144,7 @@ function EncounterSimulation() {
                 setEncounterError(null);
 
                 const data = await getEncounter(eid);
+                console.log(data);
                 if (!data) {
                     setEncounterError("Encounter was not found.");
                     setEncounterData(undefined);
@@ -139,8 +160,10 @@ function EncounterSimulation() {
                 setLoadingEncounter(false);
             }
         };
-
-    loadEncounter();
+        loadEndOfEncounter();
+        if (!endOfEncounter) {
+            loadEncounter();
+        }
 }, []);
     useEffect(() => {
         //Checks startup logic -> if not startup, then grab currentTurnCreature.
@@ -250,15 +273,6 @@ function EncounterSimulation() {
     }, [preTurnQueue, encounterData, currentTurnCreature,
                                                 manualMode, actionExecutionSession]);
     useEffect(() => {
-        const loadEndOfEncounter = async (): Promise<void> => {
-            const response = await axiosTokenInstance.get(`/encounter/${eid}/completed`)
-            if (response.data.isEnd) {
-                if (encounterData && !encounterData.completed) {
-                    await axiosTokenInstance.get(`/encounter/${eid}/setcompleted`);
-                }
-                setEndOfEncounter(true);
-            }
-        }
         loadEndOfEncounter()
     }, [encounterData, currentTurnCreature]);
 
@@ -426,7 +440,7 @@ function EncounterSimulation() {
                         </div>
                     </div>
 
-                    {!initiativeOpen && (
+                    {!initiativeOpen && !endOfEncounter && (
                         <button
                             onClick={() => setInitiativeOpen(true)}
                             style={{
@@ -440,7 +454,7 @@ function EncounterSimulation() {
                             <ArrowRightShort/>
                         </button>
                     )}
-                    {initiativeOpen && (
+                    {initiativeOpen && !endOfEncounter && (
                         <div style={{
                             position: "absolute",
                             top: 0,

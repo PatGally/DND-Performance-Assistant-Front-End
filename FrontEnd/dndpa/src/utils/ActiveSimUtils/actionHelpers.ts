@@ -63,6 +63,12 @@ export type HandlePASubmissionParams = {
   prob: number;
   eDam: number;
   impact: number;
+  overallRank : number;
+  base_weight : number;
+  ml_weight : number;
+  useML : boolean;
+  final_weight : number;
+  candidateCount : number;
   targets: RecommendationTarget;
   previewResultID?: string;
   currentTurnCreature?: Creature;
@@ -222,7 +228,6 @@ export function extractActionEffects(action: CreatureAction): {
         : [],
     };
   }
-
   if (isMonsterAction(action)) {
     return {
       conditions: Array.isArray(action.conditions) ? action.conditions : [],
@@ -231,7 +236,6 @@ export function extractActionEffects(action: CreatureAction): {
         : [],
     };
   }
-
   return {
     conditions: [],
     statusEffects: [],
@@ -270,6 +274,12 @@ export async function handleActionSubmission({
     actionProb: 0,
     actionEDam: 0,
     actionImpact: 0,
+        actionRanking : 0,
+    base_weight :0,
+    ml_weight :0,
+    useML : false,
+    final_weight : 0,
+    candidateCount : 0,
     targets: [],
     conditions,
     statusEffects,
@@ -328,10 +338,7 @@ export async function handleActionSubmission({
 }
 
 export async function handlePASubmission({
-  name,
-  prob,
-  eDam,
-  impact,
+  name, prob, eDam, impact, overallRank, base_weight, ml_weight, useML, final_weight, candidateCount,
   targets,
   previewResultID,
   currentTurnCreature,
@@ -390,6 +397,12 @@ export async function handlePASubmission({
     actionProb: prob,
     actionEDam: eDam,
     actionImpact: impact,
+    actionRanking : overallRank,
+    base_weight : base_weight,
+    ml_weight : ml_weight,
+    useML : useML,
+    final_weight : final_weight,
+    candidateCount : candidateCount,
     targets: resolvedTargets,
     conditions,
     statusEffects,
@@ -403,6 +416,7 @@ export async function handlePASubmission({
     },
     timestamp: "",
   };
+  console.log("Setting draft", draft);
 
   setActionExecutionSession({
     action: normalized,
@@ -425,8 +439,10 @@ export async function handleActionExecution({
   setActionExecutionSession,
   setManualLock,
   setInitiativeRefreshKey,
-}: HandleActionExecutionParams): Promise<void> {
-  if (!eid || !currentTurnCreature || !encounterData || !actionExecutionSession) return;
+}: HandleActionExecutionParams): Promise<void | string> {
+  if (!eid || !currentTurnCreature || !encounterData || !actionExecutionSession) {
+    return "Missing action execution context.";
+  }
 
   const executedAoeToken = aoeTokens.find(
     (token) => token.resultID === finalDraft.resultID
@@ -441,7 +457,7 @@ export async function handleActionExecution({
       setActionExecutionSession((prev) =>
         prev ? { ...prev, error: "Targets are required." } : prev
       );
-      return;
+      return "Targets are required.";
     }
 
     const payload = {
@@ -449,12 +465,33 @@ export async function handleActionExecution({
       token: executedAoeToken ?? null,
     };
 
-    await axiosTokenInstance.post(`/encounter/${eid}/simulate/ruleset`, payload);
+    console.log("Pre-execution payload:", payload);
+
+    try {
+      await axiosTokenInstance.post(`/encounter/${eid}/simulate/ruleset`, payload);
+    } catch (error: any) {
+      const detail = error.response?.data?.detail;
+      const message = Array.isArray(detail)
+        ? detail.map((item: unknown) => String(item)).join(", ")
+        : typeof detail === "string"
+          ? detail
+          : "Error with Action Execution";
+
+      console.error(message);
+
+      setActionExecutionSession((prev) =>
+        prev ? { ...prev, error: message } : prev
+      );
+
+      return message;
+    }
 
     const updatedEncounter = await getEncounter(eid);
     if (!updatedEncounter) {
-      console.error("Failed to reload encounter after action execution.");
-      return;
+      setActionExecutionSession((prev) =>
+        prev ? { ...prev, error: "Action execution failed." } : prev
+      );
+      return "Action execution failed.";
     }
 
     setEncounterData(updatedEncounter);
@@ -471,17 +508,28 @@ export async function handleActionExecution({
       return withoutExecuted;
     });
 
-    const newCurrentTurnCreature = getCurrentTurnCreatureFromEncounter(updatedEncounter);
-    setCurrentTurnCreature(newCurrentTurnCreature);
+    const newCurrentTurnCreature =
+      getCurrentTurnCreatureFromEncounter(updatedEncounter);
 
+    setCurrentTurnCreature(newCurrentTurnCreature);
     setActionExecutionSession(undefined);
     setManualLock(false);
     setInitiativeRefreshKey((prev) => prev + 1);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to execute action:", error);
+
+    const detail = error?.response?.data?.detail;
+    const message = Array.isArray(detail)
+      ? detail.map((item: unknown) => String(item)).join(", ")
+      : typeof detail === "string"
+        ? detail
+        : "Action execution failed.";
+
     setActionExecutionSession((prev) =>
-      prev ? { ...prev, error: "Action execution failed." } : prev
+      prev ? { ...prev, error: message } : prev
     );
+
+    return message;
   }
 }
 

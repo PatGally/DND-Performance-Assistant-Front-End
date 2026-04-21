@@ -25,6 +25,12 @@ type RecommendationProps = {
     prob: number,
     eDam: number,
     impact: number,
+    overallRank : number,
+    base_weight : number,
+    ml_weight : number,
+    useML : boolean,
+    final_weight : number,
+    candidateCount : number,
     targets: RecommendationTarget,
     previewResultID?: string
   ) => void;
@@ -79,6 +85,7 @@ export default function Recommendation({
         setCurrentIndex(0);
 
         const data = await recommendationGet(eid, cid);
+        console.log("Recommendation data", data);
         setRecommendations(Array.isArray(data) ? data : []);
       } catch (err) {
         if (err instanceof Error) {
@@ -155,14 +162,20 @@ export default function Recommendation({
 
   function handleAccept() {
     if (!currentRecommendation) return;
-
+    console.log("Accepting ", currentRecommendation)
     handlePASubmission(
-      currentRecommendation.name,
-      currentRecommendation.prob,
-      currentRecommendation.eDam,
-      currentRecommendation.impact,
-      currentRecommendation.target,
-      isAoeTarget(currentRecommendation.target) ? activePreviewResultID : undefined
+        currentRecommendation.name,
+        currentRecommendation.prob,
+        currentRecommendation.eDam,
+        currentRecommendation.impact,
+        currentRecommendation.overallRank,
+        currentRecommendation.base_weight,
+        currentRecommendation.ml_weight,
+        currentRecommendation.ml_weight !== null && currentRecommendation.ml_weight !== undefined,
+        currentRecommendation.final_weight,
+        recommendations.length,
+        currentRecommendation.target,
+        isAoeTarget(currentRecommendation.target) ? activePreviewResultID : undefined
     );
   }
 
