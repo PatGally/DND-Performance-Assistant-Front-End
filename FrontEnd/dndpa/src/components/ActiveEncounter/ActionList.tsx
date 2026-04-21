@@ -35,9 +35,8 @@ function ExpandableDescriptionSection({ description }: { description?: string })
 
     return (
         <div className="action-description-section">
+            <span className="action-detail-label">Description</span>
             <div className="action-description-header">
-                <span className="action-detail-label">Description   </span>
-
                 {!isExpanded && (
                     <button
                         type="button"

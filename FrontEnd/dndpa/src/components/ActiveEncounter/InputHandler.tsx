@@ -1,4 +1,6 @@
 import {useMemo, useState} from "react";
+import '../../css/EncounterSimulation.css'
+
 import type {
   Encounter,
   ActionExecutionSession,
@@ -225,129 +227,163 @@ export default function InputHandler({
     setManualLock(false);
   }
 
-  return (
-    <div className="bg-dark border rounded p-3" style={{ minWidth: "420px", maxWidth: "700px" }}>
-      <h5 className="mb-3">{actionSession.draft.action}</h5>
-      <button className="btn btn-dark btn-outline-light" onClick={handleExit}>Back</button>
+    return (
+        <div className="pa-input-handler">
+            <div className="pa-input-handler__title">
+                {actionSession.draft.action}
+            </div>
 
-      {needsTargetSelection ? (
-        <>
-          <p className="mb-2">
-            Select target{targetCount !== 1 ? "s" : ""}{" "}
-            {targetCount > 0 ? `(up to ${targetCount})` : ""}
-          </p>
+            <div className="pa-input-handler__actions">
+                <button
+                    type="button"
+                    className="pa-input-handler__btn pa-input-handler__btn--back"
+                    onClick={handleExit}
+                >
+                    Back
+                </button>
+            </div>
 
-          <div className="mb-3">
-            {availableTargets.map((creature) => {
-              const cid = getCreatureCid(creature);
-              const checked = selectedTargets.includes(cid);
+            {needsTargetSelection ? (
+                <>
+                    <p className="pa-input-handler__helper">
+                        Select target{targetCount !== 1 ? 's' : ''}{' '}
+                        {targetCount > 0 ? `(up to ${targetCount})` : ''}
+                    </p>
 
-              return (
-                <div key={cid} className="form-check">
-                  <input
-                    className="form-check-input"
-                    type={targetCount === 1 ? "radio" : "checkbox"}
-                    name="targetSelection"
-                    id={`target-${cid}`}
-                    checked={checked}
-                    onChange={() => toggleTarget(cid)}
-                  />
-                  <label className="form-check-label" htmlFor={`target-${cid}`}>
-                    {getCreatureName(creature)}
-                  </label>
-                </div>
-              );
-            })}
-          </div>
+                    <div className="pa-input-handler__targets">
+                        {availableTargets.map((creature) => {
+                            const cid = getCreatureCid(creature);
+                            const checked = selectedTargets.includes(cid);
 
-          {localError && <div className="text-danger mb-2">{localError}</div>}
+                            return (
+                                <div key={cid} className="form-check">
+                                    <input
+                                        className="form-check-input"
+                                        type={targetCount === 1 ? 'radio' : 'checkbox'}
+                                        name="targetSelection"
+                                        id={`target-${cid}`}
+                                        checked={checked}
+                                        onChange={() => toggleTarget(cid)}
+                                    />
+                                    <label className="form-check-label" htmlFor={`target-${cid}`}>
+                                        {getCreatureName(creature)}
+                                    </label>
+                                </div>
+                            );
+                        })}
+                    </div>
 
-          <button className="btn btn-success" onClick={handleNext}>
-            Next
-          </button>
-        </>
-      ) : needsAoeSelection ? (
-          <>
-            <p className="mb-2">
-              {aoePlacementStage === "pick_direction"
-                ? "Move the cursor to choose a direction, then click the map to confirm."
-                : "Move the cursor to preview the area, then click the map to confirm placement."}
-            </p>
+                    {localError && (
+                        <p className="pa-input-handler__error">{localError}</p>
+                    )}
 
-            <p className="mb-0 text-secondary">
-              Targets will be filled automatically from the creatures inside the placed AOE.
-            </p>
+                    <div className="pa-input-handler__actions">
+                        <button
+                            type="button"
+                            className="pa-input-handler__btn pa-input-handler__btn--next"
+                            onClick={handleNext}
+                        >
+                            Next
+                        </button>
+                    </div>
+                </>
+            ) : needsAoeSelection ? (
+                <>
+                    <p className="pa-input-handler__helper">
+                        {aoePlacementStage === 'pick_direction'
+                            ? 'Move the cursor to choose a direction, then click the map to confirm.'
+                            : 'Move the cursor to preview the area, then click the map to confirm placement.'}
+                    </p>
 
-            {localError && <div className="text-danger mt-2">{localError}</div>}
-          </>
-      ) : (
-        <>
-          <p className="mb-3">Enter results for each target.</p>
+                    <p className="pa-input-handler__helper pa-input-handler__helper--muted">
+                        Targets will be filled automatically from the creatures inside the placed AOE.
+                    </p>
 
-          {actionSession.draft.targets.map((cid) => {
-            const creature = allCreatures.find((c) => getCreatureCid(c) === cid);
-            if (!creature) return null;
+                    {localError && (
+                        <p className="pa-input-handler__error">{localError}</p>
+                    )}
+                </>
+            ) : (
+                <>
+                    <p className="pa-input-handler__helper">
+                        Enter results for each target.
+                    </p>
 
-            const name = getCreatureName(creature);
-            const input = perTargetInputs[cid] ?? {
-              attackRoll: "",
-              saveRoll: "",
-              damageRoll: "",
-            };
+                    {actionSession.draft.targets.map((cid) => {
+                        const creature = allCreatures.find((c) => getCreatureCid(c) === cid);
+                        if (!creature) return null;
 
-            return (
-              <div key={cid} className="border rounded p-2 mb-3">
-                <strong>{name}</strong>
+                        const name = getCreatureName(creature);
+                        const input = perTargetInputs[cid] ?? {
+                            attackRoll: '',
+                            saveRoll: '',
+                            damageRoll: '',
+                        };
 
-                {(actionSession.action.rollMode === "toHit" ||
-                  actionSession.action.rollMode === "onHit") && (
-                  <div className="mt-2">
-                    <label className="form-label">Attack Roll</label>
-                    <input
-                      className="form-control"
-                      type="number"
-                      value={input.attackRoll}
-                      onChange={(e) => updateTargetInput(cid, "attackRoll", e.target.value)}
-                    />
-                  </div>
-                )}
+                        return (
+                            <div key={cid} className="pa-input-handler__target-block">
+                                <div className="pa-input-handler__target-name">{name}</div>
 
-                {actionSession.action.rollMode === "save" && (
-                  <div className="mt-2">
-                    <label className="form-label">
-                      Save Roll {actionSession.action.saveType ? `(${actionSession.action.saveType})` : ""}
-                    </label>
-                    <input
-                      className="form-control"
-                      type="number"
-                      value={input.saveRoll}
-                      onChange={(e) => updateTargetInput(cid, "saveRoll", e.target.value)}
-                    />
-                  </div>
-                )}
+                                {(actionSession.action.rollMode === 'toHit' ||
+                                    actionSession.action.rollMode === 'onHit') && (
+                                    <div className="pa-input-handler__field">
+                                        <label className="pa-input-handler__field-label">Attack Roll</label>
+                                        <input
+                                            className="pa-input-handler__input form-control"
+                                            type="number"
+                                            value={input.attackRoll}
+                                            onChange={(e) => updateTargetInput(cid, 'attackRoll', e.target.value)}
+                                        />
+                                    </div>
+                                )}
 
-                {actionSession.action.hasDamage && (
-                  <div className="mt-2">
-                    <label className="form-label">Damage Roll</label>
-                    <input
-                      className="form-control"
-                      type="number"
-                      value={input.damageRoll}
-                      onChange={(e) => updateTargetInput(cid, "damageRoll", e.target.value)}
-                    />
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                                {actionSession.action.rollMode === 'save' && (
+                                    <div className="pa-input-handler__field">
+                                        <label className="pa-input-handler__field-label">
+                                            Save Roll{' '}
+                                            {actionSession.action.saveType
+                                                ? `(${actionSession.action.saveType})`
+                                                : ''}
+                                        </label>
+                                        <input
+                                            className="pa-input-handler__input form-control"
+                                            type="number"
+                                            value={input.saveRoll}
+                                            onChange={(e) => updateTargetInput(cid, 'saveRoll', e.target.value)}
+                                        />
+                                    </div>
+                                )}
 
-          {localError && <div className="text-danger mb-2">{localError}</div>}
+                                {actionSession.action.hasDamage && (
+                                    <div className="pa-input-handler__field">
+                                        <label className="pa-input-handler__field-label">Damage Roll</label>
+                                        <input
+                                            className="pa-input-handler__input form-control"
+                                            type="number"
+                                            value={input.damageRoll}
+                                            onChange={(e) => updateTargetInput(cid, 'damageRoll', e.target.value)}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
 
-          <button className="btn btn-danger" onClick={handleSubmit}>
-            Submit
-          </button>
-        </>
-      )}
-    </div>
-  );
+                    {localError && (
+                        <p className="pa-input-handler__error">{localError}</p>
+                    )}
+
+                    <div className="pa-input-handler__actions">
+                        <button
+                            type="button"
+                            className="pa-input-handler__btn pa-input-handler__btn--submit"
+                            onClick={handleSubmit}
+                        >
+                            Submit
+                        </button>
+                    </div>
+                </>
+            )}
+        </div>
+    );
 }

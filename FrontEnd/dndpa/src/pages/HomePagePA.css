@@ -11,14 +11,14 @@
 :root {
     --pa-bg: #0b0b0b;
     --pa-bg-elevated: #1a1a1a;
-    /*--pa-bg-elevated: rgba(40, 24, 40, 0.85);*/
-    /*--pa-bg-card: #222222;*/
+    --pa-bg-elevated: rgba(40, 24, 40, 0.85);
+    --pa-bg-card: #222222;
     --pa-bg-card: rgba(15, 24, 40, 0.85);
     --pa-bg-light: #e7e7e7;
     --pa-bg-light-2: #d4d4d4;
 
     --pa-text: #ffffff;
-    --pa-text-dim: #b3b3b3;
+    --pa-text-dim: #ccc;
     --pa-text-muted: #7a7a7a;
     --pa-text-dark: #111111;
     --pa-text-dark-2: #3a3a3a;
@@ -243,10 +243,10 @@ body {
     position: absolute;
     inset: 0;
     background: linear-gradient(
-            90deg,
-            rgba(0, 0, 0, 0.65) 0%,
-            rgba(0, 0, 0, 0.3) 45%,
-            rgba(0, 0, 0, 0) 80%
+            65deg,
+            rgba(0, 0, 0, 0.65) 35%,
+            rgba(0, 0, 0, 0.3) 65%,
+            rgba(0, 0, 0, 0.1) 90%
     );
 }
 
@@ -263,6 +263,7 @@ body {
     align-items: flex-start;
     max-inline-size: 640px;
     padding-top: var(--pa-nav-height);
+
 }
 
 .pa-hero__title-image {
@@ -291,7 +292,8 @@ body {
 }
 
 .pa-hero__description {
-    font-size: 16px;
+    font-size: 1.2rem;
+    font-weight: 600;
     line-height: 1.5;
     color: var(--pa-text-dim);
     margin: 0 0 32px 0;

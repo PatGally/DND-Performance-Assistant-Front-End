@@ -1,25 +1,19 @@
 import {useCallback, useEffect, useRef, useState} from "react";
-import Container from "react-bootstrap/Container";
-import Row from "react-bootstrap/Row";
-import Col from "react-bootstrap/Col";
+import '../../css/EncounterSimulation.css'
 import {ArrowLeftShort, ArrowRightShort} from "react-bootstrap-icons";
 import axiosTokenInstance from "../../api/AxiosTokenInstance.ts";
 import {useLocation} from "react-router-dom";
-
 import ActiveMap from "../../components/ActiveEncounter/ActiveMap.tsx";
 import InitiativeList from "../../components/ActiveEncounter/InitiativeList.tsx";
 import ActionList from "../../components/ActiveEncounter/ActionList.tsx";
 import Recommendation from "../../components/ActiveEncounter/Recommendation.tsx";
 import InputHandler from "../../components/ActiveEncounter/InputHandler.tsx";
-
 import {
     getCreatureCid, getCreaturePosition,
     getCurrentTurnCreatureFromEncounter
 } from "../../utils/ActiveSimUtils/CreatureHelpers.ts";
-
 import {getEncounter} from "../../api/EncounterGet.ts";
 import {isPlayerCreature} from "../../api/CreatureGet.ts";
-
 import type {Creature} from "../../types/creature.ts";
 import type {CreatureAction} from "../../types/action.ts";
 import type {
@@ -28,10 +22,7 @@ import type {
     AoeToken, ManualAoePlacement,
     PendingPreTurnResolution
 } from "../../types/SimulationTypes.ts";
-
 import ExitSimulation from "../../components/ActiveEncounter/ExitSimulation.tsx";
-import { Card } from "react-bootstrap";
-// import Orb from '../../css/Orb.tsx';
 import {
     buildPreTurnSession,
     syncPreTurnQueueFromCreature
@@ -49,7 +40,7 @@ function EncounterSimulation() {
     const location = useLocation();
     const eid = location.state?.eid;
 
-    //Side homeComponents
+    //Side HomePage-Components
     const [initiativeOpen, setInitiativeOpen] = useState(false);
     const [initiativeRefreshKey, setInitiativeRefreshKey] = useState(0);
     const [recommendRefreshKey, setRecommendRefreshKey] = useState(0);
@@ -263,40 +254,90 @@ function EncounterSimulation() {
     }, [encounterData, currentTurnCreature]);
 
     return (
-        <Container fluid className="p-0" style={{ height: "100vh", display: "flex", flexDirection: "column", backgroundColor: "#000000" }}>
-            <Row className="bg-dark text-white px-3 mx-0" style={{ height: "56px", flexShrink: 0 }}>
-                <Col className="d-flex align-items-center">
-                    {encounterData
-                        ? <h3 className="mb-0">{encounterData.name} Simulation</h3>
-                        : <h3 className="mb-0">Encounter Simulation</h3>
-                            // ? <h3 className="mb-0">{(encounterData.name.length > 12
-                            //     ? encounterData.name.slice(0, 12) + "..."
-                            //     : encounterData.name)}{" "}
-                            //     Simulation
-                            // </h3>
-                            // : <h3 className="mb-0">Encounter Simulation</h3>
+        <div className="pa-enc">
+            {/* ===== MAP LAYER (fills the whole page, header floats above) ===== */}
+            <div className="pa-enc__map-layer">
+                <div
+                    ref={mapViewportRef}
+                    className="pa-enc__map-viewport"
+                    onMouseDown={(e) => onPanStart(e, isPanning, lastPanPos, mapViewportRef)}
+                    onMouseMove={(e) =>
+                        onPanMove(e, isPanning, lastPanPos, mapViewportRef, mapContentRef,
+                            pan, zoom, mapNaturalWidth, mapNaturalHeight)
                     }
-                </Col>
-                <Col className="d-flex align-items-center gap-2">
+                    onMouseUp={() => onPanEnd(isPanning, mapViewportRef)}
+                    onMouseLeave={() => onPanEnd(isPanning, mapViewportRef)}
+                    onWheel={(e) =>
+                        onWheel(e, mapViewportRef, mapContentRef, pan, zoom,
+                            mapNaturalWidth, mapNaturalHeight, MIN_ZOOM, MAX_ZOOM)
+                    }
+                >
+                    <div
+                        ref={mapContentRef}
+                        className="pa-enc__map-content"
+                        style={{
+                            // Transform stays inline — it's dynamic per-frame
+                            transform: `translate(${pan.current.x}px, ${pan.current.y}px) scale(${zoom})`,
+                        }}
+                    >
+                        {!encounterError && !loadingEncounter && encounterData && (
+                            <ActiveMap
+                                encounter={encounterData}
+                                aoeTokens={aoeTokens}
+                                manualMode={manualMode}
+                                encStart={encStart}
+                                activeEncounter={activeEncounter}
+                                selectedCID={selectedCID}
+                                isAoePlacementActive={manualAoePlacement !== null}
+                                onTokenSelect={handleActiveMapTokenSelect}
+                                onGridCellClick={handleActiveMapGridCellClick}
+                                onGridCellHover={handleActiveMapGridCellHover}
+                                onMapSizeLoaded={handleMapSizeLoaded}
+                            />
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* ===== HEADER (transparent gradient, floats over the map) ===== */}
+            <header className="pa-enc__header">
+                <div className="pa-enc__header-title">
+                    <h3 className="pa-enc__title-text">
+                        {encounterData
+                            ? `${encounterData.name} Simulation`
+                            : 'Encounter Simulation'}
+                    </h3>
+                </div>
+
+                <div className="pa-enc__header-controls">
+                    {/* Active-encounter control cluster: visible when sim is running.
+                    Disabled states are driven by the same flags as before. */}
                     {activeEncounter && !endOfEncounter && (currentTurnCreature || isLairAction) && (
                         <>
-                            {currentTurnCreature ? (
-                                <p className="mb-0">
-                                    Current Turn: {isPlayerCreature(currentTurnCreature)
-                                    ? currentTurnCreature.stats.name
-                                    : currentTurnCreature.name}
-                                </p>
-                            ) : (
-                                <p className="mb-0">Lair Action</p>
-                            )}
+                            <div className="pa-enc__turn-label">
+                                {currentTurnCreature ? (
+                                    <>
+                                        <span className="pa-enc__turn-label-prefix">Current Turn:</span>{' '}
+                                        <span className="pa-enc__turn-label-value">
+                                        {isPlayerCreature(currentTurnCreature)
+                                            ? currentTurnCreature.stats.name
+                                            : currentTurnCreature.name}
+                                    </span>
+                                    </>
+                                ) : (
+                                    <span className="pa-enc__turn-label-value">Lair Action</span>
+                                )}
+                            </div>
 
                             <button
+                                type="button"
+                                className="pa-enc__btn pa-enc__btn--ghost"
                                 disabled={isLairAction || actionExecutionSession !== undefined}
                                 onClick={() => {
                                     setManualMode(false);
                                     clearManualState({
-                                      setManualDraft,
-                                      setInitiativeExpandedCid,
+                                        setManualDraft,
+                                        setInitiativeExpandedCid,
                                     });
                                 }}
                             >
@@ -304,28 +345,27 @@ function EncounterSimulation() {
                             </button>
 
                             <button
+                                type="button"
+                                className="pa-enc__btn pa-enc__btn--ghost"
                                 disabled={actionExecutionSession !== undefined || handlingNextTurn || manualLock}
-                                onClick={() => setManualState({actionExecutionSession, latestHoverRequestRef,
-                                                        setAoeTokens, setManualAoePlacement, setManualMode,
-                                                        setInitiativeOpen, setActionOpen, setManualDraft, setInitiativeExpandedCid})}
+                                onClick={() => setManualState({
+                                    actionExecutionSession, latestHoverRequestRef,
+                                    setAoeTokens, setManualAoePlacement, setManualMode,
+                                    setInitiativeOpen, setActionOpen, setManualDraft, setInitiativeExpandedCid
+                                })}
                             >
                                 Manual
                             </button>
 
                             {manualMode && (
                                 <button
+                                    type="button"
+                                    className="pa-enc__btn pa-enc__btn--primary"
                                     onClick={() =>
                                         handleManualSimulate({
-                                            manualLock,
-                                            manualMode,
-                                            eid,
-                                            manualDraft,
-                                            setManualLock,
-                                            setEncounterData,
-                                            setCurrentTurnCreature,
-                                            setManualDraft,
-                                            setInitiativeExpandedCid,
-                                            setManualMode,
+                                            manualLock, manualMode, eid, manualDraft,
+                                            setManualLock, setEncounterData, setCurrentTurnCreature,
+                                            setManualDraft, setInitiativeExpandedCid, setManualMode,
                                             setInitiativeRefreshKey,
                                         })
                                     }
@@ -336,6 +376,8 @@ function EncounterSimulation() {
 
                             {!manualMode && (
                                 <button
+                                    type="button"
+                                    className="pa-enc__btn pa-enc__btn--primary"
                                     disabled={actionExecutionSession !== undefined || hasPreTurnQueue}
                                     onClick={handleNextTurnWrapper}
                                 >
@@ -345,291 +387,147 @@ function EncounterSimulation() {
                         </>
                     )}
 
+                    {/* Start button: shown before the encounter is active */}
                     {encStart && !activeEncounter && (
-                        <button onClick={handleSimStart}>Start!</button>
+                        <button
+                            type="button"
+                            className="pa-enc__btn pa-enc__btn--primary"
+                            onClick={handleSimStart}
+                        >
+                            Start!
+                        </button>
                     )}
 
-                </Col>
-                <Col className="d-flex justify-content-end align-items-center">
-                    <ExitSimulation />
-                </Col>
-            </Row>
+                    <div className="pa-enc__exit-slot">
+                        <ExitSimulation />
+                    </div>
+                </div>
+            </header>
 
+            {/* ===== LEFT PILL — toggle Initiative panel ===== */}
+            {!initiativeOpen && (
+                <button
+                    type="button"
+                    className="pa-enc__edge-pill pa-enc__edge-pill--left"
+                    onClick={() => setInitiativeOpen(true)}
+                    aria-label="Open initiative list"
+                >
+                    <ArrowRightShort />
+                </button>
+            )}
 
-            <Row className="g-0 mx-0" style={{ flex: 1, minHeight: 0 }}>
-                <Col style={{ position: "relative", overflow: "hidden", height: "100%", padding: 0 }}>
-                    <div
-                        ref={mapViewportRef}
-                        style={{
-                            position: "absolute",
-                            inset: 0,
-                            overflow: "hidden",
-                            cursor: "grab",
-                        }}
-                        onMouseDown={(e) =>
-                            onPanStart(e, isPanning, lastPanPos, mapViewportRef)
-                        }
-                        onMouseMove={(e) =>
-                            onPanMove(
-                                e,
-                                isPanning,
-                                lastPanPos,
-                                mapViewportRef,
-                                mapContentRef,
-                                pan,
-                                zoom,
-                                mapNaturalWidth,
-                                mapNaturalHeight
-                            )
-                        }
-                        onMouseUp={() =>
-                            onPanEnd(isPanning, mapViewportRef)
-                        }
-                        onMouseLeave={() =>
-                            onPanEnd(isPanning, mapViewportRef)
-                        }
-                        onWheel={(e) =>
-                            onWheel(
-                                e,
-                                mapViewportRef,
-                                mapContentRef,
-                                pan,
-                                zoom,
-                                mapNaturalWidth,
-                                mapNaturalHeight,
-                                MIN_ZOOM,
-                                MAX_ZOOM
-                            )
-                        }
-                    >
-                        <div ref={mapContentRef} style={{
-                            transform: `translate(${pan.current.x}px, ${pan.current.y}px) scale(${zoom})`,
-                            transformOrigin: "0 0",
-                            willChange: "transform",
-                            display: "inline-block",
-                        }}>
-                            {!encounterError && !loadingEncounter && encounterData && (
-                                <ActiveMap
-                                  encounter={encounterData}
-                                  aoeTokens={aoeTokens}
-                                  manualMode={manualMode}
-                                  encStart={encStart}
-                                  activeEncounter={activeEncounter}
-                                  selectedCID={selectedCID}
-                                  isAoePlacementActive={manualAoePlacement !== null}
-                                  onTokenSelect={handleActiveMapTokenSelect}
-                                  onGridCellClick={handleActiveMapGridCellClick}
-                                  onGridCellHover={handleActiveMapGridCellHover}
-                                  onMapSizeLoaded={handleMapSizeLoaded}
-                                />
-                            )}
-                        </div>
+            {/* ===== LEFT PANEL — Initiative list ===== */}
+            {initiativeOpen && (
+                <aside className="pa-enc__side-panel pa-enc__side-panel--left">
+                    <div className="pa-enc__side-panel-inner pa-enc__side-panel--left--border">
+                        <InitiativeList
+                            key={`${eid}-${initiativeRefreshKey}`}
+                            eid={eid}
+                            manualMode={manualMode}
+                            expandedCid={initiativeExpandedCid}
+                            onExpandedCidChange={setInitiativeExpandedCid}
+                            manualDraft={manualDraft}
+                            onManualCreatureChange={(nextCreature) =>
+                                handleManualCreatureChange({ nextCreature, setManualDraft })
+                            }
+                        />
                     </div>
 
-                    {!initiativeOpen && (
-                        <button
-                            onClick={() => setInitiativeOpen(true)}
-                            style={{
-                                position: "absolute",
-                                top: "50%",
-                                left: 0,
-                                transform: "translateY(-50%)",
-                                zIndex: 30,
-                            }}
-                        >
-                            <ArrowRightShort/>
-                        </button>
-                    )}
-                    {initiativeOpen && (
-                        <div style={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            height: "100%",
-                            width: "20%",
-                            minWidth: "220px",
-                            maxWidth: "320px",
-                            zIndex: 20,
-                            display: "flex",
-                            flexDirection: "column",
-                        }}>
-                            <div style={{
-                                flex: 1,
-                                background: "#222222",
-                                color: "white",
-                                borderRight: "1px solid #ccc",
-                                overflowY: "auto",
-                                padding: "12px",
-                            }}>
-                                <InitiativeList
-                                  key={`${eid}-${initiativeRefreshKey}`}
-                                  eid={eid}
-                                  manualMode={manualMode}
-                                  expandedCid={initiativeExpandedCid}
-                                  onExpandedCidChange={setInitiativeExpandedCid}
-                                  manualDraft={manualDraft}
-                                  onManualCreatureChange={(nextCreature) =>
-                                                          handleManualCreatureChange({
-                                                            nextCreature,
-                                                            setManualDraft,
-                                                          })
-                                                        }
-                                />
-                            </div>
-                            <button
-                                onClick={() => setInitiativeOpen(false)}
-                                style={{
-                                    position: "absolute",
-                                    top: "50%",
-                                    right: "-44px",
-                                    transform: "translateY(-50%)",
-                                    zIndex: 30,
-                                }}
-                            >
-                                <ArrowLeftShort />
-                            </button>
+                    <button
+                        type="button"
+                        className="pa-enc__edge-pill pa-enc__edge-pill--left-close"
+                        onClick={() => setInitiativeOpen(false)}
+                        aria-label="Close initiative list"
+                    >
+                        <ArrowLeftShort />
+                    </button>
+                </aside>
+            )}
+
+            {/* ===== RIGHT PILL — toggle Action panel ===== */}
+            {!actionOpen && !hasPreTurnQueue && !manualMode && !endOfEncounter && (
+                <button
+                    type="button"
+                    className="pa-enc__edge-pill pa-enc__edge-pill--right"
+                    onClick={() => setActionOpen(true)}
+                    aria-label="Open action list"
+                >
+                    <ArrowLeftShort />
+                </button>
+            )}
+
+            {/* ===== RIGHT PANEL — Action list ===== */}
+            {actionOpen && encounterData && currentTurnCreature && !hasPreTurnQueue
+                && !manualMode && !endOfEncounter && (
+                    <aside className="pa-enc__side-panel pa-enc__side-panel--right">
+                        <div className="pa-enc__side-panel-inner pa-enc__side-panel--right--border">
+                            <ActionList
+                                cid={getCreatureCid(currentTurnCreature)}
+                                eid={eid}
+                                handleActionSubmission={handleSubmitAction}
+                                onSelectManual={handleSetManualState}
+                            />
                         </div>
-                    )}
 
-                    {!actionOpen && !hasPreTurnQueue && !manualMode && !endOfEncounter && (
                         <button
-                            onClick={() => setActionOpen(true)}
-                            style={{
-                                position: "absolute",
-                                top: "50%",
-                                right: 0,
-                                transform: "translateY(-50%)",
-                                zIndex: 30,
-                            }}
+                            type="button"
+                            className="pa-enc__edge-pill pa-enc__edge-pill--right-close"
+                            onClick={() => setActionOpen(false)}
+                            aria-label="Close action list"
                         >
-                            <ArrowLeftShort />
+                            <ArrowRightShort />
                         </button>
-                    )}
-                    {actionOpen && encounterData && currentTurnCreature && !hasPreTurnQueue
-                        && !manualMode && !endOfEncounter && (
-                        <div style={{
-                            position: "absolute",
-                            top: 0,
-                            right: 0,
-                            height: "100%",
-                            width: "20%",
-                            minWidth: "220px",
-                            maxWidth: "320px",
-                            zIndex: 20,
-                            display: "flex",
-                            flexDirection: "column",
-                        }}>
-                            <div style={{
-                                flex: 1,
-                                background: "#222222",
-                                color: "white",
-                                borderLeft: "1px solid #ccc",
-                                overflowY: "auto",
-                                padding: "12px",
-                            }}>
-                                <ActionList
-                                  cid={getCreatureCid(currentTurnCreature)}
-                                  eid={eid}
-                                  handleActionSubmission={handleSubmitAction}
-                                  onSelectManual={handleSetManualState}
-                                />
+                    </aside>
+                )}
+
+            {/* ===== BOTTOM CARD — Recommendation / InputHandler ===== */}
+            {activeEncounter && currentTurnCreature && (
+                <div className="pa-enc__bottom-card">
+                    {hasPreTurnQueue && encounterData && !endOfEncounter && actionExecutionSession ? (
+                        <>
+                            <div className="pa-enc__bottom-card-title">Resolve Pre-Turn Effects</div>
+                            <div className="pa-enc__bottom-card-subtitle">
+                                {preTurnQueue.length} remaining for this creature.
                             </div>
-                            <button
-                                onClick={() => setActionOpen(false)}
-                                style={{
-                                    position: "absolute",
-                                    top: "50%",
-                                    left: "-44px",
-                                    transform: "translateY(-50%)",
-                                    zIndex: 30,
-                                }}
-                            >
-                                <ArrowRightShort />
-                            </button>
-                        </div>
-                    )}
 
-                    {activeEncounter && currentTurnCreature && (
-                        <Card className="text-white "
-                              style={{
-                                  position: "absolute",
-                                  bottom: 16,
-                                  left: "50%",
-                                  transform: "translateX(-50%)",
-                                  zIndex: 15,
-                                  width: "30%",
-                                  backgroundColor: "rgba(15, 24, 40, 0.75)",
-                                  backdropFilter: "blur(6px)",
-                                  WebkitBackdropFilter: "blur(6px)",
-                                  border: "none",
-                                  outline: "none",
-                                  boxShadow: "none"
-                              }}
-                        >
-                            <Card.Body>
-                                <Row>
-                                    {/*<Col lg={2}>*/}
-                                    {/*    <Orb*/}
-                                    {/*        hoverIntensity={2}*/}
-                                    {/*        rotateOnHover={false}*/}
-                                    {/*        hue={0}*/}
-                                    {/*        forceHoverState={false}*/}
-                                    {/*        backgroundColor="#100000"*/}
-                                    {/*    />*/}
-                                    {/*</Col>*/}
-                                    <Col xs="auto" >
-                                        {hasPreTurnQueue && encounterData && !endOfEncounter && actionExecutionSession ? (
-                                          <>
-                                            <Card.Title>Resolve Pre-Turn Effects</Card.Title>
-                                            <Card.Text>
-                                              {preTurnQueue.length} remaining for this creature.
-                                            </Card.Text>
-
-                                            <InputHandler
-                                              encounter={encounterData}
-                                              actionSession={actionExecutionSession}
-                                              setActionExecutionSession={setActionExecutionSession}
-                                              setManualLock={setManualLock}
-                                              clearManualAoePreview={handleClearManualAoePreview}
-                                              handleActionExecution={handleExecutePreTurn}
-                                              aoePlacementStage="ready"
-                                              onExit={handleExitPreTurn}
-                                            />
-                                          </>
-                                        ) : manualMode ? (
-                                            <Card.Text>Manual Mode</Card.Text>
-                                        ) : encounterData && actionExecutionSession ? (
-                                            <InputHandler
-                                              encounter={encounterData}
-                                              actionSession={actionExecutionSession}
-                                              setActionExecutionSession={setActionExecutionSession}
-                                              setManualLock={setManualLock}
-                                              clearManualAoePreview={handleClearManualAoePreview}
-                                              handleActionExecution={handleExecuteAction}
-                                              aoePlacementStage={manualAoePlacement?.stage ?? "ready"}
-                                            />
-                                        ) : !endOfEncounter ? (
-                                                <Recommendation
-                                                  eid={eid}
-                                                  cid={getCreatureCid(currentTurnCreature)}
-                                                  setAoeTokens={setAoeTokens}
-                                                  buildRecommendationAoeToken={handleBuildRecommendationAoeToken}
-                                                  handlePASubmission={handleSubmitRecommendation}
-                                                  key={recommendRefreshKey}
-                                                />
-                                        ) : (
-                                            <>
-                                                <h5>End of Encounter!</h5>
-                                            </>
-                                        )}
-                                    </Col>
-                                </Row>
-                            </Card.Body>
-                        </Card>
+                            <InputHandler
+                                encounter={encounterData}
+                                actionSession={actionExecutionSession}
+                                setActionExecutionSession={setActionExecutionSession}
+                                setManualLock={setManualLock}
+                                clearManualAoePreview={handleClearManualAoePreview}
+                                handleActionExecution={handleExecutePreTurn}
+                                aoePlacementStage="ready"
+                                onExit={handleExitPreTurn}
+                            />
+                        </>
+                    ) : manualMode ? (
+                        <div className="pa-enc__bottom-card-title">Manual Mode</div>
+                    ) : encounterData && actionExecutionSession ? (
+                        <InputHandler
+                            encounter={encounterData}
+                            actionSession={actionExecutionSession}
+                            setActionExecutionSession={setActionExecutionSession}
+                            setManualLock={setManualLock}
+                            clearManualAoePreview={handleClearManualAoePreview}
+                            handleActionExecution={handleExecuteAction}
+                            aoePlacementStage={manualAoePlacement?.stage ?? 'ready'}
+                        />
+                    ) : !endOfEncounter ? (
+                        <Recommendation
+                            eid={eid}
+                            cid={getCreatureCid(currentTurnCreature)}
+                            setAoeTokens={setAoeTokens}
+                            buildRecommendationAoeToken={handleBuildRecommendationAoeToken}
+                            handlePASubmission={handleSubmitRecommendation}
+                            key={recommendRefreshKey}
+                        />
+                    ) : (
+                        <div className="pa-enc__bottom-card-title">End of Encounter!</div>
                     )}
-                </Col>
-            </Row>
-        </Container>
+                </div>
+            )}
+        </div>
     );
 }
 

@@ -12,6 +12,8 @@ import type {
   AoeToken,
 } from "../../types/SimulationTypes.ts";
 
+import '../../css/Recommendation.css'
+
 type RecommendationProps = {
   eid: string;
   cid: string;
@@ -166,135 +168,80 @@ export default function Recommendation({
     );
   }
 
-  if (loading) return <div>Loading recommendations...</div>;
-  if (error) return <div>Error: {error}</div>;
 
-  let targetDisplay = "";
-
-  if (currentRecommendation) {
-
-    try {
-      targetDisplay = Array.isArray(currentRecommendation.target)
-        ? currentRecommendation.target.length > 0
-          ? currentRecommendation.target.join(", ")
-          : "None"
-        : currentRecommendation.target.targetsHit.length > 0
-            ? currentRecommendation.target.targetsHit.join(", ")
-            : "AOE placement";
-    } catch (e) {
-      console.error("Recommendation targetDisplay error", e);
-      targetDisplay = "None";
+    if (loading) {
+        return <div className="pa-recommendation__status">Loading recommendations...</div>;
     }
-  }
 
+    if (error) {
+        return <div className="pa-recommendation__status pa-recommendation__status--error">Error: {error}</div>;
+    }
 
-  const buttonStyle: React.CSSProperties = {
-  width: "44px",
-  height: "44px",
-  minWidth: "44px",
-  minHeight: "44px",
-  border: "none",
-  borderRadius: "8px",
-  background: "rgba(255,255,255,0.10)",
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "18px",
-  color: "white",
-};
+    let targetDisplay = '';
 
-return (
-  <div
-    style={{
-      width: "min(460px, calc(100vw - 32px))",
-      minHeight: "132px",
-      boxSizing: "border-box",
-      margin: "0 auto",
-      padding: "16px 18px",
-      color: "white",
-      display: "grid",
-      gridTemplateRows: "auto 44px",
-      rowGap: "14px",
-    }}
-  >
-    <div
-      style={{
-        width: "100%",
-        minWidth: 0,
-        overflow: "hidden",
-      }}
-    >
-      <div
-        style={{
-          fontWeight: 700,
-          fontSize: "18px",
-          lineHeight: 1.25,
-          whiteSpace: "normal",
-          overflowWrap: "anywhere",
-          wordBreak: "break-word",
-        }}
-      >
-        {currentRecommendation ? currentRecommendation.name : "No Viable Actions - Pass Turn"}
-      </div>
+    if (currentRecommendation) {
+        try {
+            targetDisplay = Array.isArray(currentRecommendation.target)
+                ? currentRecommendation.target.length > 0
+                    ? currentRecommendation.target.join(', ')
+                    : 'None'
+                : currentRecommendation.target.targetsHit.length > 0
+                    ? currentRecommendation.target.targetsHit.join(', ')
+                    : 'AOE placement';
+        } catch (e) {
+            console.error('Recommendation targetDisplay error', e);
+            targetDisplay = 'None';
+        }
+    }
 
-      <div
-        style={{
-          marginTop: "6px",
-          opacity: 0.9,
-          fontSize: "16px",
-          lineHeight: 1.35,
-          whiteSpace: "normal",
-          overflowWrap: "anywhere",
-          wordBreak: "break-word",
-        }}
-      >
-        Target: {targetDisplay}
-      </div>
-    </div>
+    return (
+        <div className="pa-recommendation">
+            <div className="pa-recommendation__body">
+                <div className="pa-recommendation__name">
+                    {currentRecommendation
+                        ? currentRecommendation.name
+                        : 'No Viable Actions - Pass Turn'}
+                </div>
 
-    <div
-      style={{
-        height: "44px",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        gap: "14px",
-      }}
-    >
-      {canGoLeft && (
-        <button
-          type="button"
-          onClick={handleBack}
-          style={buttonStyle}
-          aria-label="Previous recommendation"
-        >
-          ◀
-        </button>
-      )}
+                <div className="pa-recommendation__target">
+                    Target: {targetDisplay}
+                </div>
+            </div>
 
-      {canAccept && (
-        <button
-          type="button"
-          onClick={handleAccept}
-          style={buttonStyle}
-          aria-label="Accept recommendation"
-        >
-          ✅
-        </button>
-      )}
+            <div className="pa-recommendation__actions">
+                {canGoLeft && (
+                    <button
+                        type="button"
+                        className="pa-recommendation__btn"
+                        onClick={handleBack}
+                        aria-label="Previous recommendation"
+                    >
+                        ◀
+                    </button>
+                )}
 
-      {canGoRight && (
-        <button
-          type="button"
-          onClick={handleForward}
-          style={buttonStyle}
-          aria-label="Next recommendation"
-        >
-          ▶
-        </button>
-      )}
-    </div>
-  </div>
-);
+                {canAccept && (
+                    <button
+                        type="button"
+                        className="pa-recommendation__btn pa-recommendation__btn--accept"
+                        onClick={handleAccept}
+                        aria-label="Accept recommendation"
+                    >
+                        ✓
+                    </button>
+                )}
+
+                {canGoRight && (
+                    <button
+                        type="button"
+                        className="pa-recommendation__btn"
+                        onClick={handleForward}
+                        aria-label="Next recommendation"
+                    >
+                        ▶
+                    </button>
+                )}
+            </div>
+        </div>
+    );
 }

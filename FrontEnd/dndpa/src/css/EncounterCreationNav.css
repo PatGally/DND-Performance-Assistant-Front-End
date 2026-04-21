@@ -1,0 +1,154 @@
+.pa-ecnav {
+    --pa-ecnav-ink: #0F1828;
+    --pa-ecnav-tint: rgba(15, 24, 40, 0.85);
+
+    --pa-ecnav-surface: rgba(255, 255, 255, 0.06);
+    --pa-ecnav-surface-hover: rgba(255, 255, 255, 0.12);
+    --pa-ecnav-surface-active: #ffffff;
+
+    --pa-ecnav-border: rgba(255, 255, 255, 0.12);
+    --pa-ecnav-border-hover: rgba(255, 255, 255, 0.25);
+
+    --pa-ecnav-text: #ffffff;
+    --pa-ecnav-text-dim: rgba(255, 255, 255, 0.7);
+    --pa-ecnav-text-disabled: rgba(255, 255, 255, 0.35);
+
+    --pa-ecnav-transition: 180ms ease;
+    --pa-ecnav-radius-pill: 999px;
+
+    position: static;
+
+    background-image: linear-gradient(var(--pa-ecnav-tint), var(--pa-ecnav-tint));
+}
+
+.pa-ecnav *,
+.pa-ecnav *::before,
+.pa-ecnav *::after {
+    box-sizing: border-box;
+}
+
+.pa-ecnav .pa-ecnav__step.btn {
+    padding: 7px 18px;
+    border-radius: var(--pa-ecnav-radius-pill);
+    border: 1px solid var(--pa-ecnav-border);
+    background-color: var(--pa-ecnav-surface);
+    color: var(--pa-ecnav-text-dim);
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    transition:
+            background-color var(--pa-ecnav-transition),
+            border-color var(--pa-ecnav-transition),
+            color var(--pa-ecnav-transition);
+}
+
+.pa-ecnav .pa-ecnav__step.btn:hover:not(:disabled):not(.pa-ecnav__step--active) {
+    background-color: var(--pa-ecnav-surface-hover);
+    border-color: var(--pa-ecnav-border-hover);
+    color: var(--pa-ecnav-text);
+}
+
+.pa-ecnav .pa-ecnav__step.btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18);
+}
+
+/* Active step — filled light surface, dark text for clear contrast */
+.pa-ecnav .pa-ecnav__step--active.btn,
+.pa-ecnav .pa-ecnav__step--active.btn:hover,
+.pa-ecnav .pa-ecnav__step--active.btn:focus,
+.pa-ecnav .pa-ecnav__step--active.btn:active {
+    background-color: var(--pa-ecnav-surface-active);
+    border-color: var(--pa-ecnav-surface-active);
+    color: var(--pa-ecnav-ink);
+}
+
+/* Disabled (not-yet-unlocked) steps — visible but clearly unusable */
+.pa-ecnav .pa-ecnav__step.btn:disabled {
+    background-color: var(--pa-ecnav-surface);
+    border-color: var(--pa-ecnav-border);
+    color: var(--pa-ecnav-text-disabled);
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ==========================================================================
+   NAV BUTTONS — right side (Back, Next, Submit)
+   ========================================================================== */
+
+.pa-ecnav .pa-ecnav__nav-btn.btn {
+    padding: 7px 22px;
+    border-radius: var(--pa-ecnav-radius-pill);
+    border: 1px solid var(--pa-ecnav-border);
+    background-color: var(--pa-ecnav-surface);
+    color: var(--pa-ecnav-text);
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    transition:
+            background-color var(--pa-ecnav-transition),
+            border-color var(--pa-ecnav-transition),
+            opacity var(--pa-ecnav-transition);
+}
+
+.pa-ecnav .pa-ecnav__nav-btn.btn:hover:not(:disabled) {
+    background-color: var(--pa-ecnav-surface-hover);
+    border-color: var(--pa-ecnav-border-hover);
+}
+
+.pa-ecnav .pa-ecnav__nav-btn.btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18);
+}
+
+.pa-ecnav .pa-ecnav__nav-btn.btn:disabled {
+    color: var(--pa-ecnav-text-disabled);
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pa-ecnav .pa-ecnav__nav-btn--next.btn,
+.pa-ecnav .pa-ecnav__nav-btn--submit.btn {
+    background-color: var(--pa-ecnav-surface-active);
+    border-color: var(--pa-ecnav-surface-active);
+    color: var(--pa-ecnav-ink);
+}
+
+.pa-ecnav .pa-ecnav__nav-btn--next.btn:hover:not(:disabled),
+.pa-ecnav .pa-ecnav__nav-btn--submit.btn:hover:not(:disabled) {
+    background-color: var(--pa-ecnav-surface-active);
+    border-color: var(--pa-ecnav-surface-active);
+    color: var(--pa-ecnav-ink);
+    opacity: 0.92;
+}
+
+.pa-ecnav .pa-ecnav__nav-btn--next.btn:disabled,
+.pa-ecnav .pa-ecnav__nav-btn--submit.btn:disabled {
+    background-color: rgba(255, 255, 255, 0.5);
+    border-color: transparent;
+    color: var(--pa-ecnav-ink);
+    opacity: 0.55;
+}
+
+
+@media (max-width: 768px) {
+    .pa-ecnav .pa-ecnav__step.btn,
+    .pa-ecnav .pa-ecnav__nav-btn.btn {
+        padding: 6px 14px;
+        font-size: 1rem;
+    }
+
+    .pa-ecnav .ms-auto {
+        margin-left: 0 !important;
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+@media (max-width: 420px) {
+    .pa-ecnav .pa-ecnav__step.btn,
+    .pa-ecnav .pa-ecnav__nav-btn.btn {
+        padding: 6px 12px;
+    }
+}
