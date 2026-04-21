@@ -54,6 +54,10 @@ export type NormalizedAction = {
   damageType?: string;
   damageMod?: string;
   weaponStat?: string;
+  attackBonus?: number;
+  damageDieNum?: number;
+  damageDieType?: number;
+  resolvedDamageMod?: number;
 };
 export type OutcomeDraft = {
   rollResults: string[];
@@ -71,6 +75,12 @@ export type ActionRequestDraft = {
   actionProb: number;
   actionEDam: number;
   actionImpact: number;
+  actionRanking : number,
+    base_weight: number,
+    ml_weight: number,
+    useML: boolean,
+    final_weight: number,
+    candidateCount: number,
   targets: string[];
   conditions: string[];
   statusEffects: Record<string, any>[];
@@ -122,6 +132,10 @@ export type Recommendation = {
     "pareto": boolean;
     "topsis": number;
     "overallRank": number;
+    "base_weight": number;
+    "ml_weight" : number;
+    "useML" : boolean;
+    "final_weight" : number;
 }
 
 export type RecommendationAoeTarget = {

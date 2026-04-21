@@ -3,17 +3,21 @@ import '../../css/EncounterSimulation.css'
 import {ArrowLeftShort, ArrowRightShort} from "react-bootstrap-icons";
 import axiosTokenInstance from "../../api/AxiosTokenInstance.ts";
 import {useLocation} from "react-router-dom";
+
 import ActiveMap from "../../components/ActiveEncounter/ActiveMap.tsx";
 import InitiativeList from "../../components/ActiveEncounter/InitiativeList.tsx";
 import ActionList from "../../components/ActiveEncounter/ActionList.tsx";
 import Recommendation from "../../components/ActiveEncounter/Recommendation.tsx";
 import InputHandler from "../../components/ActiveEncounter/InputHandler.tsx";
+
 import {
     getCreatureCid, getCreaturePosition,
     getCurrentTurnCreatureFromEncounter
 } from "../../utils/ActiveSimUtils/CreatureHelpers.ts";
+
 import {getEncounter} from "../../api/EncounterGet.ts";
 import {isPlayerCreature} from "../../api/CreatureGet.ts";
+
 import type {Creature} from "../../types/creature.ts";
 import type {CreatureAction} from "../../types/action.ts";
 import type {
@@ -22,6 +26,7 @@ import type {
     AoeToken, ManualAoePlacement,
     PendingPreTurnResolution
 } from "../../types/SimulationTypes.ts";
+
 import ExitSimulation from "../../components/ActiveEncounter/ExitSimulation.tsx";
 import {
     buildPreTurnSession,
@@ -40,13 +45,13 @@ function EncounterSimulation() {
     const location = useLocation();
     const eid = location.state?.eid;
 
-    //Side HomePage-Components
-    const [initiativeOpen, setInitiativeOpen] = useState(false);
+    //Side homeComponents
+    const [initiativeOpen, setInitiativeOpen] = useState(true);
     const [initiativeRefreshKey, setInitiativeRefreshKey] = useState(0);
     const [recommendRefreshKey, setRecommendRefreshKey] = useState(0);
     const latestHoverRequestRef = useRef(0);
     const didHydrateInitialPreTurnRef = useRef(false);
-    const [actionOpen, setActionOpen] = useState(false);
+    const [actionOpen, setActionOpen] = useState(true);
 
     //Pre/post enc logic
     const [encStart, setEncStart] = useState(false);
@@ -106,9 +111,28 @@ function EncounterSimulation() {
       setRecommendRefreshKey, setInitiativeRefreshKey, setEncStart, setActiveEncounter, setHandlingNextTurn,
     });
 
+    const loadEndOfEncounter = async (): Promise<void> => {
+            try {
+                const response = await axiosTokenInstance.get(`/encounter/${eid}/completed`)
+                if (response.data.isEnd) {
+                    if (encounterData && !encounterData.completed) {
+                        try {
+                            await axiosTokenInstance.get(`/encounter/${eid}/setcompleted`);
+                        }
+                        catch(e) {
+                            console.error(e);
+                        }
+                    }
+                    setEndOfEncounter(true);
+            }
+            }
+            catch(e) {
+                console.error(e);
+            }
+        }
+
     //ONLOAD EFFECTS
     useEffect(() => {
-        //Loads the encounter from the DB
         const loadEncounter = async (): Promise<void> => {
             try {
                 setLoadingEncounter(true);
@@ -130,8 +154,10 @@ function EncounterSimulation() {
                 setLoadingEncounter(false);
             }
         };
-
-    loadEncounter();
+        loadEndOfEncounter();
+        if (!endOfEncounter) {
+            loadEncounter();
+        }
 }, []);
     useEffect(() => {
         //Checks startup logic -> if not startup, then grab currentTurnCreature.
@@ -208,7 +234,6 @@ function EncounterSimulation() {
 
         if (!currentTurnCreature) return;
         if ((currentTurnCreature as any)._isLairAction) {
-            // Force manual mode, block ruleset
             setManualMode(true);
             setInitiativeOpen(true);
             setActionOpen(false);
@@ -241,21 +266,11 @@ function EncounterSimulation() {
     }, [preTurnQueue, encounterData, currentTurnCreature,
                                                 manualMode, actionExecutionSession]);
     useEffect(() => {
-        const loadEndOfEncounter = async (): Promise<void> => {
-            const response = await axiosTokenInstance.get(`/encounter/${eid}/completed`)
-            if (response.data.isEnd) {
-                if (encounterData && !encounterData.completed) {
-                    await axiosTokenInstance.get(`/encounter/${eid}/setcompleted`);
-                }
-                setEndOfEncounter(true);
-            }
-        }
         loadEndOfEncounter()
     }, [encounterData, currentTurnCreature]);
 
     return (
         <div className="pa-enc">
-            {/* ===== MAP LAYER (fills the whole page, header floats above) ===== */}
             <div className="pa-enc__map-layer">
                 <div
                     ref={mapViewportRef}
@@ -276,7 +291,6 @@ function EncounterSimulation() {
                         ref={mapContentRef}
                         className="pa-enc__map-content"
                         style={{
-                            // Transform stays inline — it's dynamic per-frame
                             transform: `translate(${pan.current.x}px, ${pan.current.y}px) scale(${zoom})`,
                         }}
                     >
@@ -299,7 +313,6 @@ function EncounterSimulation() {
                 </div>
             </div>
 
-            {/* ===== HEADER (transparent gradient, floats over the map) ===== */}
             <header className="pa-enc__header">
                 <div className="pa-enc__header-title">
                     <h3 className="pa-enc__title-text">
@@ -310,8 +323,6 @@ function EncounterSimulation() {
                 </div>
 
                 <div className="pa-enc__header-controls">
-                    {/* Active-encounter control cluster: visible when sim is running.
-                    Disabled states are driven by the same flags as before. */}
                     {activeEncounter && !endOfEncounter && (currentTurnCreature || isLairAction) && (
                         <>
                             <div className="pa-enc__turn-label">
@@ -351,8 +362,7 @@ function EncounterSimulation() {
                                 onClick={() => setManualState({
                                     actionExecutionSession, latestHoverRequestRef,
                                     setAoeTokens, setManualAoePlacement, setManualMode,
-                                    setInitiativeOpen, setActionOpen, setManualDraft, setInitiativeExpandedCid
-                                })}
+                                    setInitiativeOpen, setActionOpen, setManualDraft, setInitiativeExpandedCid})}
                             >
                                 Manual
                             </button>
@@ -373,7 +383,6 @@ function EncounterSimulation() {
                                     Submit
                                 </button>
                             )}
-
                             {!manualMode && (
                                 <button
                                     type="button"
@@ -387,7 +396,6 @@ function EncounterSimulation() {
                         </>
                     )}
 
-                    {/* Start button: shown before the encounter is active */}
                     {encStart && !activeEncounter && (
                         <button
                             type="button"
@@ -404,8 +412,8 @@ function EncounterSimulation() {
                 </div>
             </header>
 
-            {/* ===== LEFT PILL — toggle Initiative panel ===== */}
-            {!initiativeOpen && (
+
+            {!initiativeOpen && !endOfEncounter && (
                 <button
                     type="button"
                     className="pa-enc__edge-pill pa-enc__edge-pill--left"
@@ -416,8 +424,8 @@ function EncounterSimulation() {
                 </button>
             )}
 
-            {/* ===== LEFT PANEL — Initiative list ===== */}
-            {initiativeOpen && (
+
+            {initiativeOpen && !endOfEncounter && (
                 <aside className="pa-enc__side-panel pa-enc__side-panel--left">
                     <div className="pa-enc__side-panel-inner pa-enc__side-panel--left--border">
                         <InitiativeList
@@ -444,7 +452,6 @@ function EncounterSimulation() {
                 </aside>
             )}
 
-            {/* ===== RIGHT PILL — toggle Action panel ===== */}
             {!actionOpen && !hasPreTurnQueue && !manualMode && !endOfEncounter && (
                 <button
                     type="button"
@@ -480,7 +487,6 @@ function EncounterSimulation() {
                     </aside>
                 )}
 
-            {/* ===== BOTTOM CARD — Recommendation / InputHandler ===== */}
             {activeEncounter && currentTurnCreature && (
                 <div className="pa-enc__bottom-card">
                     {hasPreTurnQueue && encounterData && !endOfEncounter && actionExecutionSession ? (
