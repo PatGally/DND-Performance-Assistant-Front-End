@@ -139,8 +139,19 @@ export default function InputHandler({
     function toggleTarget(cid: string) {
         setSelectedTargets((prev) => {
             const exists = prev.includes(cid);
-            if (exists) return prev.filter((id) => id !== cid);
-            if (targetCount > 0 && prev.length >= targetCount) return prev;
+
+            if (targetCount === 1) {
+                return exists ? [] : [cid];
+            }
+
+            if (exists) {
+                return prev.filter((id) => id !== cid);
+            }
+
+            if (targetCount > 0 && prev.length >= targetCount) {
+                return prev;
+            }
+
             return [...prev, cid];
         });
     }
