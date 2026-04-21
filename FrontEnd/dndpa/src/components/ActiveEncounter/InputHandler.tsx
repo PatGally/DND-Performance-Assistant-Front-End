@@ -9,6 +9,12 @@ import {
   getCreatureName,
   getCreatureCid,
 } from "../../utils/ActiveSimUtils/CreatureHelpers.ts";
+import {
+  getRollBoundsForTarget,
+  getDamageBounds,
+  formatBounds,
+  getEffectiveDamageBounds, isCriticalAttackRoll,
+} from "../../utils/ActiveSimUtils/actionHelpers.ts";
 
 type PerTargetInput = {
   attackRoll: string;
@@ -54,6 +60,11 @@ export default function InputHandler({
   const allCreatures: Creature[] = useMemo(
     () => [...(encounter.players ?? []), ...(encounter.monsters ?? [])],
     [encounter]
+  );
+
+  const damageBounds = useMemo(
+    () => getDamageBounds(actionSession),
+    [actionSession]
   );
 
   const availableTargets = useMemo(() => allCreatures, [allCreatures]);
@@ -181,97 +192,171 @@ export default function InputHandler({
       ...(actionSession.draft.extraOutcome?.extraDiceResults ?? []),
     ];
 
+    const needsAttackRoll =
+      actionSession.action.rollMode === "toHit" ||
+      actionSession.action.rollMode === "onHit";
+    const needsSaveRoll = actionSession.action.rollMode === "save";
+    const needsDamageRoll = actionSession.action.hasDamage;
+
     for (const cid of targets) {
       const entry = perTargetInputs[cid];
+      const creature = allCreatures.find((c) => getCreatureCid(c) === cid);
 
-      if (!entry) {
+      if (!entry || !creature) {
         showTimedError("Missing input data for one or more targets.");
         return;
       }
 
-      let rollValue = "";
+      const rollBounds = getRollBoundsForTarget(actionSession, creature);
 
-      if (
-        (actionSession.action.rollMode === "toHit" ||
-          actionSession.action.rollMode === "onHit") &&
-        entry.attackRoll.trim() === ""
-      ) {
+      if (needsAttackRoll && entry.attackRoll.trim() === "") {
         showTimedError("All attack roll inputs must be filled.");
         return;
       }
 
-      if (
-        actionSession.action.rollMode === "save" &&
-        entry.saveRoll.trim() === ""
-      ) {
+      if (needsSaveRoll && entry.saveRoll.trim() === "") {
         showTimedError("All save roll inputs must be filled.");
         return;
       }
 
-      if (actionSession.action.hasDamage && entry.damageRoll.trim() === "") {
+      if (needsDamageRoll && entry.damageRoll.trim() === "") {
         showTimedError("All damage roll inputs must be filled.");
         return;
       }
 
-      if (
-        actionSession.action.rollMode.toLowerCase() === "tohit" ||
-        actionSession.action.rollMode.toLowerCase() === "onhit"
-      ) {
-        rollValue = entry.attackRoll.trim();
-      } else if (actionSession.action.rollMode.toLowerCase() === "save") {
-        rollValue = entry.saveRoll.trim();
+      const critActive =
+        needsAttackRoll && rollBounds
+          ? isCriticalAttackRoll(
+              actionSession.action.rollMode,
+              entry.attackRoll,
+              rollBounds
+            )
+          : false;
+
+      const effectiveDamageBounds = getEffectiveDamageBounds(
+        damageBounds,
+        critActive
+      );
+
+      if (needsAttackRoll) {
+        if (!rollBounds) {
+          showTimedError(
+            `Could not determine attack roll bounds for ${actionSession.draft.action}.`
+          );
+          return;
+        }
+
+        const validatedRoll = Number(entry.attackRoll.trim());
+
+        if (!Number.isFinite(validatedRoll)) {
+          showTimedError(
+            `Attack roll for ${getCreatureName(creature)} must be a number.`
+          );
+          return;
+        }
+
+        if (validatedRoll < rollBounds.min || validatedRoll > rollBounds.max) {
+          showTimedError(
+            `Attack roll for ${getCreatureName(creature)} must be between ${rollBounds.min} and ${rollBounds.max}.`
+          );
+          return;
+        }
+
+        rollResults.push(String(validatedRoll));
+      } else if (needsSaveRoll) {
+        if (!rollBounds) {
+          showTimedError(
+            `Could not determine save roll bounds for ${actionSession.draft.action}.`
+          );
+          return;
+        }
+
+        const validatedRoll = Number(entry.saveRoll.trim());
+
+        if (!Number.isFinite(validatedRoll)) {
+          showTimedError(
+            `Save roll for ${getCreatureName(creature)} must be a number.`
+          );
+          return;
+        }
+
+        if (validatedRoll < rollBounds.min || validatedRoll > rollBounds.max) {
+          showTimedError(
+            `Save roll for ${getCreatureName(creature)} must be between ${rollBounds.min} and ${rollBounds.max}.`
+          );
+          return;
+        }
+
+        rollResults.push(String(validatedRoll));
       } else if (actionSession.action.rollMode.toLowerCase() === "autohit") {
-        rollValue = "y";
+        rollResults.push("y");
       }
 
-      if (rollValue !== "") {
-        rollResults.push(rollValue);
-        diceResults.push(
-          actionSession.action.hasDamage ? Number(entry.damageRoll) : 0
-        );
+      if (needsDamageRoll) {
+        if (!effectiveDamageBounds) {
+          showTimedError(
+            `Could not determine damage bounds for ${actionSession.draft.action}.`
+          );
+          return;
+        }
+
+        const damageValue = Number(entry.damageRoll.trim());
+
+        if (!Number.isFinite(damageValue)) {
+          showTimedError(
+            `Damage roll for ${getCreatureName(creature)} must be a number.`
+          );
+          return;
+        }
+
+        if (
+          damageValue < effectiveDamageBounds.min ||
+          damageValue > effectiveDamageBounds.max
+        ) {
+          showTimedError(
+            `Damage roll for ${getCreatureName(creature)} must be between ${effectiveDamageBounds.min} and ${effectiveDamageBounds.max}.`
+          );
+          return;
+        }
+
+        diceResults.push(damageValue);
+      } else {
+        diceResults.push(0);
       }
     }
 
-    while (extraDiceResults.length < extraRollResults.length) {
-      extraDiceResults.push(0);
-    }
-
-    while (extraRollResults.length < extraDiceResults.length) {
-      extraRollResults.push("");
-    }
-
-    const finalDraft: ActionRequestDraft = {
-      ...actionSession.draft,
-      outcome: {
-        rollResults,
-        diceResults,
-      },
-      extraOutcome: {
-        extraRollResults,
-        extraDiceResults,
-      },
-      timestamp: getCurrentTimeString(),
-    };
-
-    setActionExecutionSession((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        draft: finalDraft,
-        error: null,
-      };
-    });
-
-    setLocalError("");
-
-    const response = await handleActionExecution(finalDraft);
-    console.log("HandleActionExecution response", response);
-
-    if (typeof response === "string" && response.trim() !== "") {
-      showTimedError(response);
-      return;
-    }
+  while (extraDiceResults.length < extraRollResults.length) {
+    extraDiceResults.push(0);
   }
+  while (extraRollResults.length < extraDiceResults.length) {
+    extraRollResults.push("");
+  }
+
+  const finalDraft: ActionRequestDraft = {
+    ...actionSession.draft,
+    outcome: {
+      rollResults,
+      diceResults,
+    },
+    extraOutcome: {
+      extraRollResults,
+      extraDiceResults,
+    },
+    timestamp: getCurrentTimeString(),
+  };
+
+  setActionExecutionSession((prev) => {
+    if (!prev) return prev;
+    return {
+      ...prev,
+      draft: finalDraft,
+      error: null,
+    };
+  });
+
+  setLocalError("");
+  await handleActionExecution(finalDraft);
+}
 
   function handleExit() {
     if (onExit) {
@@ -353,9 +438,7 @@ export default function InputHandler({
           <p className="mb-3">Enter results for each target.</p>
 
           {actionSession.draft.targets.map((cid) => {
-            const creature = allCreatures.find(
-              (c) => getCreatureCid(c) === cid
-            );
+            const creature = allCreatures.find((c) => getCreatureCid(c) === cid);
             if (!creature) return null;
 
             const name = getCreatureName(creature);
@@ -365,6 +448,21 @@ export default function InputHandler({
               damageRoll: "",
             };
 
+            const rollBounds = getRollBoundsForTarget(actionSession, creature);
+            const critActive =
+              (actionSession.action.rollMode === "toHit" ||
+                actionSession.action.rollMode === "onHit") &&
+              isCriticalAttackRoll(
+                actionSession.action.rollMode,
+                input.attackRoll,
+                rollBounds
+              );
+
+            const effectiveDamageBounds = getEffectiveDamageBounds(
+              damageBounds,
+              critActive
+            );
+
             return (
               <div key={cid} className="border rounded p-2 mb-3">
                 <strong>{name}</strong>
@@ -372,10 +470,20 @@ export default function InputHandler({
                 {(actionSession.action.rollMode === "toHit" ||
                   actionSession.action.rollMode === "onHit") && (
                   <div className="mt-2">
-                    <label className="form-label">Attack Roll w/ Mod</label>
+                    <div className="small text-secondary mb-1">
+                      {formatBounds(rollBounds)}
+                    </div>
+                    {critActive && (
+                      <div className="small text-warning mb-1">
+                        Critical hit active: damage bounds doubled.
+                      </div>
+                    )}
+                    <label className="form-label">Attack Roll</label>
                     <input
                       className="form-control"
                       type="number"
+                      min={rollBounds?.min}
+                      max={rollBounds?.max}
                       value={input.attackRoll}
                       onChange={(e) =>
                         updateTargetInput(cid, "attackRoll", e.target.value)
@@ -386,8 +494,11 @@ export default function InputHandler({
 
                 {actionSession.action.rollMode === "save" && (
                   <div className="mt-2">
+                    <div className="small text-secondary mb-1">
+                      {formatBounds(rollBounds)}
+                    </div>
                     <label className="form-label">
-                      Save Roll w/ Mod{" "}
+                      Save Roll{" "}
                       {actionSession.action.saveType
                         ? `(${actionSession.action.saveType})`
                         : ""}
@@ -395,6 +506,8 @@ export default function InputHandler({
                     <input
                       className="form-control"
                       type="number"
+                      min={rollBounds?.min}
+                      max={rollBounds?.max}
                       value={input.saveRoll}
                       onChange={(e) =>
                         updateTargetInput(cid, "saveRoll", e.target.value)
@@ -405,10 +518,15 @@ export default function InputHandler({
 
                 {actionSession.action.hasDamage && (
                   <div className="mt-2">
-                    <label className="form-label">Base Damage Roll Result</label>
+                    <div className="small text-secondary mb-1">
+                      {formatBounds(effectiveDamageBounds)}
+                    </div>
+                    <label className="form-label">Damage Roll</label>
                     <input
                       className="form-control"
                       type="number"
+                      min={effectiveDamageBounds?.min}
+                      max={effectiveDamageBounds?.max}
                       value={input.damageRoll}
                       onChange={(e) =>
                         updateTargetInput(cid, "damageRoll", e.target.value)

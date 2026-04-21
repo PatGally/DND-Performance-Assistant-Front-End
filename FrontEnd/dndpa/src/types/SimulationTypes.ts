@@ -54,6 +54,10 @@ export type NormalizedAction = {
   damageType?: string;
   damageMod?: string;
   weaponStat?: string;
+  attackBonus?: number;
+  damageDieNum?: number;
+  damageDieType?: number;
+  resolvedDamageMod?: number;
 };
 export type OutcomeDraft = {
   rollResults: string[];
