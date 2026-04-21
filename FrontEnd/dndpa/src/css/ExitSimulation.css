@@ -99,7 +99,6 @@
 }
 
 .pa-exit__divider {
-    height: 1px;
     background: var(--pa-exit-border);
     margin: 0;
 }
