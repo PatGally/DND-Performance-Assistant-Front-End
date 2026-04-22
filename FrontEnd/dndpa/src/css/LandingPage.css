@@ -89,6 +89,7 @@
     margin: 0;
     background-color: var(--pa-landing-card-bg);
     border-radius: var(--pa-landing-radius-md);
+    padding: 5px;
 }
 
 /* ---------- Info cards ---------- */

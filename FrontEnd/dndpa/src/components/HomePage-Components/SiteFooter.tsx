@@ -78,7 +78,7 @@ const SiteFooter: React.FC = () => {
             <div className="pa-footer__divider" />
 
             <div className="pa-footer__bottom">
-                <a className="pa-footer__small-link"> Alpha Testing </a>
+                <a className="pa-footer__small-link"> Alpha Testing 1.1.0 </a>
                 <span className="pa-footer__copyright">
           © {new Date().getFullYear()} dndpa All Rights Reserved.
         </span>
