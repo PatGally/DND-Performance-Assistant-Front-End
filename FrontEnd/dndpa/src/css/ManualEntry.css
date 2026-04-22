@@ -116,10 +116,30 @@
 /* ---------- Number input (label + input row) ---------- */
 .manual-entry-number-field {
     display: grid;
-    grid-template-columns: 160px 1fr;
+    grid-template-columns: minmax(0, 1fr) 56px;
     gap: 8px;
     align-items: center;
     margin-bottom: 8px;
+}
+
+.manual-entry-number-field .manual-entry-field-label {
+    min-width: 0;
+}
+
+.manual-entry-number-field .manual-entry-input {
+    width: 100%;
+    min-width: 0;
+}
+
+@media (max-width: 420px) {
+    .manual-entry-number-field {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+
+    .manual-entry-number-field .manual-entry-input {
+        max-width: 72px;
+    }
 }
 
 /* ---------- Checkbox field ---------- */

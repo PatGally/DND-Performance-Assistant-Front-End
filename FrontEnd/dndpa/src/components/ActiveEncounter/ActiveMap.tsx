@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {getAoeOverlayBox, getConeImageStyle, getLineImageStyle} from "../../utils/ActiveSimUtils/aoeHelpers.ts";
+import {getAoeOverlayBox, getConeImageStyle, getLineImageStyleFromCells} from "../../utils/ActiveSimUtils/aoeHelpers.ts";
 import {
   ArtificerToken,
   BarbarianToken,
@@ -529,7 +529,7 @@ export default function ActiveMap({
   const overlayBox = getAoeOverlayBox(aoe, cells, cellWidth, cellHeight);
   const coneImageStyle = getConeImageStyle(aoe, cells, cellWidth, cellHeight);
   const isCone = (aoe.shape ?? "").toLowerCase() === "cone";
-  const lineImageStyle = getLineImageStyle(aoe, cells, cellWidth, cellHeight);
+  const lineImageStyle = getLineImageStyleFromCells(cells, cellWidth, cellHeight);
   const isLine = (aoe.shape ?? "").toLowerCase() === "line";
   const isCircle = (aoe.shape ?? "").toLowerCase() === "circle";
 
