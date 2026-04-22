@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, Modal, Button } from "react-bootstrap";
+import { Card, Modal } from "react-bootstrap";
+import '../../css/EncounterView.css';
 import type { EncounterWithPacket } from "../../types/encounter.ts";
 import "bootstrap/dist/css/bootstrap.min.css";
 import NoEncounters from "./NoEncounters.tsx";
@@ -44,71 +45,49 @@ const EncounterView = ({ encounters, loadingEncounter, onDeleteEncounter }: Prop
             <NoEncounters />
     </div>;
     return (
-        < >
-            <div className="container-fluid"
-                 style={{ backgroundColor: "rgba(15, 24, 40, 0.85)",
-                flex: 1,
-                minHeight: "100vh"}}>
+        <>
+            <div className="pa-ev">
                 <div className="row g-3">
                     {(encounters ?? []).map((enc) => (
                         <div key={enc.eid} className="col-12 col-md-6 col-lg-4">
-                            <Card style={{ overflow: 'hidden' }}>
-
-                                <div style={{ height: '200px', overflow: 'hidden', position: 'relative' }}>
+                            <Card className="pa-ev__card">
+                                {/* Map preview with gradient overlay + title */}
+                                <div className="pa-ev__media">
                                     {enc.mapLink ? (
                                         <img
+                                            className="pa-ev__media-image"
                                             src={enc.mapLink}
                                             alt={`Map for ${enc.name}`}
-                                            style={{
-                                                width: '100%',
-                                                height: '100%',
-                                                objectFit: 'cover',
-                                                objectPosition: 'center',
-                                                display: 'block',
-                                            }}
                                         />
                                     ) : (
-                                        <div style={{
-                                            width: '100%',
-                                            height: '100%',
-                                            backgroundColor: '#1a1a2e',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            color: '#666',
-                                            fontSize: '0.85rem',
-                                        }}>
+                                        <div className="pa-ev__media-placeholder">
                                             No map available
                                         </div>
                                     )}
 
-                                    <div
-                                        style={{
-                                            position: 'absolute',
-                                            bottom: 0,
-                                            left: 0,
-                                            right: 0,
-                                            padding: '0.5rem 0.75rem',
-                                            background: 'linear-gradient(transparent, rgba(0,0,0,0.75))',
-                                            color: '#fff',
-                                            fontWeight: 600,
-                                            fontSize: '1.1rem',
-                                        }}
-                                    >
-                                        {enc.name}
+                                    <div className="pa-ev__media-overlay">
+                                        <div className="pa-ev__media-title">
+                                            {enc.name}
+                                        </div>
                                     </div>
                                 </div>
 
-                                <Card.Body >
-                                    <p className="text-muted mb-3" style={{ fontSize: '0.8rem' }}>
-                                        {new Date(enc.date).toLocaleDateString()} &mdash; Completed: {String(enc.completed)}
+                                {/* Body: date + actions */}
+                                <Card.Body className="pa-ev__body">
+                                    <p className="pa-ev__meta">
+                                        {new Date(enc.date).toLocaleDateString()}
+                                        {' — '}
+                                        <span className={`pa-ev__status pa-ev__status--${enc.completed ? 'complete' : 'open'}`}>
+                                        {enc.completed ? 'Completed' : 'In Progress'}
+                                    </span>
                                     </p>
 
-                                    <div className="d-flex justify-content-between">
+                                    <div className="pa-ev__actions">
                                         <button
-                                            className="btn btn-primary"
+                                            type="button"
+                                            className="pa-ev__btn pa-ev__btn--primary"
                                             onClick={() =>
-                                                navigate("/encounter-simulation", {
+                                                navigate('/encounter-simulation', {
                                                     state: { eid: enc.eid },
                                                 })
                                             }
@@ -117,7 +96,8 @@ const EncounterView = ({ encounters, loadingEncounter, onDeleteEncounter }: Prop
                                         </button>
 
                                         <button
-                                            className="btn btn-danger"
+                                            type="button"
+                                            className="pa-ev__btn pa-ev__btn--danger"
                                             onClick={() => openDeleteConfirm(enc)}
                                         >
                                             Delete
@@ -130,26 +110,44 @@ const EncounterView = ({ encounters, loadingEncounter, onDeleteEncounter }: Prop
                 </div>
             </div>
 
-            <Modal show={showDeleteConfirm} onHide={closeDeleteConfirm} centered>
-                <Modal.Header closeButton>
-                    <Modal.Title>Confirm Delete</Modal.Title>
+            {/* Delete confirmation modal */}
+            <Modal
+                show={showDeleteConfirm}
+                onHide={closeDeleteConfirm}
+                centered
+                contentClassName="pa-ev-modal"
+            >
+                <Modal.Header closeButton className="pa-ev-modal__header">
+                    <Modal.Title className="pa-ev-modal__title">Confirm Delete</Modal.Title>
                 </Modal.Header>
-                <Modal.Body>
-                    Are you sure you want to delete{" "}
-                    <strong>{selectedEncounter?.name}</strong>?
+
+                <Modal.Body className="pa-ev-modal__body">
+                    Are you sure you want to delete{' '}
+                    <strong className="pa-ev-modal__target">
+                        {selectedEncounter?.name}
+                    </strong>
+                    ?
                 </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="light" onClick={closeDeleteConfirm}>
+
+                <Modal.Footer className="pa-ev-modal__footer">
+                    <button
+                        type="button"
+                        className="pa-ev__btn pa-ev__btn--ghost"
+                        onClick={closeDeleteConfirm}
+                    >
                         Cancel
-                    </Button>
-                    <Button variant="primary" onClick={confirmDelete}>
+                    </button>
+                    <button
+                        type="button"
+                        className="pa-ev__btn pa-ev__btn--danger"
+                        onClick={confirmDelete}
+                    >
                         Delete
-                    </Button>
+                    </button>
                 </Modal.Footer>
             </Modal>
         </>
-    );
-
+    )
 };
 
 export default EncounterView;
