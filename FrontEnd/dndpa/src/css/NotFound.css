@@ -20,10 +20,6 @@
     --pa-404-radius-pill: 999px;
 }
 
-/* ---------- Page shell ----------
-   Two-layer background: a solid near-black base + the specified rgba tint
-   on top. This way the 0.85-alpha color reads correctly against a known
-   backdrop rather than whatever might be behind the page. */
 .pa-404 {
     min-height: 100vh;
     width: 100%;

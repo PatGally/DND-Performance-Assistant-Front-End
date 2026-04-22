@@ -7,6 +7,7 @@ import { uuidPolyfill } from "../../api/uuidPolyfill.ts";
 import { EncounterPost } from "../../api/EncounterPost.ts";
 import { normalizePlayer } from "../../utils/normalizePlayer.ts";
 import { normalizeMonster } from "../../utils/normalizeMonster";
+import '../../css/EncounterCreationNav.css'
 
 import {
     ArtificerToken,
@@ -110,8 +111,11 @@ const getMonsterTokenImage = (creatureType: string | undefined): string => {
 function isPanelValid(panel: ActivePanel, formData: EncounterFormData): boolean {
     switch (panel) {
         case "SET_ENCOUNTERNAME":
-            return formData.name.trim().length >= 3;
-
+            const nameEntry = formData.name.trim();
+            if (nameEntry.length >= 3 && nameEntry.length <= 20) {
+                return true
+            }
+            else return false
         case "ADD_CHARACTERS":
             return formData.characters.length >= 1;
 
@@ -242,80 +246,42 @@ function EncounterCreationNavAndSubmit({
         }
     };
 
+    const STEP_BUTTONS = [
+        { panel: 'SET_ENCOUNTERNAME', label: 'Name' },
+        { panel: 'ADD_CHARACTERS',    label: 'Add Players' },
+        { panel: 'ADD_MONSTERS',      label: 'Add Monsters' },
+        { panel: 'ADD_INITIATIVE',    label: 'Initiative' },
+        { panel: 'ADD_MAPLINK',       label: 'Map Link' },
+        { panel: 'ADD_GRIDSIZE',      label: 'Grid Size' },
+    ] as const;
+
     return (
-        <Container fluid className="p-3 mx-0" style={{backgroundColor: "rgba(15, 24, 40, 0.85)"}}>
-            <div className="d-flex gap-1">
-                <button
-                    className={`btn border-0 ${
-                        activePanel === "SET_ENCOUNTERNAME" ? "btn-secondary" : "btn-dark"
-                    }`}
-                    onClick={() => setActivePanel("SET_ENCOUNTERNAME")}
-                    type="button"
-                >
-                    Name
-                </button>
+        <Container fluid className="pa-ecnav p-3 mx-0">
+            <div className="d-flex gap-2 flex-wrap">
+                {STEP_BUTTONS.map(({ panel, label }) => {
+                    const unlocked = panel === 'SET_ENCOUNTERNAME' || isUnlocked(panel);
+                    const isActive = activePanel === panel;
 
-                <button
-                    className={`btn border-0 ${
-                        activePanel === "ADD_CHARACTERS" ? "btn-secondary" : "btn-dark"
-                    }`}
-                    onClick={() => isUnlocked("ADD_CHARACTERS") && setActivePanel("ADD_CHARACTERS")}
-                    disabled={!isUnlocked("ADD_CHARACTERS")}
-                    type="button"
-                >
-                    Add Players
-                </button>
+                    return (
+                        <button
+                            key={panel}
+                            type="button"
+                            className={`btn pa-ecnav__step ${isActive ? 'pa-ecnav__step--active' : ''}`}
+                            onClick={() => unlocked && setActivePanel(panel)}
+                            disabled={!unlocked}
+                        >
+                            {label}
+                        </button>
+                    );
+                })}
 
-                <button
-                    className={`btn border-0 ${
-                        activePanel === "ADD_MONSTERS" ? "btn-secondary" : "btn-dark"
-                    }`}
-                    onClick={() => isUnlocked("ADD_MONSTERS") && setActivePanel("ADD_MONSTERS")}
-                    disabled={!isUnlocked("ADD_MONSTERS")}
-                    type="button"
-                >
-                    Add Monsters
-                </button>
-
-                <button
-                    className={`btn border-0 ${
-                        activePanel === "ADD_INITIATIVE" ? "btn-secondary" : "btn-dark"
-                    }`}
-                    onClick={() => isUnlocked("ADD_INITIATIVE") && setActivePanel("ADD_INITIATIVE")}
-                    disabled={!isUnlocked("ADD_INITIATIVE")}
-                    type="button"
-                >
-                    Initiative
-                </button>
-
-                <button
-                    className={`btn border-0 ${
-                        activePanel === "ADD_MAPLINK" ? "btn-secondary" : "btn-dark"
-                    }`}
-                    onClick={() => isUnlocked("ADD_MAPLINK") && setActivePanel("ADD_MAPLINK")}
-                    disabled={!isUnlocked("ADD_MAPLINK")}
-                    type="button"
-                >
-                    Map Link
-                </button>
-
-                <button
-                    className={`btn border-0 ${
-                        activePanel === "ADD_GRIDSIZE" ? "btn-secondary" : "btn-dark"
-                    }`}
-                    onClick={() => isUnlocked("ADD_GRIDSIZE") && setActivePanel("ADD_GRIDSIZE")}
-                    disabled={!isUnlocked("ADD_GRIDSIZE")}
-                    type="button"
-                >
-                    Grid Size
-                </button>
-
+                {/* Back / Next / Submit — right-aligned */}
                 <div className="d-flex gap-2 ms-auto">
                     <button
-                        className="btn btn-dark border-0"
+                        type="button"
+                        className="btn pa-ecnav__nav-btn"
                         onClick={goPrev}
                         disabled={currentIndex === 0 || isSubmitting}
-                        type="button"
                     >
                         Back
                     </button>
@@ -323,18 +289,18 @@ function EncounterCreationNavAndSubmit({
                     <Form onSubmit={handleSubmit}>
                         {isLastPanel ? (
                             <button
-                                className="btn btn-success border-0"
                                 type="submit"
+                                className="btn pa-ecnav__nav-btn pa-ecnav__nav-btn--submit"
                                 disabled={!isCurrentValid || isSubmitting}
                             >
-                                {isSubmitting ? "Submitting..." : "Submit"}
+                                {isSubmitting ? 'Submitting...' : 'Submit'}
                             </button>
                         ) : (
                             <button
-                                className="btn btn-dark border-0"
+                                type="button"
+                                className="btn pa-ecnav__nav-btn pa-ecnav__nav-btn--next"
                                 onClick={goNext}
                                 disabled={!isCurrentValid || isSubmitting}
-                                type="button"
                             >
                                 Next
                             </button>

@@ -1,13 +1,3 @@
-/* ==========================================================================
-   LandingPage.css
-   --------------------------------------------------------------------------
-   Simple post-login landing for alpha testing. Shares the `pa-` class prefix
-   and token approach with HomePagePA so the two pages stay visually aligned.
-
-   Palette: white + black on the specified semi-transparent dark background.
-   ========================================================================== */
-
-/* ---------- Design tokens (scoped to this page) ---------- */
 .pa-landing {
     --pa-landing-bg: rgba(15, 24, 40, 0.85);
     --pa-landing-text: #ffffff;
@@ -91,6 +81,15 @@
     line-height: 1.5;
     color: var(--pa-landing-text-dim);
     margin: 0;
+}
+.pa-landing__subtitleSurvey {
+    font-size: 1.1rem;
+    line-height: 1.5;
+    color: lavender;
+    margin: 0;
+    background-color: var(--pa-landing-card-bg);
+    border-radius: var(--pa-landing-radius-md);
+    padding: 5px;
 }
 
 /* ---------- Info cards ---------- */
@@ -183,4 +182,58 @@
     .pa-landing__cards {
         grid-template-columns: minmax(0, 1fr);
     }
+}
+
+/* Survery buttons */
+
+.pa-landing__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.9rem 2.25rem;
+    min-width: 180px;
+
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: #fff;
+
+    background: linear-gradient(135deg, #ff4655 0%, #e63946 100%);
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+
+    box-shadow:
+            0 4px 14px rgba(255, 70, 85, 0.4),
+            0 2px 4px rgba(0, 0, 0, 0.15);
+
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.pa-landing__btn:hover {
+    background: linear-gradient(135deg, #ff5a67 0%, #ff4655 100%);
+    box-shadow:
+            0 6px 20px rgba(255, 70, 85, 0.55),
+            0 3px 6px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+}
+
+.pa-landing__btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(255, 70, 85, 0.35);
+}
+
+.pa-landing__btn:focus-visible {
+    outline: 3px solid rgba(255, 70, 85, 0.5);
+    outline-offset: 3px;
+}
+
+.pa-landing__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }

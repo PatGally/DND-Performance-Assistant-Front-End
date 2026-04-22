@@ -1,7 +1,7 @@
 import ComplexManualEntrySection from "./ComplexManualEntrySection";
 import { STAT_KEYS } from "../../../types/ManualEntryTypes.ts";
 import { getNumberValue, toInteger } from "../../../utils/ActiveSimUtils/ManualEntryHelpers.ts";
-
+import '../../../css/ManualEntry.css';
 import type {
     ManualStatBlock,
     StatKey,
@@ -25,21 +25,15 @@ export default function ComplexManualEntryStatBlockEditor({
 
     return (
         <ComplexManualEntrySection title={title}>
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                    gap: 10,
-                }}
-            >
+            <div className="manual-entry-stat-grid">
                 {STAT_KEYS.map((key) => (
-                    <div key={key}>
-                        <div style={{ marginBottom: 4 }}>{key}</div>
+                    <div key={key} className="manual-entry-stat-cell">
+                        <div  className="manual-entry-stat-label">{key}</div>
                         <input
                             type="number"
                             value={getNumberValue(value[key], 0)}
                             onChange={(e) => updateStat(key, e.target.value)}
-                            style={{ width: "100%" }}
+                            className="manual-entry-input"
                         />
                     </div>
                 ))}

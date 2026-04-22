@@ -1,5 +1,5 @@
 import { useState } from "react";
-
+import '../../../css/ManualEntry.css';
 export default function ComplexManualEntryMultiSelectSearch({
     label,
     options,
@@ -28,52 +28,34 @@ export default function ComplexManualEntryMultiSelectSearch({
     }
 
     return (
-        <div style={{ marginBottom: 12 }}>
-            <div>{label}</div>
-
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        <div className="manual-entry-multiselect">
+            <div className="manual-entry-multiselect-label" >{label}</div>
+            {current.length > 0 && (
+            <div className="manual-entry-chip-list">
                 {current.map((item) => (
-                    <div
-                        key={item}
-                        style={{ background: "#444", padding: "4px 8px", borderRadius: 4 }}
-                    >
+                    <div key={item} className="manual-entry-chip">
                         {item}
                         <span
                             onClick={() => toggle(item)}
-                            style={{ marginLeft: 6, cursor: "pointer" }}
-                        >
+                            className="manual-entry-chip-remove">
                             ✕
                         </span>
                     </div>
                 ))}
             </div>
+            )}
 
             <input
                 placeholder="Search..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                style={{ width: "100%", margin: "6px 0" }}
+                className="manual-entry-search-input"
             />
 
-            <div
-                style={{
-                    maxHeight: 120,
-                    overflowY: "auto",
-                    border: "1px solid #ccc",
-                    minHeight: 0,
-                }}
-            >
+            <div className="manual-entry-option-list">
                 {filtered.map((opt) => (
-                    <div
-                        key={opt}
-                        onClick={() => toggle(opt)}
-                        style={{
-                            padding: 6,
-                            cursor: "pointer",
-                            background: current.includes(opt) ? "#666" : "transparent",
-                        }}
-                    >
-                        {opt}
+                    <div key={opt} onClick={() => toggle(opt)}
+                        className={"manual-entry-option" + (current.includes(opt) ? " selected" : "")}>{opt}
                     </div>
                 ))}
             </div>

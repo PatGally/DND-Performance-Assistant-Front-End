@@ -1,0 +1,119 @@
+.pa-recommendation {
+    --pa-rec-ink: #0F1828;
+    --pa-rec-text: #ffffff;
+    --pa-rec-text-dim: rgba(255, 255, 255, 0.75);
+    --pa-rec-surface: rgba(255, 255, 255, 0.08);
+    --pa-rec-surface-hover: rgba(255, 255, 255, 0.14);
+    --pa-rec-border: rgba(255, 255, 255, 0.15);
+    --pa-rec-transition: 180ms ease;
+    --pa-rec-radius-sm: 6px;
+    --pa-rec-radius-md: 10px;
+
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    color: var(--pa-rec-text);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.pa-recommendation *,
+.pa-recommendation *::before,
+.pa-recommendation *::after {
+    box-sizing: border-box;
+}
+
+/* ---------- Body (name + target) ---------- */
+.pa-recommendation__body {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.pa-recommendation__name {
+    font-weight: 700;
+    font-size: 17px;
+    line-height: 1.25;
+    color: var(--pa-rec-text);
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.pa-recommendation__target {
+    margin-top: 6px;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--pa-rec-text-dim);
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* ---------- Actions (back / accept / next) ---------- */
+.pa-recommendation__actions {
+    height: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+}
+
+.pa-recommendation__btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    border: 1px solid var(--pa-rec-border);
+    border-radius: var(--pa-rec-radius-sm);
+    background: var(--pa-rec-surface);
+    color: var(--pa-rec-text);
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition:
+            background-color var(--pa-rec-transition),
+            border-color var(--pa-rec-transition),
+            transform var(--pa-rec-transition);
+}
+
+.pa-recommendation__btn:hover {
+    background: var(--pa-rec-surface-hover);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.pa-recommendation__btn:active {
+    transform: scale(0.96);
+}
+
+.pa-recommendation__btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15);
+}
+
+/* Accept button — primary weight, white fill */
+.pa-recommendation__btn--accept {
+    background: var(--pa-rec-text);
+    color: var(--pa-rec-ink);
+    border-color: var(--pa-rec-text);
+    font-weight: 700;
+}
+
+.pa-recommendation__btn--accept:hover {
+    background: var(--pa-rec-text);
+    opacity: 0.92;
+    border-color: var(--pa-rec-text);
+}
+
+/* ---------- Loading / error status ---------- */
+.pa-recommendation__status {
+    font-size: 14px;
+    color: var(--pa-rec-text-dim);
+    padding: 12px 0;
+}
+
+.pa-recommendation__status--error {
+    color: #f87171;
+}

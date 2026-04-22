@@ -35,9 +35,8 @@ function ExpandableDescriptionSection({ description }: { description?: string })
 
     return (
         <div className="action-description-section">
+            <span className="action-detail-label">Description</span>
             <div className="action-description-header">
-                <span className="action-detail-label">Description   </span>
-
                 {!isExpanded && (
                     <button
                         type="button"
@@ -126,9 +125,7 @@ function renderMonsterDetails(action: MonsterAction) {
             <DetailRow label="Damage Mod" value={action.rolls?.damageMod || "0"} />
             <DetailRow label="Damage Type" value={action.damType?.join(", ") || "None"} />
             <DetailRow label="Conditions" value={action.conditions?.join(", ") || "None"} />
-            <DetailRow
-                label="Recharge"
-                value={Array.isArray(action.recharge) ? action.recharge.join(", ") : String(action.recharge || "None")}
+            <DetailRow label="Recharge" value={Array.isArray(action.recharge) ? action.recharge.join(", ") : String(action.recharge || "None")}
             />
             <DetailRow label="Action Cost" value={action.actionCost || "None"} />
             <DetailRow label="Special Notes" value={action.specialNotes?.join(", ") || "None"} />

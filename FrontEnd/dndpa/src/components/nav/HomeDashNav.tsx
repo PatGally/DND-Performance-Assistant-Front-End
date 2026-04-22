@@ -1,5 +1,5 @@
 import { CloudArrowDown, PersonGear, QuestionSquare, Archive, Journals, BarChart, House, Bug } from 'react-bootstrap-icons';
-import Dock from '../../css/Dock';
+import Dock from '../Information/Dock.tsx';
 
 type ActivePanel =
     | 'LANDING_PAGE'

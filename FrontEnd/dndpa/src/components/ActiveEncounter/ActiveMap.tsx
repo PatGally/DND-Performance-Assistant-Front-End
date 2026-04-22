@@ -675,31 +675,72 @@ export default function ActiveMap({
         const minY = Math.max(0, Math.min(...ys));
         const maxY = Math.min(rows - 1, Math.max(...ys));
 
+        const tokenWidth = (maxX - minX + 1) * cellWidth;
+        const tokenHeight = (maxY - minY + 1) * cellHeight;
+
         return (
-          <img
+          <div
             key={token.cid}
-            src={resolvedSrc}
-            alt={creature.name}
-            title={`${creature.name} (${maxX - minX + 1}x${maxY - minY + 1})`}
-            onClick={() => handleTokenClick(token.cid)}
-            onError={() => console.error("Failed to load token image", token.cid)}
             style={{
               position: "absolute",
               left: minX * cellWidth,
               top: minY * cellHeight,
-              width: (maxX - minX + 1) * cellWidth,
-              height: (maxY - minY + 1) * cellHeight,
-              objectFit: "contain",
+              width: tokenWidth,
+              height: tokenHeight,
               zIndex: 3,
-              userSelect: "none",
-              pointerEvents: isAoePlacementActive ? "none" : "auto",
-              cursor: isAoePlacementActive ? "default" : "pointer",
-              filter:
-                selectedCID === token.cid
-                  ? "drop-shadow(0 0 8px rgba(0,255,255,0.95))"
-                  : "drop-shadow(0 1px 2px rgba(0,0,0,0.7))",
+              overflow: "visible",
+              pointerEvents: "none",
             }}
-          />
+          >
+            <img
+              src={resolvedSrc}
+              alt={creature.name}
+              title={`${creature.name} (${maxX - minX + 1}x${maxY - minY + 1})`}
+              onClick={() => handleTokenClick(token.cid)}
+              onError={() => console.error("Failed to load token image", token.cid)}
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+                userSelect: "none",
+                pointerEvents: isAoePlacementActive ? "none" : "auto",
+                cursor: isAoePlacementActive ? "default" : "pointer",
+                filter:
+                  selectedCID === token.cid
+                    ? "drop-shadow(0 0 8px rgba(0,255,255,0.95))"
+                    : "drop-shadow(0 1px 2px rgba(0,0,0,0.7))",
+              }}
+            />
+
+            <div
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "100%",
+                transform: "translate(-50%, 2px)",
+                maxWidth: cellWidth,
+                minHeight: cellHeight * 0.18,
+                maxHeight: cellHeight * .50,
+                padding: "1px 4px",
+                background: "rgba(0, 0, 0, 0.5)",
+                color: "#fff",
+                fontSize: `${Math.max(8, Math.floor(cellHeight * 0.22))}px`,
+                lineHeight: 1.2,
+                textAlign: "center",
+                borderRadius: "4px",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                boxSizing: "border-box",
+                pointerEvents: "none",
+              }}
+              title={creature.name}
+            >
+              {creature.name }
+            </div>
+          </div>
         );
       })}
     </div>

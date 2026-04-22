@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { CreatureAction } from "../../types/action.ts";
-import type { Creature } from "../../types/creature.ts";
+import type {Creature, PlayerCreature} from "../../types/creature.ts";
 import type {
   ActionExecutionSession,
   ActionRequestDraft,
@@ -38,6 +38,25 @@ import { getActorByConcentrationID } from "./PreTurnHelpers.ts";
 
 type StateSetter<T> = Dispatch<SetStateAction<T>>;
 
+type AbilityKey = "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA";
+
+type RollBounds = {
+  min: number;
+  max: number;
+};
+
+const SPELLCASTING_ABILITY_BY_CLASS: Record<string, AbilityKey> = {
+  artificer: "INT",
+  bard: "CHA",
+  cleric: "WIS",
+  druid: "WIS",
+  paladin: "CHA",
+  ranger: "WIS",
+  sorcerer: "CHA",
+  warlock: "CHA",
+  wizard: "INT",
+};
+
 const WEAPON_DEFAULTS = {
   targetMode: "single" as const,
   targetCount: 1,
@@ -63,6 +82,12 @@ export type HandlePASubmissionParams = {
   prob: number;
   eDam: number;
   impact: number;
+  overallRank : number;
+  base_weight : number;
+  ml_weight : number;
+  useML : boolean;
+  final_weight : number;
+  candidateCount : number;
   targets: RecommendationTarget;
   previewResultID?: string;
   currentTurnCreature?: Creature;
@@ -134,12 +159,89 @@ function parseCount(value?: string | number): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export function normalizeAction(action: CreatureAction): NormalizedAction {
+export function isCriticalAttackRoll(
+  rollMode: string,
+  rawRoll: string,
+  rollBounds: RollBounds | null
+): boolean {
+  if (!(rollMode === "toHit" || rollMode === "onHit")) return false;
+  if (!rollBounds) return false;
+
+  const rollValue = Number(rawRoll.trim());
+  return Number.isFinite(rollValue) && rollValue === rollBounds.max;
+}
+
+export function getEffectiveDamageBounds(
+  baseBounds: RollBounds | null,
+  isCrit: boolean
+): RollBounds | null {
+  if (!baseBounds) return null;
+  if (!isCrit) return baseBounds;
+
+  return {
+    min: baseBounds.min * 2,
+    max: baseBounds.max * 2,
+  };
+}
+
+function getTargetSaveBonus(creature: Creature, saveType: string): number {
+  const key = saveType.toUpperCase() as AbilityKey;
+
+  if (isPlayerCreatureLocal(creature)) {
+    return toNumber(creature.stats.saveProfs?.[key]) ?? 0;
+  }
+
+  return toNumber(creature.saveProfs?.[key]) ?? 0;
+}
+
+export function getRollBoundsForTarget(actionSession: ActionExecutionSession, creature: Creature): RollBounds | null {
+  const rollMode = actionSession.action.rollMode?.toLowerCase();
+
+  if (rollMode === "tohit" || rollMode === "onhit") {
+    const bonus = actionSession.action.attackBonus ?? 0;
+    return {
+      min: 1 + bonus,
+      max: 20 + bonus,
+    };
+  }
+
+  if (rollMode === "save") {
+    const bonus = getTargetSaveBonus(creature, actionSession.action.saveType);
+    return {
+      min: 1 + bonus,
+      max: 20 + bonus,
+    };
+  }
+
+  return null;
+}
+
+export function getDamageBounds(actionSession: ActionExecutionSession): RollBounds | null {
+  const dieNum = actionSession.action.damageDieNum;
+  const dieType = actionSession.action.damageDieType;
+
+  if (!dieNum || !dieType) return null;
+
+  const damageMod = actionSession.action.resolvedDamageMod ?? 0;
+
+  return {
+    min: dieNum + damageMod,
+    max: (dieNum * dieType) + damageMod,
+  };
+}
+
+export function formatBounds(bounds: RollBounds | null): string {
+  if (!bounds) return "";
+  return `Min: ${bounds.min} | Max: ${bounds.max}`;
+}
+
+export function normalizeAction(action: CreatureAction, actor?: Creature): NormalizedAction {
   if (isSpellAction(action)) {
     const target = action.targeting?.[0];
     const count = parseCount(target?.number);
     const isAoe = !!target?.shape;
     const isSelf = !!target?.self;
+    const parsedDamage = parseDamageDice(target?.rolls?.damage);
 
     return {
       kind: "spell",
@@ -165,12 +267,18 @@ export function normalizeAction(action: CreatureAction): NormalizedAction {
       damage: target?.rolls?.damage ?? "",
       damageMod: target?.rolls?.damageMod ?? "",
       damageType: target?.damType?.[0] ?? "",
+
+      attackBonus: getSpellAttackBonus(actor),
+      damageDieNum: parsedDamage?.dieNum,
+      damageDieType: parsedDamage?.dieType,
+      resolvedDamageMod: resolveDamageMod(target?.rolls?.damageMod, actor),
     };
   }
 
   if (isMonsterAction(action)) {
     const count = parseCount(action.number);
     const isAoe = !!action.shape;
+    const parsedDamage = parseDamageDice(action.rolls?.damage);
 
     return {
       kind: "monster",
@@ -194,8 +302,15 @@ export function normalizeAction(action: CreatureAction): NormalizedAction {
       damage: action.rolls?.damage ?? "",
       damageMod: action.rolls?.damageMod ?? "",
       damageType: action.damType?.[0] ?? "",
+
+      attackBonus: toNumber(action.rolls?.attackBonus) ?? 0,
+      damageDieNum: parsedDamage?.dieNum,
+      damageDieType: parsedDamage?.dieType,
+      resolvedDamageMod: toNumber(action.rolls?.damageMod) ?? 0,
     };
   }
+
+  const parsedDamage = parseDamageDice(action.properties.damage);
 
   return {
     kind: "weapon",
@@ -206,6 +321,11 @@ export function normalizeAction(action: CreatureAction): NormalizedAction {
     damageType: action.properties.damageType,
     damageMod: "",
     weaponStat: action.properties.weaponStat,
+
+    attackBonus: getWeaponAttackBonus(actor, action.properties.weaponStat),
+    damageDieNum: parsedDamage?.dieNum,
+    damageDieType: parsedDamage?.dieType,
+    resolvedDamageMod: getWeaponDamageMod(actor, action.properties.weaponStat),
   };
 }
 
@@ -222,7 +342,6 @@ export function extractActionEffects(action: CreatureAction): {
         : [],
     };
   }
-
   if (isMonsterAction(action)) {
     return {
       conditions: Array.isArray(action.conditions) ? action.conditions : [],
@@ -231,11 +350,101 @@ export function extractActionEffects(action: CreatureAction): {
         : [],
     };
   }
-
   return {
     conditions: [],
     statusEffects: [],
   };
+}
+
+export function isPlayerCreatureLocal(creature: Creature): creature is PlayerCreature {
+  return "stats" in creature;
+}
+
+export function toNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+export function parseDamageDice(damage?: string): {dieNum: number; dieType: number} | null {
+  if (!damage) return null;
+  const match = damage.trim().match(/^(\d+)d(\d+)$/i);
+  if (!match) return null;
+
+  return {
+    dieNum: Number(match[1]),
+    dieType: Number(match[2]),
+  };
+}
+
+export function getAbilityModifier(creature: Creature, stat: AbilityKey): number {
+  if (isPlayerCreatureLocal(creature)) {
+    const explicit = toNumber(creature.stats.modifiers?.[stat]);
+    if (explicit !== null) return explicit;
+
+    const statScore = toNumber(creature.stats.statArray[stat]);
+    if (statScore !== null) return Math.floor((statScore - 10) / 2);
+    return 0;
+  }
+
+  const explicit = toNumber(creature.modifiers?.[stat]);
+  if (explicit !== null) return explicit;
+
+  const statScore = toNumber(creature.statArray[stat]);
+  if (statScore !== null) return Math.floor((statScore - 10) / 2);
+  return 0;
+}
+
+export function getPlayerProfBonus(player: PlayerCreature): number {
+  const topLevelProf = toNumber((player as Record<string, unknown>).profBonus);
+  if (topLevelProf !== null) return topLevelProf;
+
+  const statsProf = toNumber((player.stats as Record<string, unknown>).profBonus);
+  if (statsProf !== null) return statsProf;
+
+  const level = toNumber(player.stats.level) ?? 1;
+  return 2 + Math.floor((Math.max(level, 1) - 1) / 4);
+}
+
+export function getSpellAttackBonus(actor?: Creature): number {
+  if (!actor) return 0;
+
+  if (isPlayerCreatureLocal(actor)) {
+    const classKey = String(actor.stats.characterClass ?? "").toLowerCase();
+    const castingStat = SPELLCASTING_ABILITY_BY_CLASS[classKey];
+    if (!castingStat) return 0;
+
+    return getAbilityModifier(actor, castingStat) + getPlayerProfBonus(actor);
+  }
+
+  return toNumber(actor.spellInfo?.attackRoll) ?? 0;
+}
+
+export function getWeaponAttackBonus(actor?: Creature, weaponStat?: string): number {
+  if (!actor || !weaponStat) return 0;
+  const stat = weaponStat.toUpperCase() as AbilityKey;
+  const abilityMod = getAbilityModifier(actor, stat);
+
+  if (isPlayerCreatureLocal(actor)) {
+    return abilityMod + getPlayerProfBonus(actor);
+  }
+
+  return abilityMod;
+}
+
+export function getWeaponDamageMod(actor?: Creature, weaponStat?: string): number {
+  if (!actor || !weaponStat) return 0;
+  return getAbilityModifier(actor, weaponStat.toUpperCase() as AbilityKey);
+}
+
+export function resolveDamageMod(rawDamageMod: string | undefined, actor?: Creature): number {
+  if (!rawDamageMod) return 0;
+
+  if (rawDamageMod.toLowerCase() === "spellmod") {
+    return getSpellAttackBonus(actor);
+  }
+
+  return toNumber(rawDamageMod) ?? 0;
 }
 
 export async function handleActionSubmission({
@@ -248,7 +457,7 @@ export async function handleActionSubmission({
   setManualLock(true);
 
   const { conditions, statusEffects } = extractActionEffects(action);
-  const normalized = normalizeAction(action);
+  const normalized = normalizeAction(action, currentTurnCreature);
   const requiredInputs = buildRequiredInputs(normalized);
 
   let resultID = "a";
@@ -270,6 +479,12 @@ export async function handleActionSubmission({
     actionProb: 0,
     actionEDam: 0,
     actionImpact: 0,
+        actionRanking : 0,
+    base_weight :0,
+    ml_weight :0,
+    useML : false,
+    final_weight : 0,
+    candidateCount : 0,
     targets: [],
     conditions,
     statusEffects,
@@ -283,7 +498,7 @@ export async function handleActionSubmission({
     },
     timestamp: "",
   };
-
+  console.log("Normalized action session action:", normalized);
   setActionExecutionSession({
     action: normalized,
     requiredInputs,
@@ -328,10 +543,7 @@ export async function handleActionSubmission({
 }
 
 export async function handlePASubmission({
-  name,
-  prob,
-  eDam,
-  impact,
+  name, prob, eDam, impact, overallRank, base_weight, ml_weight, useML, final_weight, candidateCount,
   targets,
   previewResultID,
   currentTurnCreature,
@@ -360,7 +572,7 @@ export async function handlePASubmission({
     .filter((target): target is string => target !== null);
 
   const { conditions, statusEffects } = extractActionEffects(action);
-  const normalized = normalizeAction(action);
+  const normalized = normalizeAction(action, currentTurnCreature);
   const requiredInputs = buildRequiredInputs(normalized);
 
   let resultID = "-1";
@@ -390,6 +602,12 @@ export async function handlePASubmission({
     actionProb: prob,
     actionEDam: eDam,
     actionImpact: impact,
+    actionRanking : overallRank,
+    base_weight : base_weight,
+    ml_weight : ml_weight,
+    useML : useML,
+    final_weight : final_weight,
+    candidateCount : candidateCount,
     targets: resolvedTargets,
     conditions,
     statusEffects,
@@ -403,7 +621,8 @@ export async function handlePASubmission({
     },
     timestamp: "",
   };
-
+  console.log("Setting draft", draft);
+  console.log("Normalized action session action:", normalized);
   setActionExecutionSession({
     action: normalized,
     requiredInputs,
@@ -425,8 +644,10 @@ export async function handleActionExecution({
   setActionExecutionSession,
   setManualLock,
   setInitiativeRefreshKey,
-}: HandleActionExecutionParams): Promise<void> {
-  if (!eid || !currentTurnCreature || !encounterData || !actionExecutionSession) return;
+}: HandleActionExecutionParams): Promise<void | string> {
+  if (!eid || !currentTurnCreature || !encounterData || !actionExecutionSession) {
+    return "Missing action execution context.";
+  }
 
   const executedAoeToken = aoeTokens.find(
     (token) => token.resultID === finalDraft.resultID
@@ -441,7 +662,7 @@ export async function handleActionExecution({
       setActionExecutionSession((prev) =>
         prev ? { ...prev, error: "Targets are required." } : prev
       );
-      return;
+      return "Targets are required.";
     }
 
     const payload = {
@@ -449,12 +670,33 @@ export async function handleActionExecution({
       token: executedAoeToken ?? null,
     };
 
-    await axiosTokenInstance.post(`/encounter/${eid}/simulate/ruleset`, payload);
+    console.log("Pre-execution payload:", payload);
+
+    try {
+      await axiosTokenInstance.post(`/encounter/${eid}/simulate/ruleset`, payload);
+    } catch (error: any) {
+      const detail = error.response?.data?.detail;
+      const message = Array.isArray(detail)
+        ? detail.map((item: unknown) => String(item)).join(", ")
+        : typeof detail === "string"
+          ? detail
+          : "Error with Action Execution";
+
+      console.error(message);
+
+      setActionExecutionSession((prev) =>
+        prev ? { ...prev, error: message } : prev
+      );
+
+      return message;
+    }
 
     const updatedEncounter = await getEncounter(eid);
     if (!updatedEncounter) {
-      console.error("Failed to reload encounter after action execution.");
-      return;
+      setActionExecutionSession((prev) =>
+        prev ? { ...prev, error: "Action execution failed." } : prev
+      );
+      return "Action execution failed.";
     }
 
     setEncounterData(updatedEncounter);
@@ -471,17 +713,28 @@ export async function handleActionExecution({
       return withoutExecuted;
     });
 
-    const newCurrentTurnCreature = getCurrentTurnCreatureFromEncounter(updatedEncounter);
-    setCurrentTurnCreature(newCurrentTurnCreature);
+    const newCurrentTurnCreature =
+      getCurrentTurnCreatureFromEncounter(updatedEncounter);
 
+    setCurrentTurnCreature(newCurrentTurnCreature);
     setActionExecutionSession(undefined);
     setManualLock(false);
     setInitiativeRefreshKey((prev) => prev + 1);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to execute action:", error);
+
+    const detail = error?.response?.data?.detail;
+    const message = Array.isArray(detail)
+      ? detail.map((item: unknown) => String(item)).join(", ")
+      : typeof detail === "string"
+        ? detail
+        : "Action execution failed.";
+
     setActionExecutionSession((prev) =>
-      prev ? { ...prev, error: "Action execution failed." } : prev
+      prev ? { ...prev, error: message } : prev
     );
+
+    return message;
   }
 }
 

@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import NavBar from '../components/homeComponents/NavBar';
-import HeroCarousel from '../components/homeComponents/HeroCarousel';
-// import PASection from '../components/homeComponents/PASection.tsx';
-// import HowToUseHome from './homeComponents/HowToUseHome.tsx';
-// import OpenSource from './homeComponents/OpenSource.tsx';
-import AboutUs from '../components/homeComponents/AboutUs.tsx';
-import SiteFooter from '../components/homeComponents/SiteFooter';
-import './HomePagePA.css';
+import NavBar from '../components/HomePage-Components/NavBar';
+import HeroCarousel from '../components/HomePage-Components/HeroCarousel';
+import PASection from '../components/HomePage-Components/PASection.tsx';
+
+
+// import HowToUseHome from './HomePage-Components/HowToUseHome.tsx';
+// import OpenSource from './HomePage-Components/OpenSource.tsx';
+import AboutUs from '../components/HomePage-Components/AboutUs.tsx';
+import SiteFooter from '../components/HomePage-Components/SiteFooter';
+import '../css/HomePagePA.css';
 
 const HomePagePA: React.FC = () => {
     const [isScrolled, setIsScrolled] = useState<boolean>(false);
@@ -27,7 +29,7 @@ const HomePagePA: React.FC = () => {
 
             <main className="pa-main">
                 <HeroCarousel />
-                {/*<PASection />*/}
+                <PASection />
                 {/*<HowToUseHome />*/}
                 {/*<OpenSource />*/}
                 <AboutUs />

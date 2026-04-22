@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import AnimatedList from "../../css/AnimatedList.tsx";
+import AnimatedList from "../Information/AnimatedList.tsx";
 import { Form, Row, Col, Dropdown, Modal, Button } from "react-bootstrap";
 import { getCharacters } from "../../api/CharactersGet.ts";
 import {type CharacterPayload} from "../../types/creature.ts";
