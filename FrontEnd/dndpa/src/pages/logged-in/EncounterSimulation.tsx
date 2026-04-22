@@ -343,6 +343,7 @@ function EncounterSimulation() {
                             <button
                                 type="button"
                                 className="pa-enc__btn pa-enc__btn--ghost"
+                                aria-pressed={!manualMode}
                                 disabled={isLairAction || actionExecutionSession !== undefined}
                                 onClick={() => {
                                     setManualMode(false);
@@ -358,6 +359,7 @@ function EncounterSimulation() {
                             <button
                                 type="button"
                                 className="pa-enc__btn pa-enc__btn--ghost"
+                                aria-pressed={manualMode}
                                 disabled={actionExecutionSession !== undefined || handlingNextTurn || manualLock}
                                 onClick={() => setManualState({
                                     actionExecutionSession, latestHoverRequestRef,

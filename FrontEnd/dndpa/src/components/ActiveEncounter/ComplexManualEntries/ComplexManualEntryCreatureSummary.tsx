@@ -1,5 +1,5 @@
 import { isPlayerCreature } from "../../../api/CreatureGet";
-
+import '../../../css/ManualEntry.css';
 import type {
     Creature,
     MonsterCreature,
@@ -12,23 +12,51 @@ export default function ComplexManualEntryCreatureSummary({
     creature: Creature;
 }) {
     if (isPlayerCreature(creature)) {
+        const player = creature as PlayerCreature;
         return (
             <>
-                <div><strong>Type:</strong> Player</div>
-                <div><strong>Name:</strong> {(creature as PlayerCreature).stats.name}</div>
-                <div><strong>Class:</strong> {(creature as PlayerCreature).stats.characterClass}</div>
-                <div><strong>Level:</strong> {(creature as PlayerCreature).stats.level}</div>
+                <div className="manual-entry-summary-row">
+                    <span className="manual-entry-summary-label">Type:</span>
+                    Player
+                </div>
+                <div className="manual-entry-summary-row">
+                    <span className="manual-entry-summary-label">Name:</span>
+                    {player.stats.name}
+                </div>
+                <div className="manual-entry-summary-row">
+                    <span className="manual-entry-summary-label">Class:</span>
+                    {player.stats.characterClass}
+                </div>
+                <div className="manual-entry-summary-row">
+                    <span className="manual-entry-summary-label">Level:</span>
+                    {player.stats.level}
+                </div>
             </>
         );
     }
-
+    const monster = creature as MonsterCreature;
     return (
         <>
-            <div><strong>Type:</strong> Monster</div>
-            <div><strong>Name:</strong> {(creature as MonsterCreature).name}</div>
-            <div><strong>CR:</strong> {(creature as MonsterCreature).cr}</div>
-            <div><strong>Creature Type:</strong> {(creature as MonsterCreature).creatureType}</div>
-            <div><strong>Size:</strong> {(creature as MonsterCreature).size}</div>
+            <div className="manual-entry-summary-row">
+                <span className="manual-entry-summary-label">Type:</span>
+                Monster
+            </div>
+            <div className="manual-entry-summary-row">
+                <span className="manual-entry-summary-label">Name:</span>
+                {monster.name}
+            </div>
+            <div className="manual-entry-summary-row">
+                <span className="manual-entry-summary-label">CR:</span>
+                {monster.cr}
+            </div>
+            <div className="manual-entry-summary-row">
+                <span className="manual-entry-summary-label">Creature Type:</span>
+                {monster.creatureType}
+            </div>
+            <div className="manual-entry-summary-row">
+                <span className="manual-entry-summary-label">Size:</span>
+                {monster.size}
+            </div>
         </>
     );
 }

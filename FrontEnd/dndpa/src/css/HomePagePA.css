@@ -1,13 +1,3 @@
-/* ==========================================================================
-   HomePagePA.css
-   --------------------------------------------------------------------------
-   Grayscale template stylesheet. All colors are white/gray/black so the
-   structure and architecture are the focus — swap in brand colors later.
-
-   Naming: BEM-ish, all classes prefixed with `pa-` to avoid collisions.
-   ========================================================================== */
-
-/* ---------- Design tokens ---------- */
 :root {
     --pa-bg: #0b0b0b;
     --pa-bg-elevated: #1a1a1a;
@@ -38,7 +28,6 @@
     --pa-transition: 220ms ease;
 }
 
-/* ---------- Reset-ish base ---------- */
 * {
     box-sizing: border-box;
 }
@@ -48,17 +37,12 @@ body {
     background: var(--pa-bg);
     color: var(--pa-text);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    /*font-family: 'Cinzel', serif;*/
     -webkit-font-smoothing: antialiased;
 }
 
 .pa-page {
     min-height: 100vh;
     background: var(--pa-bg);
-}
-
-.pa-main {
-    /* Hero starts at the top of the viewport, so no top padding here */
 }
 
 .pa-section-title {
@@ -69,9 +53,7 @@ body {
     color: var(--pa-text);
 }
 
-/* ==========================================================================
-   NAVIGATION
-   ========================================================================== */
+
 .pa-nav {
     position: fixed;
     top: 0;
@@ -414,7 +396,7 @@ body {
 
 .pa-news__featured-image {
     width: 100%;
-    aspect-ratio: 16 / 10;
+    aspect-ratio: 10 / 6;
     background-size: cover;
     background-position: center;
     background-color: var(--pa-bg-card);
@@ -424,7 +406,7 @@ body {
 }
 
 .pa-news__featured-link:hover .pa-news__featured-image {
-    transform: scale(1.01);
+    transform: scale(1.03);
 }
 
 .pa-news__featured-title {
@@ -449,7 +431,7 @@ body {
 }
 
 .pa-news__card:hover {
-    background: var(--pa-border);
+    background: var(--pa-bg-card);
 }
 
 .pa-news__card-link {
@@ -486,7 +468,7 @@ body {
 .pa-news__card-image {
     background-size: cover;
     background-position: center;
-    background-color: var(--pa-bg-elevated);
+    background-color: var(--pa-bg-card);
     min-height: 110px;
     border-radius: var(--pa-radius-md);
     margin: 8px;

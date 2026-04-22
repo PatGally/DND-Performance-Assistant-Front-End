@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import creatureGet, { isPlayerCreature } from "../../api/CreatureGet";
 import { getConditions } from "../../api/ConditionGet";
 import { getStatusEffects } from "../../api/StatusEffectsGet";
+import '../../css/ManualEntry.css'
 
 import type {
     Creature,
@@ -151,7 +152,7 @@ export default function ComplexManualEntry({
     }
 
     if (!creature || !baseline) {
-        return <div>Loading...</div>;
+        return <div className="manual-entry-loading">Loading...</div>;
     }
 
     const currentStatusEffects = Array.isArray(val("activeStatusEffects"))
@@ -210,30 +211,21 @@ export default function ComplexManualEntry({
         isPlayerCreature(creature) || monsterHasSpellSlots;
 
     return (
-        <div style={{ border: "1px solid #ccc", padding: 10 }}>
-            <div
-                style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: 10,
-                    gap: 12,
-                }}
-            >
-                <strong>{initiativeEntry.name}</strong>
-
+        <div className="manual-entry-wrap">
+            <div className="manual-entry-header">
+                <span className="manual-entry-title">{initiativeEntry.name}</span>
                 {onToggle && (
                     <button
                         type="button"
                         onClick={onToggle}
-                        style={{ cursor: "pointer" }}
-                    >
+                        className="manual-entry-btn manual-entry-btn-small">
                         Close
                     </button>
                 )}
             </div>
-
+            <hr className="manual-entry-red-rule" />
             <ComplexManualEntryCreatureSummary creature={creature} />
+            <hr className="manual-entry-thin-rule" />
 
             <ComplexManualEntrySection title="Core">
                 <ComplexManualEntryNumberInputField

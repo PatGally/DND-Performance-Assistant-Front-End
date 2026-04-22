@@ -46,9 +46,6 @@
     box-sizing: border-box;
 }
 
-/* ==========================================================================
-   MAP LAYER
-   -------------------------------------------------------------------------- */
 .pa-enc__map-layer {
     position: absolute;
     inset: 0;
@@ -153,9 +150,7 @@
     margin-left: 4px;
 }
 
-/* ==========================================================================
-   HEADER BUTTONS — visible-but-dimmed disabled states (Option C)
-   -------------------------------------------------------------------------- */
+
 .pa-enc__btn {
     display: inline-flex;
     align-items: center;
@@ -190,6 +185,18 @@
 /* Ghost = secondary (Ruleset, Manual) */
 .pa-enc__btn--ghost {
     background: var(--pa-enc-surface);
+}
+
+.pa-enc__btn--ghost[aria-pressed="true"]:not(:disabled) {
+    background: var(--pa-enc-text);
+    color: var(--pa-enc-ink);
+    border-color: var(--pa-enc-text);
+}
+
+.pa-enc__btn--ghost[aria-pressed="true"]:hover:not(:disabled) {
+    background: var(--pa-enc-text);
+    border-color: var(--pa-enc-text);
+    opacity: 0.92;
 }
 
 /* Primary = high-intent (Submit, Next Turn, Start) — white on dark */

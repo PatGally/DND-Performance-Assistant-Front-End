@@ -1,3 +1,4 @@
+import '../../../css/ManualEntry.css'
 export default function ComplexManualEntryCheckboxField({
     label,
     checked,
@@ -8,14 +9,7 @@ export default function ComplexManualEntryCheckboxField({
     onChange: (next: boolean) => void;
 }) {
     return (
-        <label
-            style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginTop: 4,
-            }}
-        >
+        <label className="manual-entry-checkbox">
             <input
                 type="checkbox"
                 checked={checked}

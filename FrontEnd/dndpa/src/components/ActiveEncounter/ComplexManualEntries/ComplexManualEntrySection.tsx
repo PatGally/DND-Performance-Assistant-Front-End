@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import '../../../css/ManualEntry.css';
 
 export default function ComplexManualEntrySection({
     title,
@@ -8,15 +9,8 @@ export default function ComplexManualEntrySection({
     children: ReactNode;
 }) {
     return (
-        <div
-            style={{
-                marginBottom: 14,
-                border: "1px solid #555",
-                borderRadius: 6,
-                padding: 10,
-            }}
-        >
-            <div style={{ fontWeight: 700, marginBottom: 8 }}>{title}</div>
+        <div className="manual-entry-section">
+            <div className="manual-entry-section-title">{title}</div>
             {children}
         </div>
     );

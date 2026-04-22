@@ -722,12 +722,12 @@ export default function ActiveMap({
                 transform: "translate(-50%, 2px)",
                 maxWidth: cellWidth,
                 minHeight: cellHeight * 0.18,
-                maxHeight: cellHeight * .5,
+                maxHeight: cellHeight * .50,
                 padding: "1px 4px",
                 background: "rgba(0, 0, 0, 0.5)",
                 color: "#fff",
-                fontSize: `${Math.max(8, Math.floor(cellHeight * 0.16))}px`,
-                lineHeight: 1.1,
+                fontSize: `${Math.max(8, Math.floor(cellHeight * 0.22))}px`,
+                lineHeight: 1.2,
                 textAlign: "center",
                 borderRadius: "4px",
                 whiteSpace: "nowrap",
@@ -738,7 +738,7 @@ export default function ActiveMap({
               }}
               title={creature.name}
             >
-              {creature.name}
+              {creature.name }
             </div>
           </div>
         );
