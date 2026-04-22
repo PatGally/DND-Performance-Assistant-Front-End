@@ -1,0 +1,104 @@
+.pa-exit {
+    --pa-exit-bg: rgba(15, 24, 40, 0.95);
+    --pa-exit-border: rgba(255, 255, 255, 0.12);
+    --pa-exit-text: #ffffff;
+    --pa-exit-text-dim: rgba(255, 255, 255, 0.75);
+    --pa-exit-hover: rgba(255, 255, 255, 0.08);
+    --pa-exit-danger: #f87171;
+    --pa-exit-transition: 180ms ease;
+    --pa-exit-radius: 10px;
+
+    position: relative;
+    display: inline-block;
+}
+
+.pa-exit *,
+.pa-exit *::before,
+.pa-exit *::after {
+    box-sizing: border-box;
+}
+
+.pa-exit__trigger {
+    background: transparent;
+    border: none;
+    color: var(--pa-exit-text);
+    cursor: pointer;
+    padding: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--pa-exit-radius);
+    transition: background-color var(--pa-exit-transition);
+}
+
+.pa-exit__trigger:hover,
+.pa-exit__trigger[aria-expanded="true"] {
+    background: var(--pa-exit-hover);
+}
+
+.pa-exit__trigger:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15);
+}
+
+/* ---------- Dropdown menu ---------- */
+.pa-exit__menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 200px;
+    background: var(--pa-exit-bg);
+    border: 1px solid var(--pa-exit-border);
+    border-radius: var(--pa-exit-radius);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    overflow: hidden;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: pa-exit-fade-in 150ms ease;
+}
+
+@keyframes pa-exit-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ---------- Menu item ---------- */
+.pa-exit__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    color: var(--pa-exit-text-dim);
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color var(--pa-exit-transition), color var(--pa-exit-transition);
+}
+
+.pa-exit__item:hover {
+    background: var(--pa-exit-hover);
+    color: var(--pa-exit-text);
+}
+
+.pa-exit__item--danger {
+    color: var(--pa-exit-danger);
+}
+
+.pa-exit__item--danger:hover {
+    color: var(--pa-exit-danger);
+}
+
+.pa-exit__divider {
+    background: var(--pa-exit-border);
+    margin: 0;
+}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-
+import '../../../css/ManualEntry.css';
 import { fetchUUID } from "../../../api/UUIDGet";
 
 import ComplexManualEntryMultiSelectSearch from "./ComplexManualEntryMultiSelectSearch";
@@ -86,44 +86,38 @@ export default function ComplexManualEntryStatusEffectEditor({
     }
 
     return (
-        <div style={{ marginBottom: 12 }}>
-            <div style={{ marginBottom: 6 }}>Active Status Effects</div>
+        <div className="manual-entry-status-effects">
+            <div className="manual-entry-multiselect-label">Active Status Effects</div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
+            <div className="manual-entry-status-list">
                 {value.map((record, index) => {
                     const attrs = record.effect.attribute ?? [];
                     const roll = record.effect.roll ?? "";
 
                     return (
-                        <div
-                            key={`${record.name}-${index}`}
-                            style={{
-                                border: "1px solid #555",
-                                borderRadius: 6,
-                                padding: 8,
-                                background: "#2b2b2b",
-                            }}
-                        >
-                            <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-                                <strong>{record.name}</strong>
+                        <div key={`${record.name}-${index}`} className="manual-entry-status-card">
+                            <div className="manual-entry-status-card-header">
+                                <span className="manual-entry-status-name">{record.name}</span>
                                 <button
                                     type="button"
                                     onClick={() => removeStatusEffect(index)}
-                                    style={{ cursor: "pointer" }}
+                                    className="manual-entry-btn manual-entry-btn-small"
                                 >
                                     Remove
                                 </button>
                             </div>
 
                             {attrs.length > 0 && (
-                                <div style={{ marginTop: 4 }}>
-                                    <strong>Attributes:</strong> {attrs.join(", ")}
+                                <div className="manual-entry-status-detail">
+                                    <span className="manual-entry-status-detail-label">Attributes:</span>
+                                    {attrs.join(", ")}
                                 </div>
                             )}
 
                             {roll && (
-                                <div style={{ marginTop: 4 }}>
-                                    <strong>Roll:</strong> {roll}
+                                <div className="manual-entry-status-detail">
+                                    <span className="manual-entry-status-detail-label">Roll:</span>
+                                    {roll}
                                 </div>
                             )}
                         </div>
@@ -131,9 +125,9 @@ export default function ComplexManualEntryStatusEffectEditor({
                 })}
             </div>
 
-            <div style={{ border: "1px solid #555", borderRadius: 6, padding: 10 }}>
+            <div className="manual-entry-status-builder">
                 <div style={{ marginBottom: 6 }}>
-                    <strong>Add Status Effect</strong>
+                    <span className="manual-entry-status-builder-title">Add Status Effect</span>
                 </div>
 
                 <select
@@ -142,7 +136,7 @@ export default function ComplexManualEntryStatusEffectEditor({
                         setSelectedStatusEffect(e.target.value);
                         resetBuilderFields();
                     }}
-                    style={{ width: "100%", marginBottom: 10 }}
+                    className="manual-entry-select"
                 >
                     <option value="">Select status effect</option>
                     {options.map((effect) => (
@@ -162,20 +156,20 @@ export default function ComplexManualEntryStatusEffectEditor({
                 )}
 
                 {needsRollPrompt && (
-                    <div style={{ marginBottom: 12 }}>
-                        <div>Roll</div>
+                    <div className="manual-entry-text-field">
+                        <div className="manual-entry-field-label">Roll</div>
                         <input
                             type="text"
                             value={rollValue}
                             onChange={(e) => setRollValue(e.target.value)}
                             placeholder="Enter roll value"
-                            style={{ width: "100%" }}
+                            className="manual-entry-input"
                         />
                     </div>
                 )}
 
                 {error && (
-                    <div style={{ color: "#ff6b6b", marginBottom: 8 }}>
+                    <div className="manual-entry-error">
                         {error}
                     </div>
                 )}
@@ -184,7 +178,7 @@ export default function ComplexManualEntryStatusEffectEditor({
                     type="button"
                     onClick={addStatusEffect}
                     disabled={isCreating}
-                    style={{ cursor: isCreating ? "not-allowed" : "pointer" }}
+                    className="manual-entry-btn"
                 >
                     {isCreating ? "Creating..." : "Add Status Effect"}
                 </button>

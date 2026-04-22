@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-
+import '../../../css/ManualEntry.css';
 import ComplexManualEntrySection from "./ComplexManualEntrySection";
 import {
     serializeSpellSlots,
@@ -41,24 +41,16 @@ export default function ComplexManualEntrySpellSlotsEditor({
 
     return (
         <ComplexManualEntrySection title="Spell Slots">
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "56px minmax(0, 1fr)",
-                    gap: 8,
-                    alignItems: "center",
-                    width: "100%",
-                }}
-            >
-                <strong>Level</strong>
-                <strong>Slots</strong>
+            <div className="manual-entry-spell-grid">
+                <span className="manual-entry-spell-header" >Level</span>
+                <span className="manual-entry-spell-header">Slots</span>
 
                 {rows.map((row, index) => (
                     <div
                         key={`spell-slot-${index}`}
-                        style={{ display: "contents" }}
+                        className="manual-entry-spell-row"
                     >
-                        <div>{index + 1}</div>
+                        <div className="manual-entry-spell-level" >{index + 1}</div>
 
                         <input
                             type="number"
@@ -66,11 +58,7 @@ export default function ComplexManualEntrySpellSlotsEditor({
                             max={row.max}
                             value={row.current}
                             onChange={(e) => updateRow(index, e.target.value)}
-                            style={{
-                                width: "100%",
-                                minWidth: 0,
-                                boxSizing: "border-box",
-                            }}
+                            className="manual-entry-input"
                         />
                     </div>
                 ))}

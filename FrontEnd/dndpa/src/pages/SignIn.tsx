@@ -4,7 +4,7 @@ import React, {useState} from "react";
 import d20 from '../assets/d20.png'
 import {login} from "../api/Login.ts"
 import {googleLogin} from '../api/GoogleLogin.ts'
-import "./HomePagePA.css"
+import "../css/HomePagePA.css"
 
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";

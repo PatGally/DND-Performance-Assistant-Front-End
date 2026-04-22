@@ -2,7 +2,7 @@ import HomeDashNav from '../../components/nav/HomeDashNav';
 import LoadCharacter from "../../components/Home-Dashboard/LoadCharacter";
 import EncounterView from "../../components/Home-Dashboard/EncounterView";
 import CreateEncounter from "../../components/Home-Dashboard/CreateEncounter";
-import UserMenu from "./UserMenu.tsx";
+import UserMenu from "../../components/Home-Dashboard/UserMenu.tsx";
 import { useEffect, useState } from 'react';
 import CharCreation from "../../components/Home-Dashboard/CharCreation";
 import { getMonsters} from "../../api/MonstersGet";
@@ -17,7 +17,7 @@ import Survey from "../../components/Home-Dashboard/Survey"
 import LandingPage from "../../components/Home-Dashboard/LandingPage.tsx";
 import BugReport from "../../components/Home-Dashboard/BugReport.tsx";
 
-import PixelBlast from '../../css/PixelBlast';
+import PixelBlast from '../../components/Complex-Components/PixelBlast.tsx';
 
 function HomeDashboard() {
     const [activePage, setActivePage] = useState('LANDING_PAGE');
@@ -25,6 +25,7 @@ function HomeDashboard() {
     const [encounters, setEncounters] = useState<EncounterWithPacket[]>([]);
     const [loadingEncounter, setLoadingEncounter] = useState<boolean>(false);
     const [encounterLimitReached, setEncounterLimitReached] = useState(false);
+
     const MAX_ENCOUNTERS = 5;
 
     useEffect(() => {
@@ -95,7 +96,15 @@ function HomeDashboard() {
     const handleCharacterCreated = async() => {
         setActivePage("LOAD_CHARACTERS");
     }
-
+    const handleSurveySelected = async() => {
+        setActivePage("SURVEY");
+    }
+    const handleBugReportSelected = async() => {
+        setActivePage("BUG_REPORT");
+    }
+    const handleUserGuideSelected = async() => {
+        setActivePage("HOW_TO_USE");
+    }
     return (
         <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100vh',
             overflow: 'hidden',
@@ -139,10 +148,10 @@ function HomeDashboard() {
                 </div>
 
                 <div style={{ flex: 1, overflowY: 'auto' }}>
-                    {activePage === 'LANDING_PAGE' && <LandingPage />}
-                    {activePage === 'SAVED_ENCOUNTERS' && <EncounterView encounters={encounters} loadingEncounter={loadingEncounter} onDeleteEncounter={handleDeleteEncounter} />}
-                    {activePage === 'CREATE_ENCOUNTER' && <CreateEncounter
-                        monsters={monsters} onEncounterCreated={handleEncounterCreated}
+                    {activePage === 'LANDING_PAGE' && <LandingPage onSurveySelected={handleSurveySelected} onBugReportSelected={handleBugReportSelected} onUserGuideSelected={handleUserGuideSelected}/>}
+                    {activePage === 'SAVED_ENCOUNTERS' && <EncounterView encounters={encounters} loadingEncounter={loadingEncounter}
+                                                                         onDeleteEncounter={handleDeleteEncounter} />}
+                    {activePage === 'CREATE_ENCOUNTER' && <CreateEncounter monsters={monsters} onEncounterCreated={handleEncounterCreated}
                         encounterLimitReached={encounterLimitReached}
                     />}
                     {activePage === 'LOAD_CHARACTERS' && <LoadCharacter onDeletePlayer={onDeletePlayer} />}

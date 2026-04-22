@@ -113,7 +113,7 @@ function AddGridSize({ formData, updateFormData }: Props) {
                                 <Form.Group>
                                     <Form.Label className="text-white d-flex justify-content-between">
                                         <span>Grid Line Weight</span>
-                                        <span className="text-white-50" style={{ fontSize: '0.8rem' }}>{lineWidth}px</span>
+                                        <span className="text-white-80" style={{ fontSize: '0.9rem' }}>{lineWidth}px</span>
                                     </Form.Label>
                                     <Form.Range
                                         min={1}
@@ -127,7 +127,7 @@ function AddGridSize({ formData, updateFormData }: Props) {
                                 <Form.Group>
                                     <Form.Label className="text-white d-flex justify-content-between">
                                         <span>X Offset</span>
-                                        <span className="text-white-50" style={{ fontSize: '0.8rem' }}>{offsetX}px</span>
+                                        <span className="text-white-80" style={{ fontSize: '0.9rem' }}>{offsetX}px</span>
                                     </Form.Label>
                                     <Form.Range
                                         min={-100}
@@ -141,7 +141,7 @@ function AddGridSize({ formData, updateFormData }: Props) {
                                 <Form.Group>
                                     <Form.Label className="text-white d-flex justify-content-between">
                                         <span>Y Offset</span>
-                                        <span className="text-white-50" style={{ fontSize: '0.8rem' }}>{offsetY}px</span>
+                                        <span className="text-white-80" style={{ fontSize: '0.9rem' }}>{offsetY}px</span>
                                     </Form.Label>
                                     <Form.Range
                                         min={-100}
@@ -157,7 +157,7 @@ function AddGridSize({ formData, updateFormData }: Props) {
                                 <Form.Group>
                                     <Form.Label className="text-white d-flex justify-content-between">
                                         <span>X Cell Size</span>
-                                        <span className="text-white-50" style={{ fontSize: '0.8rem' }}>{scaleX.toFixed(2)}x</span>
+                                        <span className="text-white-80" style={{ fontSize: '0.9rem' }}>{scaleX.toFixed(2)}x</span>
                                     </Form.Label>
                                     <Form.Range
                                         min={50}
@@ -171,7 +171,7 @@ function AddGridSize({ formData, updateFormData }: Props) {
                                 <Form.Group>
                                     <Form.Label className="text-white d-flex justify-content-between">
                                         <span>Y Cell Size</span>
-                                        <span className="text-white-50" style={{ fontSize: '0.8rem' }}>{scaleY.toFixed(2)}x</span>
+                                        <span className="text-white-80" style={{ fontSize: '0.9rem' }}>{scaleY.toFixed(2)}x</span>
                                     </Form.Label>
                                     <Form.Range
                                         min={50}
@@ -184,8 +184,8 @@ function AddGridSize({ formData, updateFormData }: Props) {
                         </Row>
                         <div className="text-end">
                             <small
-                                className="text-white-50"
-                                style={{ cursor: 'pointer', textDecoration: 'underline', fontSize: '0.75rem' }}
+                                className="text-white-80"
+                                style={{ cursor: 'pointer', textDecoration: 'underline', fontSize: '0.95rem' }}
                                 onClick={() => { setOffsetX(0); setOffsetY(0); setScaleX(1); setScaleY(1); }}
                             >
                                 Reset alignment

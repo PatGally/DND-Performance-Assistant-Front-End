@@ -5,7 +5,7 @@ import d20 from '../assets/d20.png'
 import { signup } from "../api/SignUpPost.ts";
 import {googleLogin} from '../api/GoogleLogin.ts'
 
-import "./HomePagePA.css"
+import "../css/HomePagePA.css"
 
 import {Link} from "react-router-dom";
 import { useForm,  type SubmitHandler } from "react-hook-form";

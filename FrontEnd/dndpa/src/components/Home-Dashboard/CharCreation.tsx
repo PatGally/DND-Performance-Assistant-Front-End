@@ -223,6 +223,7 @@ function CharCreation({onCharacterCreated}: Props) {
                             {...register('name', {
                                 required: 'Player name is required',
                                 minLength: { value: 2, message: 'Name too short' },
+                                maxLength: {value: 20, message: 'Name is to long: 20 Characters Max'}
                             })}
                         />
                         <Form.Control.Feedback type="invalid">
@@ -401,7 +402,7 @@ function CharCreation({onCharacterCreated}: Props) {
                         className="pa-char-create__submit"
                         disabled={isSubmitting || loadingCid}
                     >
-                        {isSubmitting ? 'Creating...' : 'Create Character'}
+                        {isSubmitting ? 'Creating...' : 'Create Player'}
                     </Button>
                 </div>
             </Form>

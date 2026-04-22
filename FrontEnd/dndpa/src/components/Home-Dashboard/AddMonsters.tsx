@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import type { EncounterFormData } from "./CreateEncounter";
 import { type MonsterCreature } from "../../types/creature.ts";
-import AnimatedList from "../../css/AnimatedList.tsx";
+import AnimatedList from "../Information/AnimatedList.tsx";
 import { Form, Row, Col } from "react-bootstrap";
 
 

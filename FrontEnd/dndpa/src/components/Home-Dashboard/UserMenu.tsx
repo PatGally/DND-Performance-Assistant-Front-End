@@ -1,0 +1,110 @@
+import { useState, useRef, useEffect } from "react";
+import { PersonCircle, BoxArrowRight } from "react-bootstrap-icons";
+import { useNavigate } from "react-router-dom";
+import { logout } from "../../api/logout.ts";
+
+const UserMenu = () => {
+    const [open, setOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+        } catch (e) {
+            console.error("Logout failed", e);
+        } finally {
+            navigate("/");
+        }
+    };
+
+    return (
+        <div ref={menuRef} style={{ position: "relative", display: "inline-block" }}>
+            <button
+                onClick={() => setOpen((prev) => !prev)}
+                style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "4px",
+                    display: "flex",
+                    alignItems: "center",
+                    color: "white",
+                }}
+            >
+                <PersonCircle size={28} />
+            </button>
+
+            {open && (
+                <div
+                    style={{
+                        position: "absolute",
+                        top: "calc(100% + 8px)",
+                        right: 0,
+                        backgroundColor: "rgba(15, 24, 40, 0.85)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: "10px",
+                        boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+                        minWidth: "180px",
+                        zIndex: 1000,
+                        overflow: "hidden",
+                        animation: "fadeIn 0.15s ease",
+                    }}
+                >
+                    <style>{`
+                        @keyframes fadeIn {
+                            from { opacity: 0; transform: translateY(-6px); }
+                            to   { opacity: 1; transform: translateY(0); }
+                        }
+                        .menu-item {
+                            display: flex;
+                            align-items: center;
+                            gap: 10px;
+                            padding: 12px 16px;
+                            cursor: pointer;
+                            color: #e0e0e0;
+                            font-size: 14px;
+                            transition: background 0.15s;
+                            border: none;
+                            background: none;
+                            width: 100%;
+                            text-align: left;
+                        }
+                        .menu-item:hover {
+                            background: rgba(255,255,255,0.07);
+                        }
+                        .menu-divider {
+                            height: 1px;
+                            background: rgba(255,255,255,0.08);
+                            margin: 0;
+                        }
+                        .logout-item {
+                            color: #ff6b6b !important;
+                        }
+                    `}</style>
+
+
+
+                    <div className="menu-divider" />
+
+                    <button className="menu-item logout-item" onClick={handleLogout}>
+                        <BoxArrowRight size={'1.4rem'} />
+                        <span>Sign Out</span>
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default UserMenu;

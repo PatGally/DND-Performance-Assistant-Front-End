@@ -1,0 +1,654 @@
+.pa-enc {
+    --pa-enc-ink: #0F1828;
+    --pa-enc-bg-base: #000000;
+    --pa-enc-tint: rgba(15, 24, 40, 0.85);
+    --pa-enc-tint-soft: rgba(15, 24, 40, 0.6);
+
+    --pa-enc-surface: rgba(255, 255, 255, 0.06);
+    --pa-enc-surface-hover: rgba(255, 255, 255, 0.1);
+    --pa-enc-surface-strong: rgba(255, 255, 255, 0.14);
+
+    --pa-enc-border: rgba(255, 255, 255, 0.12);
+    --pa-enc-border-strong: rgba(255, 255, 255, 0.25);
+
+    --pa-enc-text: #ffffff;
+    --pa-enc-text-dim: rgba(255, 255, 255, 0.7);
+    --pa-enc-text-muted: rgba(255, 255, 255, 0.45);
+    --pa-enc-text-disabled: rgba(255, 255, 255, 0.35);
+
+    --pa-enc-error: #f87171;
+    --pa-enc-success: rgba(255, 255, 255, 0.95);
+
+    --pa-enc-radius-sm: 6px;
+    --pa-enc-radius-md: 10px;
+    --pa-enc-radius-lg: 14px;
+    --pa-enc-radius-pill: 999px;
+
+    --pa-enc-header-height: 64px;
+    --pa-enc-transition: 180ms ease;
+}
+
+
+.pa-enc {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    background-color: var(--pa-enc-bg-base);
+    color: var(--pa-enc-text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+.pa-enc *,
+.pa-enc *::before,
+.pa-enc *::after {
+    box-sizing: border-box;
+}
+
+.pa-enc__map-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+.pa-enc__map-viewport {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    cursor: grab;
+}
+
+.pa-enc__map-viewport:active {
+    cursor: grabbing;
+}
+
+.pa-enc__map-content {
+    transform-origin: 0 0;
+    will-change: transform;
+    display: inline-block;
+}
+
+
+.pa-enc__header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
+    height: var(--pa-enc-header-height);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    pointer-events: none; /* allow map interactions between buttons */
+    background: linear-gradient(
+            180deg,
+            rgba(15, 24, 40, 0.85) 60%,
+            rgba(15, 24, 40, 0.55) 95%,
+            rgba(15, 24, 40, 0) 100%
+    );
+}
+
+.pa-enc__header > * {
+    pointer-events: auto;
+}
+
+.pa-enc__header-title {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 40%;
+}
+
+.pa-enc__title-text {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--pa-enc-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+}
+
+.pa-enc__header-controls {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.pa-enc__turn-label {
+    font-size: 13px;
+    color: var(--pa-enc-text-dim);
+    padding: 6px 12px;
+    background: var(--pa-enc-tint-soft);
+    border: 1px solid var(--pa-enc-border);
+    border-radius: var(--pa-enc-radius-pill);
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pa-enc__turn-label-prefix {
+    color: var(--pa-enc-text-muted);
+}
+
+.pa-enc__turn-label-value {
+    color: var(--pa-enc-text);
+    font-weight: 600;
+}
+
+.pa-enc__exit-slot {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 4px;
+}
+
+
+.pa-enc__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 18px;
+    border-radius: var(--pa-enc-radius-pill);
+    border: 1px solid var(--pa-enc-border);
+    background: var(--pa-enc-surface);
+    color: var(--pa-enc-text);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+            background-color var(--pa-enc-transition),
+            border-color var(--pa-enc-transition),
+            color var(--pa-enc-transition),
+            opacity var(--pa-enc-transition);
+}
+
+.pa-enc__btn:hover:not(:disabled) {
+    background: var(--pa-enc-surface-hover);
+    border-color: var(--pa-enc-border-strong);
+}
+
+.pa-enc__btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15);
+}
+
+/* Ghost = secondary (Ruleset, Manual) */
+.pa-enc__btn--ghost {
+    background: var(--pa-enc-surface);
+}
+
+.pa-enc__btn--ghost[aria-pressed="true"]:not(:disabled) {
+    background: var(--pa-enc-text);
+    color: var(--pa-enc-ink);
+    border-color: var(--pa-enc-text);
+}
+
+.pa-enc__btn--ghost[aria-pressed="true"]:hover:not(:disabled) {
+    background: var(--pa-enc-text);
+    border-color: var(--pa-enc-text);
+    opacity: 0.92;
+}
+
+/* Primary = high-intent (Submit, Next Turn, Start) — white on dark */
+.pa-enc__btn--primary {
+    background: var(--pa-enc-text);
+    color: var(--pa-enc-ink);
+    border-color: var(--pa-enc-text);
+}
+
+.pa-enc__btn--primary:hover:not(:disabled) {
+    background: var(--pa-enc-text);
+    border-color: var(--pa-enc-text);
+    opacity: 0.92;
+}
+
+/* Disabled (Option C): visible, clearly unusable, but not hidden */
+.pa-enc__btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    color: var(--pa-enc-text-disabled);
+    border-color: var(--pa-enc-border);
+    background: var(--pa-enc-surface);
+}
+
+.pa-enc__btn--primary:disabled {
+    background: rgba(255, 255, 255, 0.5);
+    color: var(--pa-enc-ink);
+    border-color: transparent;
+    opacity: 0.55;
+}
+
+/* ==========================================================================
+   EDGE PILLS — sticky toggle tabs for initiative / action panels
+   -------------------------------------------------------------------------- */
+.pa-enc__edge-pill {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 30;
+    width: 32px;
+    height: 64px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--pa-enc-border);
+    background: var(--pa-enc-tint);
+    color: var(--pa-enc-text);
+    cursor: pointer;
+    transition:
+            background-color var(--pa-enc-transition),
+            border-color var(--pa-enc-transition),
+            width var(--pa-enc-transition);
+}
+
+.pa-enc__edge-pill:hover {
+    background: var(--pa-enc-surface-strong);
+    border-color: var(--pa-enc-border-strong);
+    width: 40px;
+}
+
+.pa-enc__edge-pill svg {
+    width: 22px;
+    height: 22px;
+}
+
+/* Left edge: flush with left side, rounded on the right only */
+.pa-enc__edge-pill--left {
+    left: 0;
+    border-left: none;
+    border-top-right-radius: var(--pa-enc-radius-md);
+    border-bottom-right-radius: var(--pa-enc-radius-md);
+}
+
+/* Right edge: flush with right side, rounded on the left only */
+.pa-enc__edge-pill--right {
+    right: 0;
+    border-right: none;
+    border-top-left-radius: var(--pa-enc-radius-md);
+    border-bottom-left-radius: var(--pa-enc-radius-md);
+}
+
+/* The close-pills attach to the outer edge of an open side panel */
+.pa-enc__edge-pill--left-close {
+    right: -32px;
+    left: auto;
+    border-top-right-radius: var(--pa-enc-radius-md);
+    border-bottom-right-radius: var(--pa-enc-radius-md);
+    border-left: none;
+}
+
+.pa-enc__edge-pill--right-close {
+    left: -32px;
+    right: auto;
+    border-top-left-radius: var(--pa-enc-radius-md);
+    border-bottom-left-radius: var(--pa-enc-radius-md);
+    border-right: none;
+}
+
+/* ==========================================================================
+   SIDE PANELS — left (initiative) / right (action)
+   -------------------------------------------------------------------------- */
+.pa-enc__side-panel {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 20%;
+    min-width: 260px;
+    max-width: 340px;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    padding-top: var(--pa-enc-header-height);
+}
+/*tablet*/
+@media (max-width: 900px) {
+    .pa-enc__side-panel {
+        width: 20%;
+        min-width: 80px;
+        max-width: 100px;
+    }
+}
+/*phones*/
+/*@media (max-width: 600px) {*/
+/*    .pa-enc__bottom-card {*/
+/*        width: calc(100vw - 16px);*/
+/*    }*/
+/*}*/
+/*phone*/
+@media (max-width: 600px) {
+    .pa-enc__side-panel {
+        width: 20%;
+        min-width: 0;
+        max-width: 280px;
+    }
+}
+
+.pa-enc__side-panel--left {
+    left: 0;
+}
+
+.pa-enc__side-panel--right {
+    right: 0;
+}
+.pa-enc__side-panel--left--border{
+    border-radius: 0 20px 20px 0;
+}
+.pa-enc__side-panel--right--border{
+    border-radius: 20px 0 0 20px;
+}
+
+.pa-enc__side-panel-inner {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 12px;
+    /*background-color: var(--pa-enc-bg-base);*/
+    background-image: linear-gradient(var(--pa-enc-tint), var(--pa-enc-tint));
+    color: var(--pa-enc-text);
+
+}
+
+/* ==========================================================================
+   BOTTOM CARD — Recommendation / InputHandler container
+   -------------------------------------------------------------------------- */
+.pa-enc__bottom-card {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 15;
+    width: min(560px, calc(100vw - 32px));
+    max-height: calc(100vh - var(--pa-enc-header-height) - 32px);
+    overflow-y: auto;
+    padding: 16px 20px;
+    border-radius: var(--pa-enc-radius-lg);
+    background: var(--pa-enc-tint);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--pa-enc-border);
+    color: var(--pa-enc-text);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.pa-enc__bottom-card-title {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 4px 0;
+    color: var(--pa-enc-text);
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.pa-enc__bottom-card-subtitle {
+    font-size: 14px;
+    color: var(--pa-enc-text-dim);
+    margin: 0 0 12px 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* ==========================================================================
+   INPUT HANDLER — refactored from Bootstrap. Scoped under .pa-enc so the
+   styles don't leak to any other Bootstrap forms in the app.
+   -------------------------------------------------------------------------- */
+.pa-enc .pa-input-handler {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    width: 100%;
+}
+
+.pa-enc .pa-input-handler__title {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--pa-enc-text);
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.pa-enc .pa-input-handler__helper {
+    font-size: 13px;
+    color: var(--pa-enc-text-dim);
+    margin: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.pa-enc .pa-input-handler__helper--muted {
+    color: var(--pa-enc-text-muted);
+}
+
+.pa-enc .pa-input-handler__targets {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Target checkbox/radio rows */
+.pa-enc .pa-input-handler .form-check {
+    padding-left: 1.75em;
+    margin-bottom: 0;
+    min-height: auto;
+    color: var(--pa-enc-text);
+}
+
+.pa-enc .pa-input-handler .form-check-label {
+    font-size: 14px;
+    color: var(--pa-enc-text-dim);
+    cursor: pointer;
+    transition: color var(--pa-enc-transition);
+}
+
+.pa-enc .pa-input-handler .form-check:hover .form-check-label {
+    color: var(--pa-enc-text);
+}
+
+.pa-enc .pa-input-handler .form-check-input {
+    background-color: var(--pa-enc-surface);
+    border: 1px solid var(--pa-enc-border-strong);
+    cursor: pointer;
+}
+
+.pa-enc .pa-input-handler .form-check-input:checked {
+    background-color: var(--pa-enc-text);
+    border-color: var(--pa-enc-text);
+}
+
+.pa-enc .pa-input-handler .form-check-input[type="checkbox"]:checked {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='none' stroke='%230F1828' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3 6-6'/%3E%3C/svg%3E");
+}
+
+.pa-enc .pa-input-handler .form-check-input:focus {
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15);
+    border-color: var(--pa-enc-text);
+}
+
+/* Per-target result block */
+.pa-enc .pa-input-handler__target-block {
+    padding: 12px;
+    border: 1px solid var(--pa-enc-border);
+    border-radius: var(--pa-enc-radius-sm);
+    background: var(--pa-enc-surface);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+}
+
+.pa-enc .pa-input-handler__target-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--pa-enc-text);
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.pa-enc .pa-input-handler__field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.pa-enc .pa-input-handler__field-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--pa-enc-text-dim);
+    margin: 0;
+}
+
+/* Scoped form-control overrides — same treatment as the character form */
+.pa-enc .pa-input-handler__input.form-control {
+    background-color: var(--pa-enc-surface);
+    border: 1px solid var(--pa-enc-border);
+    color: var(--pa-enc-text);
+    border-radius: var(--pa-enc-radius-sm);
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+.pa-enc .pa-input-handler__input.form-control:hover {
+    background-color: var(--pa-enc-surface-hover);
+}
+
+.pa-enc .pa-input-handler__input.form-control:focus {
+    background-color: var(--pa-enc-surface-hover);
+    border-color: var(--pa-enc-border-strong) !important;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08) !important;
+    color: var(--pa-enc-text);
+    outline: none;
+}
+
+/* Error text */
+.pa-enc .pa-input-handler__error {
+    color: var(--pa-enc-error);
+    font-size: 12px;
+    margin: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* Action row + buttons inside the input handler */
+.pa-enc .pa-input-handler__actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.pa-enc .pa-input-handler__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 20px;
+    border-radius: var(--pa-enc-radius-pill);
+    border: 1px solid var(--pa-enc-border);
+    background: var(--pa-enc-surface);
+    color: var(--pa-enc-text);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--pa-enc-transition), border-color var(--pa-enc-transition);
+}
+
+.pa-enc .pa-input-handler__btn:hover:not(:disabled) {
+    background: var(--pa-enc-surface-hover);
+    border-color: var(--pa-enc-border-strong);
+}
+
+.pa-enc .pa-input-handler__btn--back {
+    /* Ghost — same as default */
+}
+
+.pa-enc .pa-input-handler__btn--next {
+    background: var(--pa-enc-text);
+    color: var(--pa-enc-ink);
+    border-color: var(--pa-enc-text);
+}
+
+.pa-enc .pa-input-handler__btn--next:hover:not(:disabled) {
+    background: var(--pa-enc-text);
+    opacity: 0.92;
+}
+
+.pa-enc .pa-input-handler__btn--submit {
+    background: var(--pa-enc-text);
+    color: var(--pa-enc-ink);
+    border-color: var(--pa-enc-text);
+}
+
+.pa-enc .pa-input-handler__btn--submit:hover:not(:disabled) {
+    background: var(--pa-enc-text);
+    opacity: 0.92;
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   --------------------------------------------------------------------------
+   On narrow viewports:
+   - Header wraps so buttons don't overflow.
+   - Side panels become narrower (bounded by min-width) and overlay the map.
+   - Bottom card shrinks to leave gutter on both sides.
+   ========================================================================== */
+@media (max-width: 900px) {
+    .pa-enc__header {
+        height: auto;
+        min-height: var(--pa-enc-header-height);
+        padding: 10px 16px;
+        flex-wrap: wrap;
+        background: linear-gradient(
+                180deg,
+                rgba(15, 24, 40, 0.9) 0%,
+                rgba(15, 24, 40, 0.4) 100%
+        );
+    }
+
+    .pa-enc__header-title {
+        max-width: 100%;
+    }
+
+    .pa-enc__title-text {
+        font-size: 16px;
+    }
+
+    .pa-enc__header-controls {
+        justify-content: flex-start;
+    }
+
+    .pa-enc__turn-label {
+        max-width: 100%;
+    }
+
+    .pa-enc__side-panel {
+        width: 80%;
+        min-width: 0;
+        max-width: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .pa-enc__btn {
+        padding: 7px 14px;
+        font-size: 12px;
+    }
+
+    .pa-enc__bottom-card {
+        width: calc(100vw - 16px);
+        padding: 14px 16px;
+        bottom: 8px;
+    }
+}

@@ -2,7 +2,6 @@
     display: flex;
     min-height: 100vh;
     background-color: rgba(15, 24, 40, 0.85);
-    /*background-color: white; !* change this later *!*/
     color: #ccc;
     font-family: Arial, sans-serif;
 }
@@ -15,6 +14,7 @@
     position: sticky;
     top: 0;
     height: 100vh;
+    overflow-y: auto;
 }
 
 .howto-sidebar h3 {

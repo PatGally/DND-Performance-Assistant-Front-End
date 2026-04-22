@@ -7,7 +7,7 @@ import type {
   PendingPreTurnResolution,
 } from "../../types/SimulationTypes.ts";
 
-import { getCreatureName, getCurrentTurnCreatureFromEncounter } from "./CreatureHelpers.ts";
+import {getCreatureName, getCreaturePosition, getCurrentTurnCreatureFromEncounter} from "./CreatureHelpers.ts";
 import axiosTokenInstance from "../../api/AxiosTokenInstance.ts";
 import { getEncounter } from "../../api/EncounterGet.ts";
 import { syncPreTurnQueueFromCreature } from "./PreTurnHelpers.ts";
@@ -54,6 +54,27 @@ export function simStart({
 }: SimStartParams): void {
   if (!encounterData || encounterData.initiative.length === 0) return;
 
+  const allCreatures: Creature[] = [
+    ...(encounterData.players ?? []),
+    ...(encounterData.monsters ?? []),
+  ];
+
+  const zeroOccupants = allCreatures.filter((creature) => {
+            const position = getCreaturePosition(creature);
+            return position.some(
+                (tile) =>
+                    Array.isArray(tile) &&
+                    tile.length === 2 &&
+                    tile[0] === 0 &&
+                    tile[1] === 0
+            );
+        });
+  const noCollisionAtZero = zeroOccupants.length <= 1;
+
+  if(!noCollisionAtZero) {
+    return;
+  }
+
   setEncStart(false);
   setActiveEncounter(true);
 
@@ -63,11 +84,6 @@ export function simStart({
   if(initStart.toLowerCase() == "lair action") {
     setCurrentTurnCreature({ _isLairAction: true } as unknown as Creature);
   }
-
-  const allCreatures: Creature[] = [
-    ...(encounterData.players ?? []),
-    ...(encounterData.monsters ?? []),
-  ];
 
   const matchingCreature = allCreatures.find(
     (creature) => getCreatureName(creature) === initStart

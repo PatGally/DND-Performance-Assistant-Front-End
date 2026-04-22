@@ -3,7 +3,7 @@ import {type Creature, type MonsterCreature, type PlayerCreature} from "../../ty
 import creatureGet from "../../api/CreatureGet";
 import {isPlayerCreature} from "../../api/CreatureGet";
 import type {InitiativeEntry} from "../../types/SimulationTypes";
-
+import { CleanActiveStatusData } from "../../utils/ActiveSimUtils/CleanActiveStatusData";
 
 type ComplexInitiativeEntryProps = {
   eid: string;
@@ -30,6 +30,7 @@ function renderList(label: string, items: unknown[] | undefined) {
 
 function renderPlayer(creature: PlayerCreature, onToggle?: () => void) {
     const stats = creature.stats;
+    const cleaned = CleanActiveStatusData(stats.activeStatusEffects);
 
     const s: Record<string, React.CSSProperties> = {
         wrap: {
@@ -146,6 +147,7 @@ function renderPlayer(creature: PlayerCreature, onToggle?: () => void) {
     const saveProfs = stats.saveProfs as Record<string, unknown> | undefined;
     const modifiers = stats.modifiers as Record<string, unknown> | undefined;
 
+
     function getOrdinal(level: number): string {
         const mod10 = level % 10;
         const mod100 = level % 100;
@@ -239,7 +241,10 @@ function renderPlayer(creature: PlayerCreature, onToggle?: () => void) {
             {renderList("Damage Vulnerabilities", stats.damVulns)}
             {renderList("Condition Immunities",   stats.conImmunes)}
             {renderList("Active Conditions",      stats.activeConditions)}
-            {renderList("Active Status Effects",  stats.activeStatusEffects)}
+            {/*{renderList("Active Status Effects",  stats.activeStatusEffects)}*/}
+            {renderList("Active Status Effects", cleaned.map(s => `${s.label}: ${s.description}`))}
+            {/*<pre>{JSON.stringify(stats.activeStatusEffects, null, 2)}</pre>*/}
+
 
             <div>
                 <strong>Spell Slots:</strong> {formatSpellSlots(stats.spellSlots)}
@@ -476,8 +481,9 @@ function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
             <InlineList title="Damage Vulnerabilities" items={creature.damVulns} />
             <InlineList title="Condition Immunities"   items={creature.conImmunes} />
             <InlineList title="Active Conditions"      items={activeConditions} />
-            <InlineList title="Active Status Effects"  items={creature.activeStatusEffects}/>
-
+            <InlineList title="Active Status Effects"
+                        items={CleanActiveStatusData(creature.activeStatusEffects).map(s => `${s.label}: ${s.description}`)}
+            />
             {creature.spellInfo && (
                 <>
                     <hr style={s.thinRule} />
@@ -514,7 +520,6 @@ function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
 export default function ComplexInitiativeEntry({
   eid,
   cid,
-  // initiativeEntry,
   onToggle,
 }: ComplexInitiativeEntryProps) {
   const [creature, setCreature] = useState<Creature | null>(null);
