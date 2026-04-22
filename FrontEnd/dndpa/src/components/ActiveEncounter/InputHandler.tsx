@@ -443,8 +443,8 @@ export default function InputHandler({
                 <>
                     <p className="pa-input-handler__helper">
                         {aoePlacementStage === "pick_direction"
-                            ? "Move the cursor to choose a direction, then click the map to confirm."
-                            : "Move the cursor to preview the area, then click the map to confirm placement."}
+                            ? "Move the cursor to choose a direction, then double click the map to confirm."
+                            : "Move the cursor to preview the area, then double click the map to confirm placement."}
                     </p>
 
                     <p className="pa-input-handler__helper pa-input-handler__helper--muted">
