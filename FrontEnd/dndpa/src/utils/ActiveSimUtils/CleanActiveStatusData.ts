@@ -1,9 +1,17 @@
+export type RawAction = {
+    spellname?: string;
+    spellName?: string;
+    level?: string;
+    actionCost?: string;
+};
+
 export type RawStatusEffect = {
     roll?: string;
     damage?: string;
     attribute?: string | string[];
     resultID?: string | string[];
     spellName?: string | string[];
+    action?: RawAction[];
     type?: string;
     monsterName?: string;
     crCap?: string;
@@ -25,10 +33,61 @@ export type CleanActiveStatus = {
     details: { label: string; value: string }[];
 };
 
-const toText = (v: string | string[] | undefined): string => {
+
+const toText = (v: unknown): string => {
     if (v === undefined || v === null) return "";
-    if (Array.isArray(v)) return v.filter(Boolean).join(", ");
-    return v;
+    if (typeof v === "string") return v;
+    if (Array.isArray(v)) {
+        return v
+            .map(item => {
+                if (item === null || item === undefined) return "";
+                if (typeof item === "string") return item;
+                if (typeof item === "object") {
+                    const a = item as RawAction;
+                    return a.spellname || a.spellName || "";
+                }
+                return String(item);
+            })
+            .filter(Boolean)
+            .join(", ");
+    }
+    if (typeof v === "object") {
+        const a = v as RawAction;
+        return a.spellname || a.spellName || "";
+    }
+    return String(v);
+};
+
+
+const actionSpellNames = (actions: RawAction[] | undefined): string => {
+    if (!Array.isArray(actions) || actions.length === 0) return "";
+    return actions
+        .map(a => a.spellname || a.spellName || "")
+        .filter(Boolean)
+        .join(", ");
+};
+
+
+const normalizeName = (name: string): string => {
+    const n = (name || "").toLowerCase();
+    const aliases: Record<string, string> = {
+        lingeffect: "lingEffect",
+        lingsave: "lingSave",
+        switchsides: "SwitchSides",
+        autofail: "Autofail",
+        autocrit: "autocrit",
+        "time stop": "Time Stop",
+        advantage: "Advantage",
+        disadvantage: "Disadvantage",
+        buff: "Buff",
+        debuff: "Debuff",
+        resistance: "Resistance",
+        immunity: "Immunity",
+        vulnerability: "Vulnerability",
+        concentration: "Concentration",
+        summon: "Summon",
+    };
+    return aliases[n] ?? name;
 };
 
 
@@ -47,11 +106,12 @@ const prettify = (name: string): string => {
 
 function formatOne(status: RawActiveStatus, index: number): CleanActiveStatus {
     const { name, effect = {} } = status;
-    const label = prettify(name);
+    const normalized = normalizeName(name);
+    const label = prettify(normalized);
     const details: { label: string; value: string }[] = [];
     let description = "";
 
-    switch (name) {
+    switch (normalized) {
         case "Advantage":
         case "Disadvantage": {
             description = `${label} (roll ${effect.roll ?? "?"})`;
@@ -111,15 +171,15 @@ function formatOne(status: RawActiveStatus, index: number): CleanActiveStatus {
         }
 
         case "lingEffect": {
-            const spell = toText(effect.spellName);
-            description = spell ? `Lingering effect: ${spell}` : "Lingering effect";
+            const spell = toText(effect.spellName) || actionSpellNames(effect.action);
+            description = spell || "Active";
             if (spell) details.push({ label: "Source", value: spell });
             break;
         }
 
         case "lingSave": {
-            const spell = toText(effect.spellName);
-            description = spell ? `Save required: ${spell}` : "Lingering save";
+            const spell = toText(effect.spellName) || actionSpellNames(effect.action);
+            description = spell ? `Save from ${spell}` : "Save required";
             if (spell) details.push({ label: "Source", value: spell });
             break;
         }
@@ -157,14 +217,20 @@ function formatOne(status: RawActiveStatus, index: number): CleanActiveStatus {
                     if (Array.isArray(v) && v.length === 0) return false;
                     return true;
                 })
-                .map(([k, v]) => `${k}: ${toText(v as string | string[])}`)
+                .map(([k, v]) => `${k}: ${toText(v)}`)
                 .join(", ");
             description = fallback || "Active";
             break;
         }
     }
 
-    return {key: `${name}-${index}`, name, label, description, details,};
+    return {
+        key: `${name}-${index}`,
+        name,
+        label,
+        description,
+        details,
+    };
 }
 
 export function CleanActiveStatusData(
