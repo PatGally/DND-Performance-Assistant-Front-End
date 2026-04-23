@@ -530,3 +530,107 @@ export async function buildManualAoePositioning({
 
   return applyMaskAtAnchor(anchor, selectedMask);
 }
+
+export function getLineImageStyleFromCells(
+  cells: GridCoord[],
+  cellWidth: number,
+  cellHeight: number
+): React.CSSProperties | null {
+  if (cells.length === 0) return null;
+
+  const centers = cells.map(([x, y]) => ({
+    x: (x + 0.5) * cellWidth,
+    y: (y + 0.5) * cellHeight,
+  }));
+
+  const meanX = centers.reduce((sum, p) => sum + p.x, 0) / centers.length;
+  const meanY = centers.reduce((sum, p) => sum + p.y, 0) / centers.length;
+
+  let sxx = 0;
+  let syy = 0;
+  let sxy = 0;
+
+  for (const p of centers) {
+    const dx = p.x - meanX;
+    const dy = p.y - meanY;
+    sxx += dx * dx;
+    syy += dy * dy;
+    sxy += dx * dy;
+  }
+
+  // Principal axis of the occupied cells
+  const rawAngle = 0.5 * Math.atan2(2 * sxy, sxx - syy);
+
+  const candidateAngles = [
+    0,
+    Math.PI / 4,
+    Math.PI / 2,
+    (3 * Math.PI) / 4,
+    Math.PI,
+    (-3 * Math.PI) / 4,
+    -Math.PI / 2,
+    -Math.PI / 4,
+  ];
+
+  let snappedAngle = candidateAngles[0];
+  let bestDelta = Number.POSITIVE_INFINITY;
+
+  for (const candidate of candidateAngles) {
+    let delta = Math.abs(rawAngle - candidate);
+    if (delta > Math.PI) delta = 2 * Math.PI - delta;
+
+    if (delta < bestDelta) {
+      bestDelta = delta;
+      snappedAngle = candidate;
+    }
+  }
+
+  const ux = Math.cos(snappedAngle);
+  const uy = Math.sin(snappedAngle);
+
+  const vx = -uy;
+  const vy = ux;
+
+  let minU = Number.POSITIVE_INFINITY;
+  let maxU = Number.NEGATIVE_INFINITY;
+  let minV = Number.POSITIVE_INFINITY;
+  let maxV = Number.NEGATIVE_INFINITY;
+
+  for (const [x, y] of cells) {
+    const corners = [
+      { x: x * cellWidth, y: y * cellHeight },
+      { x: (x + 1) * cellWidth, y: y * cellHeight },
+      { x: (x + 1) * cellWidth, y: (y + 1) * cellHeight },
+      { x: x * cellWidth, y: (y + 1) * cellHeight },
+    ];
+
+    for (const corner of corners) {
+      const u = corner.x * ux + corner.y * uy;
+      const v = corner.x * vx + corner.y * vy;
+
+      if (u < minU) minU = u;
+      if (u > maxU) maxU = u;
+      if (v < minV) minV = v;
+      if (v > maxV) maxV = v;
+    }
+  }
+
+  const originX = ux * minU + vx * minV;
+  const originY = uy * minU + vy * minV;
+  const width = maxU - minU;
+  const height = maxV - minV;
+  const angleDeg = (snappedAngle * 180) / Math.PI;
+
+  return {
+    position: "absolute",
+    left: originX,
+    top: originY,
+    width,
+    height,
+    transform: `rotate(${angleDeg}deg)`,
+    transformOrigin: "0 0",
+    zIndex: 2,
+    pointerEvents: "none",
+    overflow: "hidden",
+  };
+}
