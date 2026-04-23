@@ -415,7 +415,7 @@ function EncounterSimulation() {
             </header>
 
 
-            {!initiativeOpen && !endOfEncounter && (
+            {!initiativeOpen && !endOfEncounter && !encStart && activeEncounter && (
                 <button
                     type="button"
                     className="pa-enc__edge-pill pa-enc__edge-pill--left"
@@ -425,9 +425,10 @@ function EncounterSimulation() {
                     <ArrowRightShort />
                 </button>
             )}
+            )
 
 
-            {initiativeOpen && !endOfEncounter && (
+            {initiativeOpen && !endOfEncounter && !encStart && activeEncounter && (
                 <aside className="pa-enc__side-panel pa-enc__side-panel--left">
                     <div className="pa-enc__side-panel-inner pa-enc__side-panel--left--border">
                         <InitiativeList
