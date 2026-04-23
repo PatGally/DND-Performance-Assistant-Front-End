@@ -785,7 +785,7 @@ export async function handlePreTurnExecution({
 
     if (activeItem.effectName === "lingsave" && savedOut) {
       await axiosTokenInstance.delete(
-        `/encounter/${eid}/creature/${getCreatureCid(currentTurnCreature)}/status-effect/${cleanedDraft.resultID}`
+        `/encounter/${eid}/creature/${getCreatureCid(currentTurnCreature)}/pre-effect/${cleanedDraft.resultID}`
       );
     }
 
