@@ -20,7 +20,21 @@ export const DAMAGE_TYPE_IMAGE_SUFFIX: Record<string, string> = {
   slashing: "Slashing",
   thunder: "Thunder",
 };
-type PixelPoint = { //AOE logic type
+type PixelPoint = {
+  x: number;
+  y: number;
+};
+type Orientation =
+  | "up"
+  | "up_right"
+  | "right"
+  | "down_right"
+  | "down"
+  | "down_left"
+  | "left"
+  | "up_left";
+
+type Point = {
   x: number;
   y: number;
 };
@@ -298,81 +312,16 @@ export function getConeImageStyle(
     overflow: "visible",
   };
 }
-export function getLineImageStyle(
-  aoe: AoeToken,
-  cells: GridCoord[],
-  cellWidth: number,
-  cellHeight: number
-): React.CSSProperties | null {
-  if ((aoe.shape ?? "").toLowerCase() !== "line") {
-    return null;
-  }
 
-  if (cells.length === 0) {
-    return null;
-  }
-
-  const anchorPx = getCellCenterPx(aoe.anchor, cellWidth, cellHeight);
-
-  let farthestCell = cells[0];
-  let bestDist = -1;
-
-  for (const cell of cells) {
-    const dx = cell[0] - aoe.anchor[0];
-    const dy = cell[1] - aoe.anchor[1];
-    const dist = dx * dx + dy * dy;
-
-    if (dist > bestDist) {
-      bestDist = dist;
-      farthestCell = cell;
-    }
-  }
-
-  const farthestPx = getCellCenterPx(farthestCell, cellWidth, cellHeight);
-  const dirX = farthestPx.x - anchorPx.x;
-  const dirY = farthestPx.y - anchorPx.y;
-
-  const magnitude = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
-  const unitX = dirX / magnitude;
-  const unitY = dirY / magnitude;
-  const angleDeg = (Math.atan2(unitY, unitX) * 180) / Math.PI;
-
-  let maxForward = Math.max(cellWidth, cellHeight) * 0.5;
-  let maxPerpendicular = Math.min(cellWidth, cellHeight) * 0.45;
-
-  for (const cell of cells) {
-    const center = getCellCenterPx(cell, cellWidth, cellHeight);
-    const relX = center.x - anchorPx.x;
-    const relY = center.y - anchorPx.y;
-
-    const forward = relX * unitX + relY * unitY;
-    const perpendicular = Math.abs(-relX * unitY + relY * unitX);
-
-    maxForward = Math.max(maxForward, forward + cellWidth * 0.5);
-    maxPerpendicular = Math.max(
-      maxPerpendicular,
-      perpendicular + Math.min(cellWidth, cellHeight) * 0.5
-    );
-  }
-
-  return {
-    position: "absolute",
-    left: anchorPx.x,
-    top: anchorPx.y,
-    width: maxForward,
-    height: maxPerpendicular * 2,
-    transform: `translate(0, -50%) rotate(${angleDeg}deg)`,
-    transformOrigin: "0 50%",
-    zIndex: 2,
-    pointerEvents: "none",
-    overflow: "visible",
-  };
-}
 export function feetToCells(value?: string | number): number {
-  const n = Number(value ?? 0);
-  if (!Number.isFinite(n) || n <= 0) return 1;
+  const n = Number(value);
+  console.log("feetToCells", n);
+  if (!Number.isFinite(n) || n <= 0) {
+    throw new Error(`Invalid AOE size: ${value}`);
+  }
   return Math.max(1, Math.ceil(n / 5));
 }
+
 export function resolveAoeTokenImageNameFromStats(
   shape: string,
   damageType?: string
@@ -449,86 +398,6 @@ export function getAoeTargetsFromPositioning(
       )
     )
     .map((creature) => getCreatureCid(creature));
-}
-function chooseOrientation(anchor: [number, number], cursor: [number, number]) {
-  const dx = cursor[0] - anchor[0];
-  const dy = cursor[1] - anchor[1];
-
-  if (dx === 0 && dy === 0) return "right";
-
-  const angle = Math.atan2(-dy, dx) * (180 / Math.PI);
-
-  const dirs = [
-    { name: "right", deg: 0 },
-    { name: "up_right", deg: 45 },
-    { name: "up", deg: 90 },
-    { name: "up_left", deg: 135 },
-    { name: "left", deg: 180 },
-    { name: "down_left", deg: -135 },
-    { name: "down", deg: -90 },
-    { name: "down_right", deg: -45 },
-  ];
-
-  let best = "right";
-  let bestDelta = Infinity;
-
-  for (const dir of dirs) {
-    let delta = Math.abs(angle - dir.deg);
-    if (delta > 180) delta = 360 - delta;
-
-    if (delta < bestDelta) {
-      bestDelta = delta;
-      best = dir.name;
-    }
-  }
-
-  return best;
-}
-function applyMaskAtAnchor(
-  anchor: [number, number],
-  offsets: [number, number][]
-): [number, number][] {
-  return offsets.map(([dx, dy]) => [anchor[0] + dx, anchor[1] + dy]);
-}
-
-export async function buildManualAoePositioning({
-  shape,
-  radiusCells,
-  anchor,
-  cursor = null,
-  lineWidthCells = 1,
-}: {
-  shape: string;
-  radiusCells: number;
-  anchor: [number, number];
-  cursor?: [number, number] | null;
-  lineWidthCells?: number;
-}): Promise<[number, number][]> {
-  const response = await axiosTokenInstance.get("/aoe/template-masks", {
-    params: {
-      shape,
-      sizeCells: radiusCells,
-      lineWidthCells,
-    },
-  });
-
-  const masks = response.data.masks as {
-    orientation: string;
-    offsets: [number, number][];
-  }[];
-
-  const normalizedShape = shape.toLowerCase();
-
-  if (normalizedShape === "circle" || normalizedShape === "square") {
-    const firstMask = masks[0]?.offsets ?? [];
-    return applyMaskAtAnchor(anchor, firstMask);
-  }
-
-  const orientation = chooseOrientation(anchor, cursor ?? anchor);
-  const selectedMask =
-    masks.find((m) => m.orientation === orientation)?.offsets ?? [];
-
-  return applyMaskAtAnchor(anchor, selectedMask);
 }
 
 export function getLineImageStyleFromCells(
@@ -633,4 +502,346 @@ export function getLineImageStyleFromCells(
     pointerEvents: "none",
     overflow: "hidden",
   };
+}
+
+function applyMaskAtAnchors(
+  anchors: GridCoord[],
+  offsets: GridCoord[]
+): GridCoord[] {
+  const cells: GridCoord[] = [];
+  for (const anchor of anchors) {
+    cells.push(...applyMaskAtAnchor(anchor, offsets));
+  }
+  return dedupeCoords(cells);
+}
+
+function getCellCenter(coord: GridCoord): Point {
+  return {
+    x: coord[0] + 0.5,
+    y: coord[1] + 0.5,
+  };
+}
+
+function getBounds(cells: GridCoord[]) {
+  const xs = cells.map(([x]) => x);
+  const ys = cells.map(([, y]) => y);
+
+  return {
+    minX: Math.min(...xs),
+    maxX: Math.max(...xs),
+    minY: Math.min(...ys),
+    maxY: Math.max(...ys),
+  };
+}
+
+function getFootprintCenterPoint(casterCells: GridCoord[]): Point {
+  const { minX, maxX, minY, maxY } = getBounds(casterCells);
+
+  return {
+    x: (minX + maxX + 1) / 2,
+    y: (minY + maxY + 1) / 2,
+  };
+}
+
+function dedupeCoords(cells: GridCoord[]): GridCoord[] {
+  const seen = new Set<string>();
+  const out: GridCoord[] = [];
+
+  for (const [x, y] of cells) {
+    const key = `${x},${y}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push([x, y]);
+  }
+
+  return out;
+}
+
+function subtractCasterCells(cells: GridCoord[], casterCells: GridCoord[]): GridCoord[] {
+  const casterSet = new Set(casterCells.map(([x, y]) => `${x},${y}`));
+  return cells.filter(([x, y]) => !casterSet.has(`${x},${y}`));
+}
+
+function applyMaskAtAnchor(
+  anchor: GridCoord,
+  offsets: GridCoord[]
+): GridCoord[] {
+  return offsets.map(([dx, dy]) => [anchor[0] + dx, anchor[1] + dy]);
+}
+
+function directionToVector(orientation: Orientation): GridCoord {
+  switch (orientation) {
+    case "up": return [0, -1];
+    case "up_right": return [1, -1];
+    case "right": return [1, 0];
+    case "down_right": return [1, 1];
+    case "down": return [0, 1];
+    case "down_left": return [-1, 1];
+    case "left": return [-1, 0];
+    case "up_left": return [-1, -1];
+  }
+}
+
+function chooseOrientationFromPoints(origin: Point, target: Point): Orientation {
+  const dx = target.x - origin.x;
+  const dy = target.y - origin.y;
+
+  if (dx === 0 && dy === 0) return "right";
+
+  const angle = Math.atan2(-dy, dx) * (180 / Math.PI);
+
+  const dirs: { name: Orientation; deg: number }[] = [
+    { name: "right", deg: 0 },
+    { name: "up_right", deg: 45 },
+    { name: "up", deg: 90 },
+    { name: "up_left", deg: 135 },
+    { name: "left", deg: 180 },
+    { name: "down_left", deg: -135 },
+    { name: "down", deg: -90 },
+    { name: "down_right", deg: -45 },
+  ];
+
+  let best: Orientation = "right";
+  let bestDelta = Infinity;
+
+  for (const dir of dirs) {
+    let delta = Math.abs(angle - dir.deg);
+    if (delta > 180) delta = 360 - delta;
+
+    if (delta < bestDelta) {
+      bestDelta = delta;
+      best = dir.name;
+    }
+  }
+
+  return best;
+}
+
+function getPerimeterAnchorCells(casterCells: GridCoord[]): GridCoord[] {
+  const { minX, maxX, minY, maxY } = getBounds(casterCells);
+
+  return casterCells.filter(([x, y]) =>
+    x === minX || x === maxX || y === minY || y === maxY
+  );
+}
+
+function angularDelta(a: number, b: number): number {
+  let delta = Math.abs(a - b);
+  if (delta > Math.PI) delta = 2 * Math.PI - delta;
+  return delta;
+}
+
+function choosePerimeterAnchorByCursor(
+  casterCells: GridCoord[],
+  cursor: GridCoord
+): GridCoord {
+  const center = getFootprintCenterPoint(casterCells);
+  const cursorPoint = getCellCenter(cursor);
+  const desiredAngle = Math.atan2(
+    -(cursorPoint.y - center.y),
+    cursorPoint.x - center.x
+  );
+
+  const perimeter = getPerimeterAnchorCells(casterCells);
+
+  let best = perimeter[0];
+  let bestAngleDelta = Infinity;
+  let bestProjection = -Infinity;
+  let bestCursorDistance = Infinity;
+
+  const ux = Math.cos(desiredAngle);
+  const uy = -Math.sin(desiredAngle);
+
+  for (const anchor of perimeter) {
+    const p = getCellCenter(anchor);
+    const vx = p.x - center.x;
+    const vy = p.y - center.y;
+
+    const anchorAngle = Math.atan2(-vy, vx);
+    const angleDelta = angularDelta(desiredAngle, anchorAngle);
+    const projection = vx * ux + vy * uy;
+    const cursorDistance =
+      Math.abs(p.x - cursorPoint.x) + Math.abs(p.y - cursorPoint.y);
+
+    const isBetter =
+      angleDelta < bestAngleDelta - 1e-6 ||
+      (Math.abs(angleDelta - bestAngleDelta) < 1e-6 &&
+        projection > bestProjection + 1e-6) ||
+      (Math.abs(angleDelta - bestAngleDelta) < 1e-6 &&
+        Math.abs(projection - bestProjection) < 1e-6 &&
+        cursorDistance < bestCursorDistance);
+
+    if (isBetter) {
+      best = anchor;
+      bestAngleDelta = angleDelta;
+      bestProjection = projection;
+      bestCursorDistance = cursorDistance;
+    }
+  }
+
+  return best;
+}
+
+function getFrontEdgeCells(
+  casterCells: GridCoord[],
+  orientation: Orientation
+): GridCoord[] {
+  const [dx, dy] = directionToVector(orientation);
+  const maxProj = Math.max(...casterCells.map(([x, y]) => x * dx + y * dy));
+  return casterCells.filter(([x, y]) => x * dx + y * dy === maxProj);
+}
+
+function getFrontCornerCell(
+  casterCells: GridCoord[],
+  orientation: Orientation
+): GridCoord {
+  const { minX, maxX, minY, maxY } = getBounds(casterCells);
+
+  switch (orientation) {
+    case "up_right":
+      return [maxX, minY];
+    case "down_right":
+      return [maxX, maxY];
+    case "down_left":
+      return [minX, maxY];
+    case "up_left":
+      return [minX, minY];
+    default:
+      throw new Error(`getFrontCornerCell called with non-diagonal orientation: ${orientation}`);
+  }
+}
+
+function isDiagonalOrientation(orientation: Orientation): boolean {
+  return (
+    orientation === "up_right" ||
+    orientation === "down_right" ||
+    orientation === "down_left" ||
+    orientation === "up_left"
+  );
+}
+
+export async function buildManualAoePositioning({
+  shape,
+  radiusCells,
+  anchor,
+  cursor = null,
+  lineWidthCells = 1,
+  originMode = "placed",
+  casterCells = [],
+}: {
+  shape: string;
+  radiusCells: number;
+  anchor: GridCoord;
+  cursor?: GridCoord | null;
+  lineWidthCells?: number;
+  originMode?: "placed" | "self";
+  casterCells?: GridCoord[];
+}): Promise<GridCoord[]> {
+  const response = await axiosTokenInstance.get("/aoe/template-masks", {
+    params: {
+      shape,
+      sizeCells: radiusCells,
+      lineWidthCells,
+    },
+  });
+
+  const masks = response.data.masks as {
+    orientation: string;
+    offsets: GridCoord[];
+  }[];
+
+  const normalizedShape = shape.toLowerCase();
+  const maskMap = new Map<string, GridCoord[]>(
+    masks.map((m) => [m.orientation, m.offsets])
+  );
+
+  // Existing placed-origin behavior
+  if (originMode !== "self" || casterCells.length === 0) {
+    if (normalizedShape === "circle" || normalizedShape === "square") {
+      const firstMask = masks[0]?.offsets ?? [];
+      return applyMaskAtAnchor(anchor, firstMask);
+    }
+
+    const orientation = chooseOrientationFromPoints(
+      getCellCenter(anchor),
+      getCellCenter(cursor ?? anchor)
+    );
+    const selectedMask = maskMap.get(orientation) ?? [];
+    return applyMaskAtAnchor(anchor, selectedMask);
+  }
+
+  const centerPoint = getFootprintCenterPoint(casterCells);
+  const cursorCell = cursor ?? anchor;
+  const orientation = chooseOrientationFromPoints(
+    centerPoint,
+    getCellCenter(cursorCell)
+  );
+
+  // Self-origin circle / square
+  if (normalizedShape === "circle" || normalizedShape === "square") {
+    const firstMask = masks[0]?.offsets ?? [];
+    const cells = applyMaskAtAnchors(casterCells, firstMask);
+    return dedupeCoords(cells);
+  }
+
+  // Self-origin line: choose ONE perimeter anchor based on angle
+  if (normalizedShape === "line") {
+    const selectedAnchor = choosePerimeterAnchorByCursor(casterCells, cursorCell);
+    const selectedMask = maskMap.get(orientation) ?? [];
+    const cells = applyMaskAtAnchor(selectedAnchor, selectedMask);
+    return subtractCasterCells(dedupeCoords(cells), casterCells);
+  }
+
+  // Self-origin cone
+  if (normalizedShape === "cone") {
+    const selectedMask = maskMap.get(orientation) ?? [];
+
+    if (isDiagonalOrientation(orientation)) {
+      const frontCorner = getFrontCornerCell(casterCells, orientation);
+      const cells = applyMaskAtAnchor(frontCorner, selectedMask);
+      return subtractCasterCells(dedupeCoords(cells), casterCells);
+    }
+
+    const frontEdge = getFrontEdgeCells(casterCells, orientation);
+    const cells = applyMaskAtAnchors(frontEdge, selectedMask);
+    return subtractCasterCells(dedupeCoords(cells), casterCells);
+  }
+
+  const fallbackMask = masks[0]?.offsets ?? [];
+  return applyMaskAtAnchor(anchor, fallbackMask);
+}
+
+export function getFootprintCenterCell(cells: [number, number][]): [number, number] | null {
+  if (!cells.length) return null;
+
+  const xs = cells.map(([x]) => x);
+  const ys = cells.map(([, y]) => y);
+
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+
+  return [Math.floor((minX + maxX) / 2), Math.floor((minY + maxY) / 2)];
+}
+
+export function extractLineWidthFeet(shape?: string): number | null {
+  if (!shape) return null;
+
+  const s = shape.toLowerCase().trim();
+
+  if (s === "line") return 5;
+
+  const match = s.match(/line.*?(\d+)\s*(?:ft|feet)\s+wide/);
+  if (match) {
+    const n = Number(match[1]);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+
+  return s.includes("line") ? 5 : null;
+}
+
+export function extractLineWidthCells(shape?: string): number {
+  const widthFeet = extractLineWidthFeet(shape);
+  return feetToCells(widthFeet ?? 5);
 }

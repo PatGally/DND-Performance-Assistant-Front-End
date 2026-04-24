@@ -24,8 +24,9 @@ import {
 } from "./CreatureHelpers.ts";
 import { fetchUUID } from "../../api/UUIDGet.ts";
 import {
+  extractLineWidthCells,
   feetToCells,
-  findActionByName,
+  findActionByName, getFootprintCenterCell,
   isDirectionalShape,
   normalizeAoeShape,
   normalizeGridCoords,
@@ -508,6 +509,7 @@ export async function handleActionSubmission({
 
   if (normalized.targetCount === -1 || normalized.targetCount === -2) {
     const actorCid = currentTurnCreature ? getCreatureCid(currentTurnCreature) : "";
+    const lineWidthCells = normalized.shape.includes("line") ? extractLineWidthCells(normalized.shape) : 1;
     const shape = normalizeAoeShape(normalized.shape);
     const selfOrigin = normalized.targetCount === -2;
     const actorPosition = normalizeGridCoords(
@@ -522,21 +524,33 @@ export async function handleActionSubmission({
       timing = "lingering";
     }
 
-    const autoAnchor = selfOrigin ? actorPosition[0] ?? null : null;
+    const autoAnchor = selfOrigin
+      ? getFootprintCenterCell(actorPosition)
+      : null;
+
+    console.log("Logging normalized before manual placement", normalized);
+
+    if (normalized.targetCount == -2 && !normalized.radius) {
+      normalized.radius = normalized.range;
+    }
 
     const placement: ManualAoePlacement = {
-      resultID: draft.resultID,
-      name: normalized.name,
-      cid: actorCid,
-      shape,
-      radiusCells: feetToCells(normalized.radius),
-      rangeCells: feetToCells(normalized.range),
-      timing,
-      token_image: resolveAoeTokenImageNameFromStats(shape, normalized.damageType),
-      selfOrigin,
-      anchor: autoAnchor,
-      stage: selfOrigin && isDirectionalShape(shape) ? "pick_direction" : "pick_anchor",
-    };
+          resultID: draft.resultID,
+          name: normalized.name,
+          cid: actorCid,
+          shape,
+          radiusCells: feetToCells(normalized.radius),
+          rangeCells: feetToCells(normalized.range),
+          lineWidthCells : lineWidthCells,
+          timing,
+          token_image: resolveAoeTokenImageNameFromStats(shape, normalized.damageType),
+          selfOrigin,
+          originMode: selfOrigin ? "self" : "placed",
+          casterCells: actorPosition,
+          anchor: autoAnchor,
+          stage: selfOrigin && isDirectionalShape(shape) ? "pick_direction" : "pick_anchor",
+        };
+    console.log("Logging placement", placement);
 
     setManualAoePlacement(placement);
   }
@@ -665,6 +679,10 @@ export async function handleActionExecution({
       return "Targets are required.";
     }
 
+    setActionExecutionSession((prev) =>
+      prev ? { ...prev, error: null } : prev
+    );
+
     const payload = {
       ...finalDraft,
       token: executedAoeToken ?? null,
@@ -675,12 +693,10 @@ export async function handleActionExecution({
     try {
       await axiosTokenInstance.post(`/encounter/${eid}/simulate/ruleset`, payload);
     } catch (error: any) {
-      const detail = error.response?.data?.detail;
-      const message = Array.isArray(detail)
-        ? detail.map((item: unknown) => String(item)).join(", ")
-        : typeof detail === "string"
-          ? detail
-          : "Error with Action Execution";
+      const message = extractActionExecutionErrorMessage(
+        error,
+        "Action execution failed."
+      );
 
       console.error(message);
 
@@ -723,12 +739,10 @@ export async function handleActionExecution({
   } catch (error: any) {
     console.error("Failed to execute action:", error);
 
-    const detail = error?.response?.data?.detail;
-    const message = Array.isArray(detail)
-      ? detail.map((item: unknown) => String(item)).join(", ")
-      : typeof detail === "string"
-        ? detail
-        : "Action execution failed.";
+    const message = extractActionExecutionErrorMessage(
+      error,
+      "Error with Action Execution"
+    );
 
     setActionExecutionSession((prev) =>
       prev ? { ...prev, error: message } : prev
@@ -810,4 +824,54 @@ export async function handlePreTurnExecution({
   } finally {
     setManualLock(false);
   }
+}
+
+function extractActionExecutionErrorMessage(
+  error: unknown,
+  fallback: string
+): string {
+  const axiosError = error as any;
+  const data = axiosError?.response?.data;
+
+  const detail =
+    data?.detail ??
+    data?.message ??
+    data?.error ??
+    data;
+
+  if (Array.isArray(detail)) {
+    return detail
+      .map((item) => {
+        if (typeof item === "string") return item;
+
+        if (item && typeof item === "object") {
+          const record = item as Record<string, unknown>;
+
+          if (typeof record.msg === "string") return record.msg;
+          if (typeof record.message === "string") return record.message;
+          if (typeof record.detail === "string") return record.detail;
+
+          return JSON.stringify(record);
+        }
+
+        return String(item);
+      })
+      .join(", ");
+  }
+
+  if (typeof detail === "string") {
+    return detail;
+  }
+
+  if (detail && typeof detail === "object") {
+    const record = detail as Record<string, unknown>;
+
+    if (typeof record.msg === "string") return record.msg;
+    if (typeof record.message === "string") return record.message;
+    if (typeof record.detail === "string") return record.detail;
+
+    return JSON.stringify(record);
+  }
+
+  return fallback;
 }

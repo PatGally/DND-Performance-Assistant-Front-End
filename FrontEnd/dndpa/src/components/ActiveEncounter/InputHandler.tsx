@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import '../../css/EncounterSimulation.css';
 
 import type {
@@ -107,8 +107,11 @@ export default function InputHandler({
         };
     }, []);
 
-    function showTimedError(message: string) {
-        setLocalError(message);
+    const showTimedError = useCallback((message: string) => {
+        const trimmedMessage = message.trim();
+        if (!trimmedMessage) return;
+
+        setLocalError(trimmedMessage);
 
         if (errorTimeoutRef.current !== null) {
             window.clearTimeout(errorTimeoutRef.current);
@@ -117,8 +120,25 @@ export default function InputHandler({
         errorTimeoutRef.current = window.setTimeout(() => {
             setLocalError("");
             errorTimeoutRef.current = null;
-        }, 5000);
-    }
+        }, 3000);
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            if (errorTimeoutRef.current !== null) {
+                window.clearTimeout(errorTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    useEffect(() => {
+        if (
+            typeof actionSession.error === "string" &&
+            actionSession.error.trim() !== ""
+        ) {
+            showTimedError(actionSession.error);
+        }
+    }, [actionSession.error, showTimedError]);
 
     function updateTargetInput(
         cid: string,
@@ -369,6 +389,12 @@ export default function InputHandler({
         });
 
         setLocalError("");
+
+        const executionError = await handleActionExecution(finalDraft);
+
+        if (typeof executionError === "string" && executionError.trim() !== "") {
+            showTimedError(executionError);
+        }
         await handleActionExecution(finalDraft);
     }
 
