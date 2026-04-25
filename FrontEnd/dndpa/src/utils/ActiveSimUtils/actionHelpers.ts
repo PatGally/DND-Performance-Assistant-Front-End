@@ -235,18 +235,57 @@ export function formatBounds(bounds: RollBounds | null): string {
   if (!bounds) return "";
   return `Min: ${bounds.min} | Max: ${bounds.max}`;
 }
+function isSpellActionLike(action: CreatureAction): boolean {
+  const maybe = action as any;
 
+  return (
+    isSpellAction(action) ||
+    typeof maybe?.spellname === "string" ||
+    Array.isArray(maybe?.targeting)
+  );
+}
+
+function isMonsterActionLike(action: CreatureAction): boolean {
+  const maybe = action as any;
+
+  return (
+    isMonsterAction(action) ||
+    (
+      !isSpellActionLike(action) &&
+      !maybe?.properties &&
+      typeof maybe?.name === "string" &&
+      (
+        maybe?.rolls !== undefined ||
+        maybe?.number !== undefined ||
+        maybe?.actionRange !== undefined ||
+        maybe?.shape !== undefined
+      )
+    )
+  );
+}
+
+function getFirstTarget(action: CreatureAction): any | undefined {
+  const maybe = action as any;
+  return Array.isArray(maybe?.targeting) ? maybe.targeting[0] : undefined;
+}
+
+function getFirstDamageType(value: unknown): string {
+  return Array.isArray(value) && typeof value[0] === "string" ? value[0] : "";
+}
 export function normalizeAction(action: CreatureAction, actor?: Creature): NormalizedAction {
-  if (isSpellAction(action)) {
-    const target = action.targeting?.[0];
+  const maybe = action as any;
+
+  if (isSpellActionLike(action)) {
+    const target = getFirstTarget(action);
+    const rolls = target?.rolls ?? {};
     const count = parseCount(target?.number);
     const isAoe = !!target?.shape;
     const isSelf = !!target?.self;
-    const parsedDamage = parseDamageDice(target?.rolls?.damage);
+    const parsedDamage = parseDamageDice(rolls?.damage);
 
     return {
       kind: "spell",
-      name: action.spellname,
+      name: String(maybe?.spellname ?? maybe?.name ?? "Unknown Spell"),
       targetMode: isSelf
         ? "self"
         : isAoe
@@ -260,30 +299,31 @@ export function normalizeAction(action: CreatureAction, actor?: Creature): Norma
       range: target?.actionRange ?? "",
       shape: target?.shape ?? "",
       radius: target?.radius ?? "",
-      rollMode: (target?.rolls?.rollType as RollMode) || "none",
-      saveType: target?.rolls?.saveType ?? "",
-      halfSave: target?.rolls?.halfSave ?? false,
-      hasDamage: !!target?.rolls?.damage,
+      rollMode: (rolls?.rollType as RollMode) || "none",
+      saveType: rolls?.saveType ?? "",
+      halfSave: rolls?.halfSave ?? false,
+      hasDamage: !!rolls?.damage,
       actionCost: target?.actionCost ?? "",
-      damage: target?.rolls?.damage ?? "",
-      damageMod: target?.rolls?.damageMod ?? "",
-      damageType: target?.damType?.[0] ?? "",
+      damage: rolls?.damage ?? "",
+      damageMod: rolls?.damageMod ?? "",
+      damageType: getFirstDamageType(target?.damType),
 
       attackBonus: getSpellAttackBonus(actor),
       damageDieNum: parsedDamage?.dieNum,
       damageDieType: parsedDamage?.dieType,
-      resolvedDamageMod: resolveDamageMod(target?.rolls?.damageMod, actor),
+      resolvedDamageMod: resolveDamageMod(rolls?.damageMod, actor),
     };
   }
 
-  if (isMonsterAction(action)) {
-    const count = parseCount(action.number);
-    const isAoe = !!action.shape;
-    const parsedDamage = parseDamageDice(action.rolls?.damage);
+  if (isMonsterActionLike(action)) {
+    const rolls = maybe?.rolls ?? {};
+    const count = parseCount(maybe?.number);
+    const isAoe = !!maybe?.shape;
+    const parsedDamage = parseDamageDice(rolls?.damage);
 
     return {
       kind: "monster",
-      name: action.name,
+      name: String(maybe?.name ?? "Unknown Monster Action"),
       targetMode: isAoe
         ? "aoe"
         : count === 1
@@ -292,41 +332,42 @@ export function normalizeAction(action: CreatureAction, actor?: Creature): Norma
             ? "multi"
             : "none",
       targetCount: count,
-      range: action.actionRange ?? "",
-      shape: action.shape ?? "",
+      range: maybe?.actionRange ?? "",
+      shape: maybe?.shape ?? "",
       radius: "",
-      rollMode: (action.rolls?.rollType as RollMode) || "none",
-      saveType: action.rolls?.saveType ?? "",
-      halfSave: action.rolls?.halfSave ?? false,
-      hasDamage: !!action.rolls?.damage,
-      actionCost: action.actionCost ?? "",
-      damage: action.rolls?.damage ?? "",
-      damageMod: action.rolls?.damageMod ?? "",
-      damageType: action.damType?.[0] ?? "",
+      rollMode: (rolls?.rollType as RollMode) || "none",
+      saveType: rolls?.saveType ?? "",
+      halfSave: rolls?.halfSave ?? false,
+      hasDamage: !!rolls?.damage,
+      actionCost: maybe?.actionCost ?? "",
+      damage: rolls?.damage ?? "",
+      damageMod: rolls?.damageMod ?? "",
+      damageType: getFirstDamageType(maybe?.damType),
 
-      attackBonus: toNumber(action.rolls?.attackBonus) ?? 0,
+      attackBonus: toNumber(rolls?.attackBonus) ?? 0,
       damageDieNum: parsedDamage?.dieNum,
       damageDieType: parsedDamage?.dieType,
-      resolvedDamageMod: toNumber(action.rolls?.damageMod) ?? 0,
+      resolvedDamageMod: toNumber(rolls?.damageMod) ?? 0,
     };
   }
 
-  const parsedDamage = parseDamageDice(action.properties.damage);
+  const properties = maybe?.properties ?? {};
+  const parsedDamage = parseDamageDice(properties?.damage);
 
   return {
     kind: "weapon",
-    name: action.name,
+    name: String(maybe?.name ?? "Unknown Weapon"),
     ...WEAPON_DEFAULTS,
-    hasDamage: !!action.properties.damage,
-    damage: action.properties.damage,
-    damageType: action.properties.damageType,
+    hasDamage: !!properties?.damage,
+    damage: properties?.damage ?? "",
+    damageType: properties?.damageType ?? "",
     damageMod: "",
-    weaponStat: action.properties.weaponStat,
+    weaponStat: properties?.weaponStat ?? "",
 
-    attackBonus: getWeaponAttackBonus(actor, action.properties.weaponStat),
+    attackBonus: getWeaponAttackBonus(actor, properties?.weaponStat),
     damageDieNum: parsedDamage?.dieNum,
     damageDieType: parsedDamage?.dieType,
-    resolvedDamageMod: getWeaponDamageMod(actor, action.properties.weaponStat),
+    resolvedDamageMod: getWeaponDamageMod(actor, properties?.weaponStat),
   };
 }
 
@@ -334,8 +375,11 @@ export function extractActionEffects(action: CreatureAction): {
   conditions: string[];
   statusEffects: Record<string, unknown>[];
 } {
-  if (isSpellAction(action)) {
-    const target = action.targeting?.[0];
+  const maybe = action as any;
+
+  if (isSpellActionLike(action)) {
+    const target = getFirstTarget(action);
+
     return {
       conditions: Array.isArray(target?.conditions) ? target.conditions : [],
       statusEffects: Array.isArray(target?.statusEffect)
@@ -343,14 +387,16 @@ export function extractActionEffects(action: CreatureAction): {
         : [],
     };
   }
-  if (isMonsterAction(action)) {
+
+  if (isMonsterActionLike(action)) {
     return {
-      conditions: Array.isArray(action.conditions) ? action.conditions : [],
-      statusEffects: Array.isArray(action.statusEffect)
-        ? (action.statusEffect as Record<string, unknown>[])
+      conditions: Array.isArray(maybe?.conditions) ? maybe.conditions : [],
+      statusEffects: Array.isArray(maybe?.statusEffect)
+        ? (maybe.statusEffect as Record<string, unknown>[])
         : [],
     };
   }
+
   return {
     conditions: [],
     statusEffects: [],

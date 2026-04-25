@@ -8,7 +8,6 @@ import type {
 import {isPlayerCreature} from "../../api/CreatureGet.ts";
 import type {CreatureAction} from "../../types/action.ts";
 import {getCreatureCid, getCreatureName} from "./CreatureHelpers.ts";
-import {isSpellAction} from "./ActionTypeChecker.ts";
 import {buildRequiredInputs, extractActionEffects, normalizeAction} from "./actionHelpers.ts";
 
 export function extractRawPreTurnEffects(creature?: Creature): PreTurnEffect[] {
@@ -65,6 +64,15 @@ export function syncPreTurnQueueFromCreature(setPreTurnQueue : React.Dispatch<Re
   setPreTurnQueue(flattened);
 }
 
+function getPreTurnActionName(action: CreatureAction): string {
+  const maybe = action as any;
+
+  if (typeof maybe?.spellname === "string") return maybe.spellname;
+  if (typeof maybe?.name === "string") return maybe.name;
+
+  return "";
+}
+
 export function buildPreTurnSession(
   item: PendingPreTurnResolution,
   targetCreature: Creature
@@ -86,7 +94,7 @@ export function buildPreTurnSession(
   const draft: ActionRequestDraft = {
     resultID: item.resultID,
     actor: item.actor, // original caster, NOT current turn creature
-    action: isSpellAction(item.spell) ? item.spell.spellname : item.spell.name,
+    action: getPreTurnActionName(item.spell),
     actionType: "PreTurn",
     actionProb: 0,
     actionEDam: 0,
@@ -110,6 +118,8 @@ export function buildPreTurnSession(
     },
     timestamp: "",
   };
+
+  console.log(draft);
 
   return {
     action: normalized,
