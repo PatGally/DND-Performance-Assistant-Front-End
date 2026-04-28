@@ -78,7 +78,6 @@ export async function handleManualSimulate({
     setManualLock(true);
 
     if (manualDraft.affectedCreatures.length > 0) {
-      console.log("Manual payload", manualDraft);
       await axiosTokenInstance.post(
         `/encounter/${eid}/simulate/manual`,
         manualDraft

@@ -104,6 +104,11 @@ export type PreTurnEffect = {
     }
 }
 
+type ActiveCondition = {
+    cond : string;
+    resultid : string[];
+}
+
 export type PlayerStats = {
   statArray: StatArray;
   saveProfs: SaveProfs;
@@ -111,7 +116,7 @@ export type PlayerStats = {
   damImmunes: string[];
   damVulns: string[];
   conImmunes: string[];
-  activeConditions: string[];
+  activeConditions: (ActiveCondition | string)[];
   activeStatusEffects: (any | PreTurnEffect)[];
   hp: number | string;
   maxhp: number | string;
@@ -139,7 +144,7 @@ export type MonsterCreature = {
   damImmunes: string[];
   damVulns: string[];
   conImmunes: string[];
-  activeConditions: string[];
+  activeConditions: (ActiveCondition | string)[];
   activeStatusEffects: any[];
   hp: number | string;
   maxhp: number | string;

@@ -140,28 +140,61 @@ export function resolveAoeTokenImageName(
 
   return `${shapePrefix}${imageSuffix}.png`;
 }
-export function extractActionTiming(action: CreatureAction): "instantaneous" | "lingering" {
-  if (isSpellAction(action)) {
-    const hasLingering = action.targeting?.some((target) => {
-      const lingEffect = (target as { lingEffect?: unknown }).lingEffect;
-      return (
-        !!lingEffect &&
-        typeof lingEffect === "object" &&
-        Object.keys(lingEffect as Record<string, unknown>).length > 0
-      );
-    });
+function hasLingeringValue(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+
+  if (typeof value === "boolean") return value;
+
+  if (typeof value === "string") {
+    return value.trim().length > 0;
+  }
+
+  if (Array.isArray(value)) {
+    return value.length > 0;
+  }
+
+  if (typeof value === "object") {
+    return Object.keys(value as Record<string, unknown>).length > 0;
+  }
+
+  return false;
+}
+
+function hasLingeringFields(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+
+  const record = value as Record<string, unknown>;
+
+  return (
+    hasLingeringValue(record.lingEffect) ||
+    hasLingeringValue(record.lingSave)
+  );
+}
+
+export function extractActionTiming(
+  action: CreatureAction
+): "instantaneous" | "lingering" {
+  const maybe = action as any;
+
+  if (isSpellAction(action) || Array.isArray(maybe?.targeting)) {
+    const hasLingering = Array.isArray(maybe?.targeting)
+      ? maybe.targeting.some((target: unknown) => hasLingeringFields(target))
+      : false;
+
+    console.log("In extractActionTiming with result", hasLingering);
 
     return hasLingering ? "lingering" : "instantaneous";
   }
 
   if (isMonsterAction(action)) {
-    const lingEffect = (action as { lingEffect?: unknown }).lingEffect;
-    return lingEffect &&
-      typeof lingEffect === "object" &&
-      Object.keys(lingEffect as Record<string, unknown>).length > 0
-      ? "lingering"
-      : "instantaneous";
+    const hasLingering = hasLingeringFields(action);
+
+    console.log("In extractActionTiming with result", hasLingering);
+
+    return hasLingering ? "lingering" : "instantaneous";
   }
+
+  console.log("Failed checks, returning instant");
 
   return "instantaneous";
 }

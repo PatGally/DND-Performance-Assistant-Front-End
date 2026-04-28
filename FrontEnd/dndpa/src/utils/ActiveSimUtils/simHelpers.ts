@@ -40,7 +40,6 @@ export type HandleNextTurnParams = {
 };
 
 export type HandlePreTurnBackParams = {
-  clearManualAoePreview: () => void;
   setActionExecutionSession: StateSetter<ActionExecutionSession | undefined>;
   setManualLock: StateSetter<boolean>;
   setPreTurnQueue: StateSetter<PendingPreTurnResolution[]>;
@@ -166,12 +165,10 @@ export async function handleNextTurn({
 }
 
 export function handlePreTurnBack({
-  clearManualAoePreview,
   setActionExecutionSession,
   setManualLock,
   setPreTurnQueue,
 }: HandlePreTurnBackParams): void {
-  clearManualAoePreview();
   setActionExecutionSession(undefined);
   setManualLock(false);
   setPreTurnQueue((prev) => prev.slice(1));

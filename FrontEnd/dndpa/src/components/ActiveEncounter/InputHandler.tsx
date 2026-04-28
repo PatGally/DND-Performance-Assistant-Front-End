@@ -15,7 +15,7 @@ import {
     getRollBoundsForTarget,
     getDamageBounds,
     formatBounds,
-    getEffectiveDamageBounds,
+    getCriticalDamageBounds,
     isCriticalAttackRoll,
 } from "../../utils/ActiveSimUtils/actionHelpers.ts";
 
@@ -267,7 +267,7 @@ export default function InputHandler({
                     )
                     : false;
 
-            const effectiveDamageBounds = getEffectiveDamageBounds(
+            const effectiveDamageBounds = getCriticalDamageBounds(
                 damageBounds,
                 critActive
             );
@@ -394,8 +394,8 @@ export default function InputHandler({
 
         if (typeof executionError === "string" && executionError.trim() !== "") {
             showTimedError(executionError);
+            return;
         }
-        await handleActionExecution(finalDraft);
     }
 
     function handleExit() {
@@ -505,7 +505,7 @@ export default function InputHandler({
                                 rollBounds
                             );
 
-                        const effectiveDamageBounds = getEffectiveDamageBounds(
+                        const effectiveDamageBounds = getCriticalDamageBounds(
                             damageBounds,
                             critActive
                         );

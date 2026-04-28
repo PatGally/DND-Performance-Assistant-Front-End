@@ -19,6 +19,56 @@ function renderValue(value: unknown): string {
     return String(value);
 }
 
+function titleCaseCondition(value: string): string {
+    return value
+        .replace(/[_-]/g, " ")
+        .trim()
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function getResultIdCountFromString(value: string): number {
+    const resultidMatch = value.match(/['"]?resultid['"]?\s*:\s*\[([^\]]*)\]/i);
+
+    if (!resultidMatch) return 0;
+
+    const resultidBody = resultidMatch[1];
+
+    return resultidBody.match(/['"][^'"]+['"]/g)?.length ?? 0;
+}
+
+function getCondNameFromString(value: string): string | null {
+    const condMatch = value.match(/['"]?cond['"]?\s*:\s*['"]([^'"]+)['"]/i);
+
+    return condMatch?.[1] ?? null;
+}
+
+function renderActiveConditionValue(item: unknown): string {
+    if (item && typeof item === "object") {
+        const condition = item as {
+            cond?: string;
+            resultid?: string[];
+        };
+
+        if (condition.cond) {
+            return `${titleCaseCondition(condition.cond)} - (${condition.resultid?.length ?? 0})`;
+        }
+
+        return renderValue(item);
+    }
+
+    if (typeof item === "string") {
+        const condName = getCondNameFromString(item);
+
+        if (condName) {
+            return `${titleCaseCondition(condName)} - Count ${getResultIdCountFromString(item)}`;
+        }
+
+        return titleCaseCondition(item);
+    }
+
+    return renderValue(item);
+}
+
 function renderList(label: string, items: unknown[] | undefined) {
     return (
         <div>
@@ -271,7 +321,10 @@ function renderPlayer(creature: PlayerCreature, onToggle?: () => void) {
             {renderList("Damage Immunities", stats.damImmunes)}
             {renderList("Damage Vulnerabilities", stats.damVulns)}
             {renderList("Condition Immunities", stats.conImmunes)}
-            {renderList("Active Conditions", stats.activeConditions)}
+            {renderList(
+                "Active Conditions",
+                stats.activeConditions?.map(renderActiveConditionValue)
+            )}
             {renderList("Active Status Effects", cleaned.map((s) => `${s.label}: ${s.description}`))}
 
             <div>
@@ -290,7 +343,7 @@ function renderPlayer(creature: PlayerCreature, onToggle?: () => void) {
 }
 
 function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
-    const activeConditions = creature.activeConditions ?? creature.activeCons ?? [];
+    const activeConditions = (creature.activeConditions ?? creature.activeCons ?? []) as unknown[];
 
     const statAbbrev: Record<string, string> = {
         strength: "STR",
@@ -610,7 +663,10 @@ function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
             <InlineList title="Damage Immunities" items={creature.damImmunes} />
             <InlineList title="Damage Vulnerabilities" items={creature.damVulns} />
             <InlineList title="Condition Immunities" items={creature.conImmunes} />
-            <InlineList title="Active Conditions" items={activeConditions} />
+            <InlineList
+                title="Active Conditions"
+                items={activeConditions.map(renderActiveConditionValue)}
+            />
             <InlineList
                 title="Active Status Effects"
                 items={CleanActiveStatusData(creature.activeStatusEffects).map(

@@ -86,7 +86,7 @@ export type ActionRequestDraft = {
   statusEffects: Record<string, any>[];
   outcome: OutcomeDraft;
   extraOutcome: ExtraOutcomeDraft;
-  timestamp: string; // "HH:MM:SS"
+  timestamp: string;
     token? : AoeToken | null;
 };
 export type ActionExecutionSession = {
