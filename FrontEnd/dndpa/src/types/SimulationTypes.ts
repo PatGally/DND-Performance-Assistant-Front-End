@@ -86,7 +86,7 @@ export type ActionRequestDraft = {
   statusEffects: Record<string, any>[];
   outcome: OutcomeDraft;
   extraOutcome: ExtraOutcomeDraft;
-  timestamp: string; // "HH:MM:SS"
+  timestamp: string;
     token? : AoeToken | null;
 };
 export type ActionExecutionSession = {
@@ -115,6 +115,7 @@ export type ManualAffectedCreature = {
   lResists?: number;
   enemy?: boolean;
   spellSlots?: number[][];
+  charges? : {name : string; charges : string}[]
 };
 export type ManualDraftState = {
   affectedCreatures: ManualAffectedCreature[];
@@ -166,8 +167,11 @@ export type ManualAoePlacement = {
   radiusCells: number;
   rangeCells: number;
   timing: string;
+  lineWidthCells : number,
   token_image: string;
   selfOrigin: boolean;
+  originMode: string;
+  casterCells : GridCoord[];
   anchor: GridCoord | null;
   stage: ManualAoePlacementStage;
 };

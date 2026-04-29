@@ -60,6 +60,7 @@ function AddMapLink({ formData, updateFormData }: Props) {
                             <div className='mt-2'> 2. https://drive.google.com/file/d/1B2vBTHudYwkMBr8_bebrzRcnCx4PhgzM/view?usp=sharing (16x22 tiles)</div>
                             <div className='mt-2'> 3. https://drive.google.com/file/d/14lTqgOZV0ndBq29mFcDu49NKHvHenQK4/view?usp=drive_link (33x22 tiles)</div>
                             <div className='mt-2'> 4. https://drive.google.com/file/d/1wpYFnV2ku77JkwTuSpfzJXnWinyBH6IQ/view?usp=drive_link (18x24 tiles)</div>
+                            <div className='mt-2'> 5. https://drive.google.com/file/d/1XiPXoJL-goNxoME-LZpAyjkJDAhsU4be/view?usp=drive_link (40x30 tiles)</div>
                         </Form.Text>
 
 

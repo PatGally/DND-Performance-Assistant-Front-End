@@ -9,3 +9,7 @@ export function isWeaponAction(action: CreatureAction): action is WeaponAction {
 export function isMonsterAction(action: CreatureAction): action is MonsterAction {
   return "desc" in action;
 }
+
+export function isBasicAction(action: CreatureAction): action is SpellAction {
+  return "spellname" in action && ["Dodge", "Grapple", "Hide", "Shove"].includes(action.spellname);
+}
