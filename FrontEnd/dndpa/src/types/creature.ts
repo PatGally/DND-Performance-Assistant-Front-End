@@ -104,7 +104,7 @@ export type PreTurnEffect = {
     }
 }
 
-type ActiveCondition = {
+export type ActiveCondition = {
     cond : string;
     resultid : string[];
 }

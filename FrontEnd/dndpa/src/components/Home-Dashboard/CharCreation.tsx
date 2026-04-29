@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import {useEffect, useMemo, useState} from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { Form, Button, Row, Col } from "react-bootstrap";
 import calculateHP from "../../utils/calculateHP.ts";
-import { SpellsGet } from "../../api/SpellsGet.ts";
+import {type Spell, SpellsGet} from "../../api/SpellsGet.ts";
 import {WeaponsGet } from "../../api/WeaponsGet.ts";
 import {type WeaponAction} from "../../types/action.ts";
 import {createCharacter} from "../../api/CharactersPost.ts";
@@ -52,7 +52,7 @@ function CharCreation({onCharacterCreated}: Props) {
     const level = watch("level");
     const characterClass = watch("characterClass");
 
-    const [spells, setSpells] = useState<any[]>([]); //specify type
+    const [spells, setSpells] = useState<Spell[]>([]); //specify type
     const [loadingSpells, setLoadingSpells] = useState<boolean>(false);
 
     const [allWeapons, setAllWeapons] = useState<WeaponAction[]>([]);
@@ -69,7 +69,6 @@ function CharCreation({onCharacterCreated}: Props) {
         };
         fetchWeapons();
     }, []);
-
     useEffect(() => {
         if (!level || !characterClass) return;
 
@@ -91,6 +90,23 @@ function CharCreation({onCharacterCreated}: Props) {
         };
         fetchSpells();
     }, [level, characterClass]);
+    const spellsByLevel = useMemo(() => {
+    return spells.reduce<Record<number, Spell[]>>((acc, spell) => {
+        const spellLevel = Number(spell.level);
+
+        if (!acc[spellLevel]) {
+            acc[spellLevel] = [];
+        }
+
+        acc[spellLevel].push(spell);
+        return acc;
+    }, {});
+}, [spells]);
+    const sortedSpellLevels = useMemo(() => {
+        return Object.keys(spellsByLevel)
+            .map(Number)
+            .sort((a, b) => a - b);
+    }, [spellsByLevel]);
 
 
     const onSubmit: SubmitHandler<FormFields> = async (data) => {
@@ -371,19 +387,35 @@ function CharCreation({onCharacterCreated}: Props) {
                             )}
 
                             {!loadingSpells && spells.length > 0 && (
-                                <div className="pa-char-create__options d-flex flex-wrap gap-3">
-                                    {spells.map((spell) => (
-                                        <Form.Check
-                                            key={spell.id}
-                                            type="switch"
-                                            label={spell.spellname}
-                                            value={spell.spellname}
-                                            className="pa-char-create__check pa-char-create__check--switch"
-                                            {...register('spells', {
-                                                validate: (v) => v.length > 0 || 'Select at least one spell',
-                                            })}
-                                        />
+                                <div className="pa-char-create__spell-levels">
+                                    {sortedSpellLevels.map((spellLevel) => (
+                                        <div key={spellLevel} className="pa-char-create__spell-level-group">
+                                            <h4 className="pa-char-create__spell-level-title">
+                                                {spellLevel === 0 ? "Cantrips" : `Level ${spellLevel}`}
+                                            </h4>
+
+                                            <div className="pa-char-create__spell-options">
+                                                {spellsByLevel[spellLevel].map((spell) => (
+                                                    <Form.Check
+                                                        key={`${spell.level}-${spell.spellname}`}
+                                                        type="checkbox"
+                                                        label={spell.spellname}
+                                                        value={spell.spellname}
+                                                        className="pa-char-create__check pa-char-create__spell-check"
+                                                        {...register("spells", {
+                                                            validate: (v) => v.length > 0 || "Select at least one spell",
+                                                        })}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
                                     ))}
+                                </div>
+                            )}
+
+                            {!loadingSpells && spells.length === 0 && (
+                                <div className="pa-char-create__loading">
+                                    No spells available for this class and level.
                                 </div>
                             )}
 
