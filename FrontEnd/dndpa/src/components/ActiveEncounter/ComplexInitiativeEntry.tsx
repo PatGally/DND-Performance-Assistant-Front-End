@@ -1,32 +1,84 @@
 import { useEffect, useState } from "react";
-import {type Creature, type MonsterCreature, type PlayerCreature} from "../../types/creature.ts";
+import { type Creature, type MonsterCreature, type PlayerCreature } from "../../types/creature.ts";
 import creatureGet from "../../api/CreatureGet";
-import {isPlayerCreature} from "../../api/CreatureGet";
-import type {InitiativeEntry} from "../../types/SimulationTypes";
+import { isPlayerCreature } from "../../api/CreatureGet";
+import type { InitiativeEntry } from "../../types/SimulationTypes";
 import { CleanActiveStatusData } from "../../utils/ActiveSimUtils/CleanActiveStatusData";
 
 type ComplexInitiativeEntryProps = {
-  eid: string;
-  cid: string;
-  initiativeEntry: InitiativeEntry;
-  onToggle: () => void;
+    eid: string;
+    cid: string;
+    initiativeEntry: InitiativeEntry;
+    onToggle: () => void;
 };
 
 function renderValue(value: unknown): string {
-  if (value === null || value === undefined) return "None";
-  if (typeof value === "boolean") return value ? "true" : "false";
-  if (typeof value === "object") return JSON.stringify(value);
-  return String(value);
-}
-function renderList(label: string, items: unknown[] | undefined) {
-  return (
-    <div>
-      <strong>{label}:</strong>{" "}
-      {items && items.length > 0 ? items.map((item) => renderValue(item)).join(", ") : "None"}
-    </div>
-  );
+    if (value === null || value === undefined) return "None";
+    if (typeof value === "boolean") return value ? "true" : "false";
+    if (typeof value === "object") return JSON.stringify(value);
+    return String(value);
 }
 
+function titleCaseCondition(value: string): string {
+    return value
+        .replace(/[_-]/g, " ")
+        .trim()
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function getResultIdCountFromString(value: string): number {
+    const resultidMatch = value.match(/['"]?resultid['"]?\s*:\s*\[([^\]]*)\]/i);
+
+    if (!resultidMatch) return 0;
+
+    const resultidBody = resultidMatch[1];
+
+    return resultidBody.match(/['"][^'"]+['"]/g)?.length ?? 0;
+}
+
+function getCondNameFromString(value: string): string | null {
+    const condMatch = value.match(/['"]?cond['"]?\s*:\s*['"]([^'"]+)['"]/i);
+
+    return condMatch?.[1] ?? null;
+}
+
+function renderActiveConditionValue(item: unknown): string {
+    if (item && typeof item === "object") {
+        const condition = item as {
+            cond?: string;
+            resultid?: string[];
+        };
+
+        if (condition.cond) {
+            return `${titleCaseCondition(condition.cond)} - (${condition.resultid?.length ?? 0})`;
+        }
+
+        return renderValue(item);
+    }
+
+    if (typeof item === "string") {
+        const condName = getCondNameFromString(item);
+
+        if (condName) {
+            return `${titleCaseCondition(condName)} - Count ${getResultIdCountFromString(item)}`;
+        }
+
+        return titleCaseCondition(item);
+    }
+
+    return renderValue(item);
+}
+
+function renderList(label: string, items: unknown[] | undefined) {
+    return (
+        <div>
+            <strong>{label}:</strong>{" "}
+            {items && items.length > 0
+                ? items.map((item) => renderValue(item)).join(", ")
+                : "None"}
+        </div>
+    );
+}
 
 function renderPlayer(creature: PlayerCreature, onToggle?: () => void) {
     const stats = creature.stats;
@@ -86,17 +138,28 @@ function renderPlayer(creature: PlayerCreature, onToggle?: () => void) {
     function StatRow({ title, data }: { title: string; data: Record<string, unknown> }) {
         const entries = Object.entries(data);
         if (!entries.length) return null;
+
         return (
             <div style={{ marginTop: "4px" }}>
-                <div style={{ ...s.label, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                <div
+                    style={{
+                        ...s.label,
+                        fontSize: "11px",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                    }}
+                >
                     {title}
                 </div>
-                <div style={{
-                    display: "grid",
-                    gridTemplateColumns: `repeat(${Math.min(entries.length, 6)}, 1fr)`,
-                    gap: "4px",
-                    marginTop: "3px",
-                }}>
+
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: `repeat(${Math.min(entries.length, 6)}, 1fr)`,
+                        gap: "4px",
+                        marginTop: "3px",
+                    }}
+                >
                     {entries.map(([key, val]) => (
                         <div key={key} style={s.statCell}>
                             <span style={s.statKey}>{key}</span>
@@ -111,25 +174,30 @@ function renderPlayer(creature: PlayerCreature, onToggle?: () => void) {
     function InlinePairs({ title, data }: { title: string; data: Record<string, unknown> }) {
         const entries = Object.entries(data);
         if (!entries.length) return null;
+
         return (
             <div style={{ marginTop: "3px" }}>
                 <span style={s.label}>{title}: </span>
-                <span style={{
-                    display: "inline-flex",
-                    flexWrap: "wrap",
-                    gap: "2px 4px",
-                    alignItems: "baseline",
-                }}>
-        {entries.map(([key, val], i) => (
-            <span key={key} style={{ whiteSpace: "nowrap" }}> {/* pair stays together */}
-                <span style={{ fontWeight: "bold" }}>{key}</span>{" "}
-                <span style={{ color: "#8b1a1a" }}>{String(val)}</span>
-                {i < entries.length - 1 && (
-                    <span style={{ opacity: 0.4, margin: "0 3px" }}>·</span>
-                )}
-          </span>
-        ))}
-      </span>
+
+                <span
+                    style={{
+                        display: "inline-flex",
+                        flexWrap: "wrap",
+                        gap: "2px 4px",
+                        alignItems: "baseline",
+                    }}
+                >
+                    {entries.map(([key, val], i) => (
+                        <span key={key} style={{ whiteSpace: "nowrap" }}>
+                            <span style={{ fontWeight: "bold" }}>{key}</span>{" "}
+                            <span style={{ color: "#8b1a1a" }}>{String(val)}</span>
+
+                            {i < entries.length - 1 && (
+                                <span style={{ opacity: 0.4, margin: "0 3px" }}>·</span>
+                            )}
+                        </span>
+                    ))}
+                </span>
             </div>
         );
     }
@@ -142,11 +210,6 @@ function renderPlayer(creature: PlayerCreature, onToggle?: () => void) {
             </div>
         );
     }
-
-    const statArray = stats.statArray as Record<string, unknown> | undefined;
-    const saveProfs = stats.saveProfs as Record<string, unknown> | undefined;
-    const modifiers = stats.modifiers as Record<string, unknown> | undefined;
-
 
     function getOrdinal(level: number): string {
         const mod10 = level % 10;
@@ -177,16 +240,34 @@ function renderPlayer(creature: PlayerCreature, onToggle?: () => void) {
         return formatted.length > 0 ? formatted.join(", ") : "None";
     }
 
+    const statArray = stats.statArray as Record<string, unknown> | undefined;
+    const saveProfs = stats.saveProfs as Record<string, unknown> | undefined;
+    const modifiers = stats.modifiers as Record<string, unknown> | undefined;
+
     return (
         <div style={s.wrap}>
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "baseline",
+                }}
+            >
+                <span
+                    style={{
+                        fontSize: "15px",
+                        fontWeight: "bold",
+                        color: "#8b1a1a",
+                        letterSpacing: "0.02em",
+                    }}
+                >
+                    {stats.name}
+                </span>
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <span style={{ fontSize: "15px", fontWeight: "bold", color: "#8b1a1a", letterSpacing: "0.02em" }}>
-          {stats.name}
-        </span>
                 <span style={{ fontSize: "11px", fontStyle: "italic", color: "#5a3030" }}>
-          {stats.characterClass} · Level {stats.level}
-        </span>
+                    {stats.characterClass} · Level {stats.level}
+                </span>
+
                 {onToggle && (
                     <button
                         type="button"
@@ -211,8 +292,8 @@ function renderPlayer(creature: PlayerCreature, onToggle?: () => void) {
             <hr style={s.blueRule} />
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2px 16px" }}>
-                <PropRow label="HP"       value={`${stats.hp} / ${stats.maxhp}`} />
-                <PropRow label="AC"       value={stats.ac} />
+                <PropRow label="HP" value={`${stats.hp} / ${stats.maxhp}`} />
+                <PropRow label="AC" value={stats.ac} />
                 <PropRow label="Position" value={renderValue(stats.position)} />
             </div>
 
@@ -236,40 +317,47 @@ function renderPlayer(creature: PlayerCreature, onToggle?: () => void) {
 
             <hr style={s.blueRule} />
 
-            {renderList("Damage Resistances",     stats.damResists)}
-            {renderList("Damage Immunities",      stats.damImmunes)}
+            {renderList("Damage Resistances", stats.damResists)}
+            {renderList("Damage Immunities", stats.damImmunes)}
             {renderList("Damage Vulnerabilities", stats.damVulns)}
-            {renderList("Condition Immunities",   stats.conImmunes)}
-            {renderList("Active Conditions",      stats.activeConditions)}
-            {/*{renderList("Active Status Effects",  stats.activeStatusEffects)}*/}
-            {renderList("Active Status Effects", cleaned.map(s => `${s.label}: ${s.description}`))}
-            {/*<pre>{JSON.stringify(stats.activeStatusEffects, null, 2)}</pre>*/}
-
+            {renderList("Condition Immunities", stats.conImmunes)}
+            {renderList(
+                "Active Conditions",
+                stats.activeConditions?.map(renderActiveConditionValue)
+            )}
+            {renderList("Active Status Effects", cleaned.map((s) => `${s.label}: ${s.description}`))}
 
             <div>
                 <strong>Spell Slots:</strong> {formatSpellSlots(stats.spellSlots)}
             </div>
 
-
             {(creature.spells?.length || creature.weapons?.length) && (
                 <>
                     <hr style={s.blueRule} />
-                    {renderList("Spells",   creature.spells)}
-                    {renderList("Weapons",  creature.weapons)}
+                    {renderList("Spells", creature.spells)}
+                    {renderList("Weapons", creature.weapons)}
                 </>
             )}
-
         </div>
     );
 }
 
 function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
-    const activeConditions = creature.activeConditions ?? creature.activeCons ?? [];
+    const activeConditions = (creature.activeConditions ?? creature.activeCons ?? []) as unknown[];
 
     const statAbbrev: Record<string, string> = {
-        strength: "STR", dexterity: "DEX", constitution: "CON",
-        intelligence: "INT", wisdom: "WIS", charisma: "CHA",
-        str: "STR", dex: "DEX", con: "CON", int: "INT", wis: "WIS", cha: "CHA",
+        strength: "STR",
+        dexterity: "DEX",
+        constitution: "CON",
+        intelligence: "INT",
+        wisdom: "WIS",
+        charisma: "CHA",
+        str: "STR",
+        dex: "DEX",
+        con: "CON",
+        int: "INT",
+        wis: "WIS",
+        cha: "CHA",
     };
 
     const s: Record<string, React.CSSProperties> = {
@@ -323,25 +411,111 @@ function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
         },
     };
 
+    type MonsterSpellListItem = {
+        name: string;
+        charges?: string | number | null;
+    };
+
+    function hasMeaningfulSpellInfo(
+        spellInfo: MonsterCreature["spellInfo"] | undefined
+    ): spellInfo is MonsterCreature["spellInfo"] {
+        return Boolean(spellInfo && Object.keys(spellInfo).length > 0);
+    }
+
+    function getMonsterSpellList(
+        spellInfo: MonsterCreature["spellInfo"] | undefined
+    ): MonsterSpellListItem[] {
+        if (!hasMeaningfulSpellInfo(spellInfo)) return [];
+        if (!("spells" in spellInfo) || !Array.isArray(spellInfo.spells)) return [];
+
+        return spellInfo.spells as MonsterSpellListItem[];
+    }
+
+    function hasMonsterCharges(spellInfo: MonsterCreature["spellInfo"] | undefined): boolean {
+        return getMonsterSpellList(spellInfo).some(
+            (spell) =>
+                spell.charges !== undefined &&
+                spell.charges !== null &&
+                String(spell.charges).trim() !== ""
+        );
+    }
+
+    function hasMonsterSpellSlots(spellInfo: MonsterCreature["spellInfo"] | undefined): boolean {
+        if (!hasMeaningfulSpellInfo(spellInfo)) return false;
+
+        return (
+            "spellSlots" in spellInfo &&
+            Array.isArray(spellInfo.spellSlots) &&
+            spellInfo.spellSlots.length > 0
+        );
+    }
+
+    function formatFullSpellSlots(
+        spellSlots: Array<[number, number]> | number[][] | undefined
+    ): string {
+        const labels = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"];
+
+        return labels
+            .map((label, index) => {
+                const value = Number(spellSlots?.[index]?.[0] ?? 0);
+                return `${label}: ${value}`;
+            })
+            .join(", ");
+    }
+
+    function formatMonsterCharges(spellInfo: MonsterCreature["spellInfo"] | undefined): string {
+        const formatted = getMonsterSpellList(spellInfo)
+            .map((spell) => {
+                if (spell.charges === undefined || spell.charges === null) return null;
+
+                const charges = String(spell.charges).trim();
+                if (!charges) return null;
+
+                return `${spell.name}: ${charges}`;
+            })
+            .filter((charge): charge is string => charge !== null);
+
+        return formatted.length > 0 ? formatted.join(", ") : "None";
+    }
+
+    function formatMonsterSpellNames(spellInfo: MonsterCreature["spellInfo"] | undefined): string {
+        const names = getMonsterSpellList(spellInfo)
+            .map((spell) => spell.name)
+            .filter((name) => name && String(name).trim() !== "");
+
+        return names.length > 0 ? names.join(", ") : "None";
+    }
+
     function StatRow({ title, data }: { title: string; data: Record<string, unknown> }) {
         const entries = Object.entries(data);
         if (!entries.length) return null;
+
         return (
             <div style={{ marginTop: "4px" }}>
-                <div style={{ ...s.label, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                <div
+                    style={{
+                        ...s.label,
+                        fontSize: "11px",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                    }}
+                >
                     {title}
                 </div>
-                <div style={{
-                    display: "grid",
-                    gridTemplateColumns: `repeat(${Math.min(entries.length, 6)}, 1fr)`,
-                    gap: "4px",
-                    marginTop: "3px",
-                }}>
+
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: `repeat(${Math.min(entries.length, 6)}, 1fr)`,
+                        gap: "4px",
+                        marginTop: "3px",
+                    }}
+                >
                     {entries.map(([key, val]) => (
                         <div key={key} style={s.statCell}>
-              <span style={s.statKey}>
-                {statAbbrev[key.toLowerCase()] ?? key.slice(0, 3).toUpperCase()}
-              </span>
+                            <span style={s.statKey}>
+                                {statAbbrev[key.toLowerCase()] ?? key.slice(0, 3).toUpperCase()}
+                            </span>
                             <span style={s.statVal}>{String(val)}</span>
                         </div>
                     ))}
@@ -353,36 +527,39 @@ function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
     function InlinePairs({ title, data }: { title: string; data: Record<string, unknown> }) {
         const entries = Object.entries(data);
         if (!entries.length) return null;
+
         return (
             <div style={{ marginTop: "3px" }}>
                 <span style={s.label}>{title}: </span>
-                <span style={{
-                    display: "inline-flex",
-                    flexWrap: "wrap",
-                    gap: "2px 4px",
-                    alignItems: "baseline",
-                }}>
-        {entries.map(([key, val], i) => (
-            <span key={key} style={{ whiteSpace: "nowrap" }}>
-                <span style={{ fontWeight: "bold" }}>{key}</span>{" "}
-                <span style={{ color: "#8b1a1a" }}>{String(val)}</span>
-                {i < entries.length - 1 && (
-                    <span style={{ opacity: 0.4, margin: "0 3px" }}>·</span>
-                )}
-          </span>
-        ))}
-      </span>
+
+                <span
+                    style={{
+                        display: "inline-flex",
+                        flexWrap: "wrap",
+                        gap: "2px 4px",
+                        alignItems: "baseline",
+                    }}
+                >
+                    {entries.map(([key, val], i) => (
+                        <span key={key} style={{ whiteSpace: "nowrap" }}>
+                            <span style={{ fontWeight: "bold" }}>{key}</span>{" "}
+                            <span style={{ color: "#8b1a1a" }}>{String(val)}</span>
+
+                            {i < entries.length - 1 && (
+                                <span style={{ opacity: 0.4, margin: "0 3px" }}>·</span>
+                            )}
+                        </span>
+                    ))}
+                </span>
             </div>
         );
     }
 
-    function InlineList({title, items}: { title: string; items?: string[]; }) {
+    function InlineList({ title, items }: { title: string; items?: string[] }) {
         return (
             <div style={{ marginTop: "3px" }}>
                 <span style={s.label}>{title}: </span>
-                <span>
-                {items && items.length > 0 ? items.join(", ") : "None"}
-            </span>
+                <span>{items && items.length > 0 ? items.join(", ") : "None"}</span>
             </div>
         );
     }
@@ -396,33 +573,39 @@ function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
         );
     }
 
-    const statArray  = creature.statArray  as Record<string, unknown> | undefined;
-    const saveProfs  = creature.saveProfs  as Record<string, unknown> | undefined;
-    const modifiers  = creature.modifiers  as Record<string, unknown> | undefined;
+    const statArray = creature.statArray as Record<string, unknown> | undefined;
+    const saveProfs = creature.saveProfs as Record<string, unknown> | undefined;
+    const modifiers = creature.modifiers as Record<string, unknown> | undefined;
 
-    function formatFullSpellSlots(
-        spellSlots: Array<[number, number]> | number[][] | undefined
-    ): string {
-        const labels = ["1st","2nd","3rd","4th","5th","6th","7th","8th","9th"];
-
-        return labels
-            .map((label, index) => {
-                const value = Number(spellSlots?.[index]?.[0] ?? 0);
-                return `${label}: ${value}`;
-            })
-            .join(", ");
-    }
+    const spellInfo = creature.spellInfo;
+    const shouldRenderSpellInfo = hasMeaningfulSpellInfo(spellInfo);
+    const shouldRenderCharges = hasMonsterCharges(spellInfo);
+    const shouldRenderSpellSlots = !shouldRenderCharges && hasMonsterSpellSlots(spellInfo);
 
     return (
         <div style={s.wrap}>
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "baseline",
+                }}
+            >
+                <span
+                    style={{
+                        fontSize: "15px",
+                        fontWeight: "bold",
+                        color: "#8b1a1a",
+                        letterSpacing: "0.02em",
+                    }}
+                >
+                    {creature.name}
+                </span>
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <span style={{ fontSize: "15px", fontWeight: "bold", color: "#8b1a1a", letterSpacing: "0.02em" }}>
-          {creature.name}
-        </span>
                 <span style={{ fontSize: "11px", fontStyle: "italic", color: "#5a3030" }}>
-          {creature.size} {creature.creatureType}
-        </span>
+                    {creature.size} {creature.creatureType}
+                </span>
+
                 {onToggle && (
                     <button
                         type="button"
@@ -447,13 +630,13 @@ function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
             <hr style={s.redRule} />
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2px 16px" }}>
-                <PropRow label="HP"   value={`${creature.hp} / ${creature.maxhp}`} />
-                <PropRow label="AC"   value={creature.ac} />
-                <PropRow label="CR"   value={creature.cr} />
+                <PropRow label="HP" value={`${creature.hp} / ${creature.maxhp}`} />
+                <PropRow label="AC" value={creature.ac} />
+                <PropRow label="CR" value={creature.cr} />
                 <PropRow label="Speed" value={creature.movement} />
-                <PropRow label="Leg. Resists"  value={creature.lResists ?? "—"} />
-                <PropRow label="Magic Resist"  value={creature.magicResist ? "Yes" : "No"} />
-                <PropRow label="Lair Action"   value={creature.lairAction  ? "Yes" : "No"} />
+                <PropRow label="Leg. Resists" value={creature.lResists ?? "—"} />
+                <PropRow label="Magic Resist" value={creature.magicResist ? "Yes" : "No"} />
+                <PropRow label="Lair Action" value={creature.lairAction ? "Yes" : "No"} />
             </div>
 
             <hr style={s.redRule} />
@@ -476,15 +659,22 @@ function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
 
             <hr style={s.redRule} />
 
-            <InlineList title="Damage Resistances"     items={creature.damResists} />
-            <InlineList title="Damage Immunities"      items={creature.damImmunes} />
+            <InlineList title="Damage Resistances" items={creature.damResists} />
+            <InlineList title="Damage Immunities" items={creature.damImmunes} />
             <InlineList title="Damage Vulnerabilities" items={creature.damVulns} />
-            <InlineList title="Condition Immunities"   items={creature.conImmunes} />
-            <InlineList title="Active Conditions"      items={activeConditions} />
-            <InlineList title="Active Status Effects"
-                        items={CleanActiveStatusData(creature.activeStatusEffects).map(s => `${s.label}: ${s.description}`)}
+            <InlineList title="Condition Immunities" items={creature.conImmunes} />
+            <InlineList
+                title="Active Conditions"
+                items={activeConditions.map(renderActiveConditionValue)}
             />
-            {creature.spellInfo && (
+            <InlineList
+                title="Active Status Effects"
+                items={CleanActiveStatusData(creature.activeStatusEffects).map(
+                    (s) => `${s.label}: ${s.description}`
+                )}
+            />
+
+            {shouldRenderSpellInfo && (
                 <>
                     <hr style={s.thinRule} />
 
@@ -492,88 +682,101 @@ function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
                         <span style={s.label}>Spell Info:</span>
 
                         <div style={{ fontSize: "12px" }}>
-                            <div>Type: {creature.spellInfo?.type}</div>
-                            <div>DC: {creature.spellInfo?.DC}</div>
-                            <div>Attack Roll: {creature.spellInfo?.attackRoll}</div>
-
+                            <div>Type: {"type" in spellInfo ? spellInfo.type : "None"}</div>
+                            <div>DC: {"DC" in spellInfo ? spellInfo.DC : "None"}</div>
                             <div>
-                                Slots: {formatFullSpellSlots(creature.spellInfo?.spellSlots)}
+                                Attack Roll:{" "}
+                                {"attackRoll" in spellInfo ? spellInfo.attackRoll : "None"}
                             </div>
 
-                            <div>
-                                Spells: {creature.spellInfo?.spells?.map(s => s.name).join(", ")}
-                            </div>
+                            {shouldRenderCharges && (
+                                <div>Charges: {formatMonsterCharges(spellInfo)}</div>
+                            )}
+
+                            {shouldRenderSpellSlots && (
+                                <div>
+                                    Slots:{" "}
+                                    {"spellSlots" in spellInfo
+                                        ? formatFullSpellSlots(spellInfo.spellSlots)
+                                        : "None"}
+                                </div>
+                            )}
+
+                            <div>Spells: {formatMonsterSpellNames(spellInfo)}</div>
                         </div>
                     </div>
                 </>
             )}
-            {creature.multiattack && (
+
+            {creature.multiattack && Object.keys(creature.multiattack).length > 0 && (
                 <div style={{ marginTop: "3px" }}>
                     <span style={s.label}>Multiattack: </span>
                     <span style={{ fontSize: "12px" }}>{JSON.stringify(creature.multiattack)}</span>
                 </div>
             )}
-
         </div>
     );
 }
+
 export default function ComplexInitiativeEntry({
-  eid,
-  cid,
-  onToggle,
+    eid,
+    cid,
+    onToggle,
 }: ComplexInitiativeEntryProps) {
-  const [creature, setCreature] = useState<Creature | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>("");
+    const [creature, setCreature] = useState<Creature | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string>("");
 
-  useEffect(() => {
-    async function loadCreature() {
-      try {
-        setLoading(true);
-        setError("");
-        const data = await creatureGet(eid, cid);
+    useEffect(() => {
+        async function loadCreature() {
+            try {
+                setLoading(true);
+                setError("");
 
-        if (!data) {
-          setError("Creature not found.");
-          setCreature(null);
-          return;
+                const data = await creatureGet(eid, cid);
+
+                if (!data) {
+                    setError("Creature not found.");
+                    setCreature(null);
+                    return;
+                }
+
+                setCreature(data);
+            } catch (err) {
+                if (err instanceof Error) {
+                    setError(err.message);
+                } else {
+                    setError("Failed to load creature.");
+                }
+            } finally {
+                setLoading(false);
+            }
         }
 
-        setCreature(data);
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("Failed to load creature.");
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
+        loadCreature();
+    }, [eid, cid]);
 
-    loadCreature();
-  }, [eid, cid]);
+    return (
+        <div>
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: "12px",
+                }}
+            />
 
-  return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "12px",
-        }}
-      >
-      </div>
+            {loading && <div style={{ marginTop: "10px" }}>Loading creature...</div>}
+            {error && <div style={{ marginTop: "10px" }}>Error: {error}</div>}
 
-      {loading && <div style={{ marginTop: "10px" }}>Loading creature...</div>}
-      {error && <div style={{ marginTop: "10px" }}>Error: {error}</div>}
-
-      {!loading && !error && creature && (
-        <>
-          {isPlayerCreature(creature) ? renderPlayer(creature, onToggle) : renderMonster(creature, onToggle)}
-        </>
-      )}
-    </div>
-  );
+            {!loading && !error && creature && (
+                <>
+                    {isPlayerCreature(creature)
+                        ? renderPlayer(creature, onToggle)
+                        : renderMonster(creature, onToggle)}
+                </>
+            )}
+        </div>
+    );
 }

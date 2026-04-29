@@ -45,6 +45,7 @@ export function getCurrentTurnCreatureFromEncounter(encounter: Encounter): Creat
             ...(encounter.monsters ?? []),
         ];
 
+        //TODO: Matches by name! We need to add a CID attribute to initiative entries.
         return allCreatures.find(
             (creature) => getCreatureName(creature).toLowerCase() === currentTurnEntry.name.toLowerCase()
         );
