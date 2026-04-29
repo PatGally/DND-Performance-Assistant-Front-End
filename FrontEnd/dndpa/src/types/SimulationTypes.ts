@@ -1,4 +1,4 @@
-import type {MonsterCreature, PlayerCreature} from "./creature.ts";
+import type {ActiveCondition, MonsterCreature, PlayerCreature} from "./creature.ts";
 import type {GridCoord} from "./creature.ts";
 import type {CreatureAction} from "./action.ts";
 
@@ -107,7 +107,7 @@ export type ManualAffectedCreature = {
   damImmunes?: string[];
   damVulns?: string[];
   conImmunes?: string[];
-  activeConditions?: string[];
+  activeConditions?: (ActiveCondition | string)[];
   activeStatusEffects?: Record<string, unknown>[];
   hp?: number;
   position?: number[][];
