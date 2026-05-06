@@ -119,7 +119,6 @@ export function buildPreTurnSession(
     timestamp: "",
   };
 
-  console.log(draft);
 
   return {
     action: normalized,

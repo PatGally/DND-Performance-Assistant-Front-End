@@ -127,4 +127,9 @@ A few intentional scoping decisions worth flagging:
 
 ## License
 
-TBD.
+This project is licensed under the PolyForm Noncommercial License 1.0.0.
+It is free to use for personal, educational, research, and other 
+non-commercial purposes. Commercial use is not permitted without a 
+separate license — contact [testingorange5000@gmail.com] for commercial licensing.
+
+See the LICENSE file for full terms.

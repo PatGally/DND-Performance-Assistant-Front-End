@@ -30,7 +30,7 @@ const router = createBrowserRouter(
         {path: 'sign-in', element: <SignIn />, errorElement: <NotFoundPublic/>},
         {path: 'sign-up', element: <SignUp />, errorElement: <NotFoundPublic/>},
 
-        { path: '*', element: <NotFoundRouter /> },
+        {path: '*', element: <NotFoundRouter/>},
     ]
 );
 

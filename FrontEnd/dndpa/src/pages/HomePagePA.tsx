@@ -4,8 +4,6 @@ import HeroCarousel from '../components/HomePage-Components/HeroCarousel';
 import PASection from '../components/HomePage-Components/PASection.tsx';
 
 
-// import HowToUseHome from './HomePage-Components/HowToUseHome.tsx';
-// import OpenSource from './HomePage-Components/OpenSource.tsx';
 import AboutUs from '../components/HomePage-Components/AboutUs.tsx';
 import SiteFooter from '../components/HomePage-Components/SiteFooter';
 import '../css/HomePagePA.css';
@@ -15,7 +13,6 @@ const HomePagePA: React.FC = () => {
 
     useEffect(() => {
         const handleScroll = (): void => {
-            // Trigger the solid nav a little before leaving the hero for a smooth handoff
             setIsScrolled(window.scrollY > 80);
         };
 
@@ -30,8 +27,6 @@ const HomePagePA: React.FC = () => {
             <main className="pa-main">
                 <HeroCarousel />
                 <PASection />
-                {/*<HowToUseHome />*/}
-                {/*<OpenSource />*/}
                 <AboutUs />
             </main>
 

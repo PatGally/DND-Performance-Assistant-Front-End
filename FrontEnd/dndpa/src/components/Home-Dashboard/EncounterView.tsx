@@ -72,7 +72,6 @@ const EncounterView = ({ encounters, loadingEncounter, onDeleteEncounter }: Prop
                                     </div>
                                 </div>
 
-                                {/* Body: date + actions */}
                                 <Card.Body className="pa-ev__body">
                                     <p className="pa-ev__meta">
                                         {new Date(enc.date).toLocaleDateString()}
@@ -110,7 +109,6 @@ const EncounterView = ({ encounters, loadingEncounter, onDeleteEncounter }: Prop
                 </div>
             </div>
 
-            {/* Delete confirmation modal */}
             <Modal
                 show={showDeleteConfirm}
                 onHide={closeDeleteConfirm}
