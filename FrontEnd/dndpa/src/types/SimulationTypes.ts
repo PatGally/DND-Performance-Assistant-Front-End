@@ -107,6 +107,7 @@ export type ManualAffectedCreature = {
   damImmunes?: string[];
   damVulns?: string[];
   conImmunes?: string[];
+  // activeConditions?: { cond: string; resultid: string[] }[];
   activeConditions?: string[];
   activeStatusEffects?: Record<string, unknown>[];
   hp?: number;

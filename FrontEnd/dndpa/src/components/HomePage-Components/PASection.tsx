@@ -1,5 +1,6 @@
 import React from 'react';
 import PA_SHOWCASEIMAGE from '../../assets/PA_showcase.png';
+// import ACTION_EXCECUTION from '../../assets/ActionExcecution.png';
 interface NewsItem {
     id: string;
     image: string;
@@ -12,7 +13,7 @@ const PASection: React.FC = () => {
     const featured: NewsItem = {
         id: 'featured',
         image: PA_SHOWCASEIMAGE,
-        title: 'WE ARE OPEN SOURCE!',
+        title: '',
         categoryIcon: '/placeholder-icon.png',
         category: ""
     };
@@ -57,6 +58,12 @@ const PASection: React.FC = () => {
                             role="img"
                             aria-label="Featured article image"
                         />
+                        {/*<div*/}
+                        {/*    className="pa-news__featured-image"*/}
+                        {/*    style={{ backgroundImage: `url(${ACTION_EXCECUTION})` }}*/}
+                        {/*    role="img"*/}
+                        {/*    aria-label="Featured article image"*/}
+                        {/*/>*/}
                         <h3 className="pa-news__featured-title">{featured.title}</h3>
                         <div className="pa-news__meta">
                             {/*<div className="pa-news__meta-icon" aria-hidden="true" />*/}
@@ -65,7 +72,6 @@ const PASection: React.FC = () => {
                     </a>
                 </article>
 
-                {/* RIGHT: stacked list of smaller cards */}
                 <div className="pa-news__list">
                     {sideItems.map((item) => (
                         <article key={item.id} className="pa-news__card">

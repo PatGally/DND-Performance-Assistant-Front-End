@@ -465,7 +465,6 @@ function EncounterSimulation() {
                 </button>
             )}
 
-            {/* ===== RIGHT PANEL — Action list ===== */}
             {actionOpen && encounterData && currentTurnCreature && !hasPreTurnQueue
                 && !manualMode && !endOfEncounter && (
                     <aside className="pa-enc__side-panel pa-enc__side-panel--right">

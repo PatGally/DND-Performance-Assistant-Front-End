@@ -241,9 +241,7 @@ function renderPlayer(creature: PlayerCreature, onToggle?: () => void) {
             {renderList("Damage Vulnerabilities", stats.damVulns)}
             {renderList("Condition Immunities",   stats.conImmunes)}
             {renderList("Active Conditions",      stats.activeConditions)}
-            {/*{renderList("Active Status Effects",  stats.activeStatusEffects)}*/}
             {renderList("Active Status Effects", cleaned.map(s => `${s.label}: ${s.description}`))}
-            {/*<pre>{JSON.stringify(stats.activeStatusEffects, null, 2)}</pre>*/}
 
 
             <div>

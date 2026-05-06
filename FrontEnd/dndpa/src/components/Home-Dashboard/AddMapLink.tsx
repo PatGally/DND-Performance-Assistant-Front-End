@@ -33,7 +33,6 @@ function AddMapLink({ formData, updateFormData }: Props) {
             return;
         }
 
-        // Use your existing backend proxy endpoint
         updateFormData({ maplink: `/api/drive-image/${fileId}` });
     };
 
@@ -61,8 +60,6 @@ function AddMapLink({ formData, updateFormData }: Props) {
                             <div className='mt-2'> 3. https://drive.google.com/file/d/14lTqgOZV0ndBq29mFcDu49NKHvHenQK4/view?usp=drive_link (33x22 tiles)</div>
                             <div className='mt-2'> 4. https://drive.google.com/file/d/1wpYFnV2ku77JkwTuSpfzJXnWinyBH6IQ/view?usp=drive_link (18x24 tiles)</div>
                         </Form.Text>
-
-
                     )}
                 </Form.Group>
 

@@ -115,6 +115,12 @@ export function serializeSpellSlots(value: SpellSlotRow[]): SpellSlotRow[] {
 
     return trimmed;
 }
+// function createConditionPayload(creature: any) {
+//     return creature.activeConditions.map((cond: string) => ({
+//         cond: cond.toLowerCase(),
+//         resultid: [cond]
+//     }));
+// }
 
 export function creatureToBaseline(
     creature: Creature,
@@ -123,6 +129,8 @@ export function creatureToBaseline(
     if (isPlayerCreature(creature)) {
         const s = creature.stats;
         const sRecord = s as unknown as Record<string, unknown>;
+        // const payLoadConditions = createConditionPayload(s);
+        // console.log(payLoadConditions);
 
         return {
             cid,
@@ -160,6 +168,7 @@ export function creatureToBaseline(
     }
 
     const m = creature as MonsterCreature;
+    // const payLoadConditionsMonster = createConditionPayload(m);
 
     return {
         cid,

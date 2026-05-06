@@ -80,6 +80,7 @@ export async function handleManualSimulate({
     if (manualDraft.affectedCreatures.length > 0) {
       await axiosTokenInstance.post(
         `/encounter/${eid}/simulate/manual`,
+          // transformManualDraftForBackend(manualDraft)
         manualDraft
       );
 
@@ -110,6 +111,28 @@ export function clearManualState({
   setManualDraft({ affectedCreatures: [] });
   setInitiativeExpandedCid(null);
 }
+
+// function createConditionPayload(creature: ManualAffectedCreature) {
+//     if (!creature.activeConditions) return undefined;
+//     return (creature.activeConditions as unknown as string[]).map((cond) => ({
+//         cond: cond.toLowerCase(),
+//         resultid: [cond],
+//     }));
+// }
+//
+// function transformManualDraftForBackend(draft: ManualDraftState): ManualDraftState {
+//     return {
+//         ...draft,
+//         affectedCreatures: draft.affectedCreatures.map((creature) => {
+//             const conditions = createConditionPayload(creature);
+//             if (!conditions) return creature;
+//             return {
+//                 ...creature,
+//                 activeConditions: conditions,
+//             } as ManualAffectedCreature;
+//         }),
+//     };
+// }
 
 export function setManualState({
   actionExecutionSession,
