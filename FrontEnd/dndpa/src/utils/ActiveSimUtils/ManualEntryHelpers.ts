@@ -129,8 +129,7 @@ export function creatureToBaseline(
     if (isPlayerCreature(creature)) {
         const s = creature.stats;
         const sRecord = s as unknown as Record<string, unknown>;
-        // const payLoadConditions = createConditionPayload(s);
-        // console.log(payLoadConditions);
+
 
         return {
             cid,

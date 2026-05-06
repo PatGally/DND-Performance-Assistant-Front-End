@@ -181,7 +181,6 @@ export function extractActionTiming(
       ? maybe.targeting.some((target: unknown) => hasLingeringFields(target))
       : false;
 
-    console.log("In extractActionTiming with result", hasLingering);
 
     return hasLingering ? "lingering" : "instantaneous";
   }
@@ -189,12 +188,10 @@ export function extractActionTiming(
   if (isMonsterAction(action)) {
     const hasLingering = hasLingeringFields(action);
 
-    console.log("In extractActionTiming with result", hasLingering);
 
     return hasLingering ? "lingering" : "instantaneous";
   }
 
-  console.log("Failed checks, returning instant");
 
   return "instantaneous";
 }
@@ -348,7 +345,6 @@ export function getConeImageStyle(
 
 export function feetToCells(value?: string | number): number {
   const n = Number(value);
-  console.log("feetToCells", n);
   if (!Number.isFinite(n) || n <= 0) {
     throw new Error(`Invalid AOE size: ${value}`);
   }

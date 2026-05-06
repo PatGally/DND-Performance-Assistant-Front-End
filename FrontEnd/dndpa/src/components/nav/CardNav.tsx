@@ -46,8 +46,7 @@ const CardNav: React.FC<CardNavProps> = ({
     const tlRef = useRef<gsap.core.Timeline | null>(null);
 
     const [signInPopUp, setSignInPopUp] = useState(false);
-    // const [logInPopUp, setLogInPopUp] = useState(false);
-    console.log(signInPopUp);
+
 
     const calculateHeight = () => {
         const navEl = navRef.current;

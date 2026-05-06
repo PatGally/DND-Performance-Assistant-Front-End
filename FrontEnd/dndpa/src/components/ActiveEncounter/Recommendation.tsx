@@ -87,7 +87,6 @@ export default function Recommendation({
         setCurrentIndex(0);
 
         const data = await recommendationGet(eid, cid);
-        console.log("Recommendation data", data);
         setRecommendations(Array.isArray(data) ? data : []);
       } catch (err) {
         if (err instanceof Error) {
@@ -164,7 +163,6 @@ export default function Recommendation({
 
   function handleAccept() {
     if (!currentRecommendation) return;
-    console.log("Accepting ", currentRecommendation)
     handlePASubmission(
         currentRecommendation.name,
         currentRecommendation.prob,
