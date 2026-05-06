@@ -142,6 +142,7 @@ export async function commitManualAoePlacement({
   const positioning = await buildManualAoePositioning({
     shape: manualAoePlacement.shape,
     radiusCells: manualAoePlacement.radiusCells,
+    lineWidthCells: manualAoePlacement.lineWidthCells ?? 1,
     anchor,
     cursor,
   });
@@ -206,6 +207,7 @@ export async function handleGridCellHover({
   const positioning = await buildManualAoePositioning({
     shape: manualAoePlacement.shape,
     radiusCells: manualAoePlacement.radiusCells,
+    lineWidthCells: manualAoePlacement.lineWidthCells ?? 1,
     anchor,
     cursor: hoverCell,
   });

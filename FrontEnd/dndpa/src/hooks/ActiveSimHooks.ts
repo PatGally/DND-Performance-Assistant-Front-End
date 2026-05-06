@@ -355,6 +355,7 @@ export function useEncounterSimulationCallbacks({
       currentTurnCreature,
       encounterData,
       preTurnQueue,
+        aoeTokens,
       setManualLock,
       setPreTurnQueue,
       setActionExecutionSession,
@@ -367,6 +368,7 @@ export function useEncounterSimulationCallbacks({
     currentTurnCreature,
     encounterData,
     preTurnQueue,
+    aoeTokens,
     setManualLock,
     setPreTurnQueue,
     setActionExecutionSession,
@@ -427,13 +429,11 @@ export function useEncounterSimulationCallbacks({
 
   const handleExitPreTurn = useCallback(() => {
     handlePreTurnBack({
-      clearManualAoePreview: handleClearManualAoePreview,
       setActionExecutionSession,
       setManualLock,
       setPreTurnQueue,
     });
   }, [
-    handleClearManualAoePreview,
     setActionExecutionSession,
     setManualLock,
     setPreTurnQueue,

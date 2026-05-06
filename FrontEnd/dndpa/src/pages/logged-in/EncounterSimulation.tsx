@@ -113,18 +113,11 @@ function EncounterSimulation() {
 
     const loadEndOfEncounter = async (): Promise<void> => {
             try {
-                const response = await axiosTokenInstance.get(`/encounter/${eid}/completed`)
+                const response = await axiosTokenInstance.get(`/encounter/${eid}/completed`);
                 if (response.data.isEnd) {
-                    if (encounterData && !encounterData.completed) {
-                        try {
-                            await axiosTokenInstance.get(`/encounter/${eid}/setcompleted`);
-                        }
-                        catch(e) {
-                            console.error(e);
-                        }
-                    }
+                    console.log("Encounter ended!");
                     setEndOfEncounter(true);
-            }
+                }
             }
             catch(e) {
                 console.error(e);
@@ -139,6 +132,7 @@ function EncounterSimulation() {
                 setEncounterError(null);
 
                 const data = await getEncounter(eid);
+                console.log(data);
                 if (!data) {
                     setEncounterError("Encounter was not found.");
                     setEncounterData(undefined);
@@ -415,7 +409,7 @@ function EncounterSimulation() {
             </header>
 
 
-            {!initiativeOpen && !endOfEncounter && (
+            {!initiativeOpen && !endOfEncounter && !encStart && activeEncounter && (
                 <button
                     type="button"
                     className="pa-enc__edge-pill pa-enc__edge-pill--left"
@@ -425,9 +419,10 @@ function EncounterSimulation() {
                     <ArrowRightShort />
                 </button>
             )}
+            )
 
 
-            {initiativeOpen && !endOfEncounter && (
+            {initiativeOpen && !endOfEncounter && !encStart && activeEncounter && (
                 <aside className="pa-enc__side-panel pa-enc__side-panel--left">
                     <div className="pa-enc__side-panel-inner pa-enc__side-panel--left--border">
                         <InitiativeList
