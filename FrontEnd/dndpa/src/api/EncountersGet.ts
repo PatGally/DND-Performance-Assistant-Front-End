@@ -5,7 +5,6 @@ import {type EncounterDash} from "../types/encounter.ts";
 export const getEncounters = async (): Promise<EncounterDash[]> => {
     try {
         const response = await axiosTokenInstance.get(`/dashboard/encounters`);
-        // Ensure the backend returned an array
         if (!Array.isArray(response.data)) {
             console.error("Unexpected response format:", response.data);
             return [];

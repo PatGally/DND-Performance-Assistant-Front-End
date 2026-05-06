@@ -13,7 +13,7 @@
 
     --pa-enc-text: #ffffff;
     --pa-enc-text-dim: rgba(255, 255, 255, 0.7);
-    --pa-enc-text-muted: rgba(255, 255, 255, 0.45);
+    --pa-enc-text-muted: rgba(255, 255, 255, 1);
     --pa-enc-text-disabled: rgba(255, 255, 255, 0.35);
 
     --pa-enc-error: #f87171;
@@ -137,11 +137,13 @@
 
 .pa-enc__turn-label-prefix {
     color: var(--pa-enc-text-muted);
+    font-size: 1rem;
 }
 
 .pa-enc__turn-label-value {
     color: var(--pa-enc-text);
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 1rem;
 }
 
 .pa-enc__exit-slot {
