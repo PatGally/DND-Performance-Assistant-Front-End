@@ -583,7 +583,6 @@ export async function handleActionSubmission({
     },
     timestamp: "",
   };
-  console.log("Normalized action session action:", normalized);
   setActionExecutionSession({
     action: normalized,
     requiredInputs,
@@ -609,7 +608,6 @@ export async function handleActionSubmission({
       ? getFootprintCenterCell(actorPosition)
       : null;
 
-    console.log("Logging normalized before manual placement", normalized);
 
     if (normalized.targetCount === -2 && !normalized.radius) {
       normalized.radius = normalized.range;
@@ -632,7 +630,6 @@ export async function handleActionSubmission({
       stage: selfOrigin && isDirectionalShape(shape) ? "pick_direction" : "pick_anchor",
     };
 
-    console.log("Logging placement", placement);
 
     setManualAoePlacement(placement);
   }
@@ -716,8 +713,6 @@ export async function handlePASubmission({
     },
     timestamp: "",
   };
-  console.log("Setting draft", draft);
-  console.log("Normalized action session action:", normalized);
   setActionExecutionSession({
     action: normalized,
     requiredInputs,
@@ -769,7 +764,6 @@ export async function handleActionExecution({
       token: executedAoeToken ?? null,
     };
 
-    console.log("Pre-execution payload:", payload);
 
     try {
       await axiosTokenInstance.post(`/encounter/${eid}/simulate/ruleset`, payload);

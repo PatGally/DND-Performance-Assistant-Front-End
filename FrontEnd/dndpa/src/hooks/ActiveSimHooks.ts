@@ -286,7 +286,6 @@ export function useEncounterSimulationCallbacks({
     targets: RecommendationTarget,
     previewResultID?: string
   ) => {
-    console.log("Hooking PA Submit with", overallRank, base_weight, ml_weight, useML, final_weight, candidateCount);
     void handlePASubmission({
       name,
       prob,

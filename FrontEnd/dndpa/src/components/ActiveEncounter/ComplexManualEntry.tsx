@@ -489,6 +489,7 @@ export default function ComplexManualEntry({
     const baselineAc = getNumberValue(baseline.ac, 0);
     const baselineLResists = getNumberValue(baseline.lResists, 0);
     const baselineEnemy = getBooleanValue(baseline.enemy, false);
+    // const profBonus = getNumberValue(baseline.);
 
     const currentHp = getNumberValue(val("hp"), baselineHp);
     const currentAc = getNumberValue(val("ac"), baselineAc);

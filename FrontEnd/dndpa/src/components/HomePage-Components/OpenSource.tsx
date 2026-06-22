@@ -7,16 +7,6 @@ interface OpenSourceCard {
     title: string;
 }
 
-/**
- * OpenSource
- * --------------
- * Horizontal scrollable row of landscape cards with left/right arrow controls
- * in the top-right. Uses native `scrollBy` with `behavior: smooth` — no
- * extra libraries required.
- *
- * The number of visible cards adjusts with viewport width via CSS; on small
- * screens the row scrolls on touch.
- */
 const OpenSource: React.FC = () => {
     const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -31,7 +21,6 @@ const OpenSource: React.FC = () => {
     const scroll = (direction: 'left' | 'right'): void => {
         const node = scrollRef.current;
         if (!node) return;
-        // Scroll by roughly one card width
         const amount = node.clientWidth * 0.6;
         node.scrollBy({
             left: direction === 'left' ? -amount : amount,
@@ -70,15 +59,12 @@ const OpenSource: React.FC = () => {
 
                     <article key={card.id} className="pa-esports__card">
                         <div className="text-dark bg-light">{card.title}</div>
-                        {/* Replace inner div with <img src={card.image} alt={card.alt} /> */}
                         <div
                             className="pa-esports__card-image"
                             style={{ backgroundImage: `url(${card.image})` }}
                             role="img"
                             aria-label={card.alt}
                         />
-
-
                     </article>
                 ))}
             </div>

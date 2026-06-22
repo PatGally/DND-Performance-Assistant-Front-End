@@ -227,7 +227,6 @@ function EncounterCreationNavAndSubmit({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (encounterLimitReached){
-            console.log("Limit Test for Encounters ",encounterLimitReached);
             return
         }
         if (isSubmitting) return;
@@ -283,7 +282,7 @@ function EncounterCreationNavAndSubmit({
             const payload = {
                 ...rest,
                 eid,
-                date: new Date().toISOString(), //TODO fix date so people see a regular x/xx/xxxx
+                date: new Date().toISOString(),
                 players: normalizedPlayers,
                 monsters: normalizedMonsters,
                 initiative: buildInitiativePayload(rest.initiative, normalizedPlayers, normalizedMonsters),

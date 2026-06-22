@@ -3,6 +3,7 @@ import initiativeGet from "../../api/InitiativeGet";
 import SimpleInitiativeEntry from "./SimpleInitiativeEntry";
 import ComplexInitiativeEntry from "./ComplexInitiativeEntry";
 import ComplexManualEntry from "./ComplexManualEntry";
+
 import {
   type ManualAffectedCreature,
 } from "../../types/SimulationTypes.ts";
@@ -75,11 +76,11 @@ export default function InitiativeList({
 
   return (
     <div style={{ width: "100%" }}>
-        {/*<span className='text-center'>Turn Order</span>*/}
       {initiative.map((entry) => {
         const isExpanded = activeExpandedCid === entry.cid;
         const draftValue = manualDraft?.affectedCreatures.find(
           (creature) => creature.cid === entry.cid
+
         );
 
         return (
