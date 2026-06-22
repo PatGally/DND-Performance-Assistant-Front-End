@@ -8,6 +8,7 @@ export type CharacterStats = {
     maxhp: string;
     cid: string;
     position: any[];
+    movementMax: number;
     characterClass: string;
     conImmunes: any[];
     activeStatusEffects: any[];
@@ -121,6 +122,7 @@ export type PlayerStats = {
   hp: number | string;
   maxhp: number | string;
   position: GridCoord[];
+  movementMax: number;
   cid: string;
   name: string;
   level: number | string;
@@ -149,6 +151,7 @@ export type MonsterCreature = {
   hp: number | string;
   maxhp: number | string;
   position: GridCoord[];
+  movementMax: number;
   cid: string;
   name: string;
   cr: number | string;

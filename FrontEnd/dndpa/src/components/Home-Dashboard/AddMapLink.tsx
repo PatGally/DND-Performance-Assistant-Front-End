@@ -33,7 +33,6 @@ function AddMapLink({ formData, updateFormData }: Props) {
             return;
         }
 
-        // Use your existing backend proxy endpoint
         updateFormData({ maplink: `/api/drive-image/${fileId}` });
     };
 

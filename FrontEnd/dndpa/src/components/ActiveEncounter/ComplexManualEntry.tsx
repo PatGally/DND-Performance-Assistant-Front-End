@@ -12,6 +12,7 @@ import type {
 
 import type {
     InitiativeEntry,
+    InitiativeEntryDisplay,
     ManualAffectedCreature,
     ManualStatBlock,
 } from "../../types/SimulationTypes";
@@ -356,7 +357,7 @@ export default function ComplexManualEntry({
 }: {
     eid: string;
     cid: string;
-    initiativeEntry: InitiativeEntry;
+    initiativeEntry: InitiativeEntry | InitiativeEntryDisplay;
     onToggle?: () => void;
     draftValue?: ManualAffectedCreature;
     onDraftChange: (next: ManualAffectedCreature) => void;

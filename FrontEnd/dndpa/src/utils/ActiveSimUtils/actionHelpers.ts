@@ -155,7 +155,6 @@ export function buildRequiredInputs(normalized: NormalizedAction): string[] {
 
   return fields;
 }
-
 export function isCriticalAttackRoll(
   rollMode: string,
   rawRoll: string,
@@ -167,7 +166,6 @@ export function isCriticalAttackRoll(
   const rollValue = Number(rawRoll.trim());
   return Number.isFinite(rollValue) && rollValue === rollBounds.max;
 }
-
 export function getCriticalDamageBounds(
   baseBounds: RollBounds | null,
   isCrit: boolean
@@ -180,7 +178,6 @@ export function getCriticalDamageBounds(
     max: baseBounds.max * 2,
   };
 }
-
 function getTargetSaveBonus(creature: Creature, saveType: string): number {
   const key = saveType.toUpperCase() as StatKey;
 
@@ -190,7 +187,6 @@ function getTargetSaveBonus(creature: Creature, saveType: string): number {
 
   return toNumber(creature.saveProfs?.[key]) ?? 0;
 }
-
 export function getRollBoundsForTarget(actionSession: ActionExecutionSession, creature: Creature): RollBounds | null {
   const rollMode = actionSession.action.rollMode?.toLowerCase();
 
@@ -212,7 +208,6 @@ export function getRollBoundsForTarget(actionSession: ActionExecutionSession, cr
 
   return null;
 }
-
 export function getDamageBounds(actionSession: ActionExecutionSession): RollBounds | null {
   const dieNum = actionSession.action.damageDieNum;
   const dieType = actionSession.action.damageDieType;
@@ -226,7 +221,6 @@ export function getDamageBounds(actionSession: ActionExecutionSession): RollBoun
     max: (dieNum * dieType) + damageMod,
   };
 }
-
 export function formatBounds(bounds: RollBounds | null): string {
   if (!bounds) return "";
   return `Min: ${bounds.min} | Max: ${bounds.max}`;
@@ -240,7 +234,6 @@ function isSpellActionLike(action: CreatureAction): boolean {
     Array.isArray(maybe?.targeting)
   );
 }
-
 function isMonsterActionLike(action: CreatureAction): boolean {
   const maybe = action as any;
 
@@ -259,16 +252,13 @@ function isMonsterActionLike(action: CreatureAction): boolean {
     )
   );
 }
-
 function getFirstTarget(action: CreatureAction): any | undefined {
   const maybe = action as any;
   return Array.isArray(maybe?.targeting) ? maybe.targeting[0] : undefined;
 }
-
 function getFirstDamageType(value: unknown): string {
   return Array.isArray(value) && typeof value[0] === "string" ? value[0] : "";
 }
-
 export function normalizeAction(action: CreatureAction, actor?: Creature): NormalizedAction {
   const maybe = action as any;
 
