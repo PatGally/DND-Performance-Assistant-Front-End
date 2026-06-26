@@ -3,6 +3,7 @@ import type { EncounterFormData } from "./CreateEncounter";
 import { type MonsterCreature } from "../../types/creature.ts";
 import AnimatedList from "../Information/AnimatedList.tsx";
 import { Form, Row, Col } from "react-bootstrap";
+import { fetchUUID } from "../../api/UUIDGet.ts";
 
 
 type Props = {
@@ -42,13 +43,29 @@ function AddMonsters({ formData, updateFormData, monsters }: Props) {
         .map((m, i) => formData.monsters.some((fm) => fm.name === m.name) ? i : -1)
         .filter((i) => i !== -1);
 
-    const handleSelect = (index: number) => {
+    const handleSelect = async (index: number) => {
         const selected = filteredMonsters[index];
         const already = formData.monsters.some((m) => m.name === selected.name);
+
+        if (already) {
+            updateFormData({
+                monsters: formData.monsters.filter((m) => m.name !== selected.name),
+            });
+            return;
+        }
+
+        let cid = selected.cid?.trim();
+        if (!cid) {
+            try {
+                cid = await fetchUUID();
+            } catch (error) {
+                console.error("Unable to assign a CID to the selected monster", error);
+                return;
+            }
+        }
+
         updateFormData({
-            monsters: already
-                ? formData.monsters.filter((m) => m.name !== selected.name)
-                : [...formData.monsters, selected],
+            monsters: [...formData.monsters, { ...selected, cid }],
         });
     };
 

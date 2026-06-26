@@ -125,21 +125,20 @@ function buildInitiativePayload(
 
     players.forEach((player) => {
         playersByKey.set(player.stats.cid, player);
-        playersByKey.set(player.stats.name, player);
     });
 
     monsters.forEach((monster) => {
         monstersByKey.set(monster.cid, monster);
-        monstersByKey.set(monster.name, monster);
     });
 
     return initiative.map(({key, ...entry}) => {
-        const lookupKey = key ?? entry.cid ?? entry.name;
+        const lookupKey = entry.cid;
 
         if (entry.turnType === "Player") {
             const player = playersByKey.get(lookupKey);
             return {
                 ...entry,
+                cid: player?.stats.cid ?? entry.cid,
                 movementResource: Number(player?.stats.movementMax ?? entry.movementResource ?? 0),
                 startingAnchor: clonePosition(player?.stats.position ?? entry.startingAnchor),
             };
@@ -149,6 +148,7 @@ function buildInitiativePayload(
             const monster = monstersByKey.get(lookupKey);
             return {
                 ...entry,
+                cid: monster?.cid ?? entry.cid,
                 movementResource: Number(monster?.movementMax ?? entry.movementResource ?? 0),
                 startingAnchor: clonePosition(monster?.position ?? entry.startingAnchor),
             };

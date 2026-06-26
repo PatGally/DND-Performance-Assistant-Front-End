@@ -21,7 +21,8 @@ function getSizeFootprint(size: string): [number, number][] {
 }
 
 export async function normalizeMonster(monster: any) {
-    const cid = monster.cid ?? await fetchUUID();
+    const existingCid = typeof monster.cid === "string" ? monster.cid.trim() : "";
+    const cid = existingCid || await fetchUUID();
     return {
         ...monster,
         cid,

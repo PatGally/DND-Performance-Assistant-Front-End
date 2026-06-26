@@ -101,7 +101,7 @@ function AddInitiative({ formData, updateFormData }: Props) {
             dex:      getDex(c.stats.statArray),
         })),
         ...formData.monsters.map((m) => ({
-            key:      m.cid ?? m.name,
+            key:      m.cid || m.name,
             cid:      m.cid,
             name:     m.name,
             type:     "monster" as const,

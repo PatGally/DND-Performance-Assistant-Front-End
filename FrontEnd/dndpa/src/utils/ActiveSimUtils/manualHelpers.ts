@@ -28,11 +28,13 @@ export type HandleManualSimulateParams = {
   setInitiativeExpandedCid: StateSetter<string | null>;
   setManualMode: StateSetter<boolean>;
   setInitiativeRefreshKey: StateSetter<number>;
+  setSelectedCID?: StateSetter<string | null>;
 };
 
 type ClearManualStateParams = {
   setManualDraft: StateSetter<ManualDraftState>;
   setInitiativeExpandedCid: StateSetter<string | null>;
+  setSelectedCID?: StateSetter<string | null>;
 };
 
 type ClearManualAoePreviewParams = {
@@ -52,6 +54,7 @@ type SetManualStateParams = {
   setActionOpen: StateSetter<boolean>;
   setManualDraft: StateSetter<ManualDraftState>;
   setInitiativeExpandedCid: StateSetter<string | null>;
+  setSelectedCID?: StateSetter<string | null>;
 };
 
 type HandleManualCreatureChangeParams = {
@@ -71,6 +74,7 @@ export async function handleManualSimulate({
   setInitiativeExpandedCid,
   setManualMode,
   setInitiativeRefreshKey,
+  setSelectedCID,
 }: HandleManualSimulateParams): Promise<void> {
   if (manualLock || !manualMode || !eid) return;
 
@@ -95,6 +99,7 @@ export async function handleManualSimulate({
 
     setManualDraft({ affectedCreatures: [] });
     setInitiativeExpandedCid(null);
+    setSelectedCID?.(null);
   } catch (error) {
     console.error("Manual simulation failed:", error);
   } finally {
@@ -106,10 +111,12 @@ export async function handleManualSimulate({
 
 export function clearManualState({
   setManualDraft,
-  setInitiativeExpandedCid
+  setInitiativeExpandedCid,
+  setSelectedCID,
 }: ClearManualStateParams): void {
   setManualDraft({ affectedCreatures: [] });
   setInitiativeExpandedCid(null);
+  setSelectedCID?.(null);
 }
 
 // function createConditionPayload(creature: ManualAffectedCreature) {
@@ -144,6 +151,7 @@ export function setManualState({
   setActionOpen,
   setManualDraft,
   setInitiativeExpandedCid,
+  setSelectedCID,
 }: SetManualStateParams): void {
   clearManualAoePreview({
     resultID: actionExecutionSession?.draft.resultID,
@@ -159,6 +167,7 @@ export function setManualState({
   clearManualState({
     setManualDraft,
     setInitiativeExpandedCid,
+    setSelectedCID,
   });
 }
 

@@ -63,6 +63,9 @@ export default function SimpleInitiativeEntry({
                 {entry.hp != null && (
                     <PropRow label="Bonus Action" value={entry.bonusActionResource} />
                 )}
+                {entry.hp != null && (
+                    <PropRow label="Movement" value={entry.movementResource} />
+                )}
             </div>
 
         </div>

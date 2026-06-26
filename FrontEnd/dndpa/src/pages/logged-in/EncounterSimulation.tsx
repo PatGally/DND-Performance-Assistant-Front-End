@@ -12,7 +12,8 @@ import InputHandler from "../../components/ActiveEncounter/InputHandler.tsx";
 
 import {
     getCreatureCid, getCreaturePosition,
-    getCurrentTurnCreatureFromEncounter
+    getCurrentTurnCreatureFromEncounter,
+    isLairActionEntry
 } from "../../utils/ActiveSimUtils/CreatureHelpers.ts";
 
 import {getEncounter} from "../../api/EncounterGet.ts";
@@ -36,8 +37,7 @@ import {loadActions} from "../../utils/ActiveSimUtils/actionHelpers.ts";
 import {onPanEnd, onPanMove, onPanStart, onWheel} from "../../utils/ActiveSimUtils/panningHelpers.ts";
 import {
     clearManualState, handleManualCreatureChange,
-    handleManualSimulate,
-    setManualState
+    handleManualSimulate
 } from "../../utils/ActiveSimUtils/manualHelpers.ts";
 import { useEncounterSimulationCallbacks } from "../../hooks/ActiveSimHooks.ts";
 
@@ -99,7 +99,7 @@ function EncounterSimulation() {
 
     const {
       handleSetManualState, handleClearManualAoePreview, handleActiveMapTokenSelect,
-      handleActiveMapGridCellClick, handleActiveMapGridCellHover, handleBuildRecommendationAoeToken,
+      handleManualMovementSelect, handleActiveMapGridCellClick, handleActiveMapGridCellHover, handleBuildRecommendationAoeToken,
       handleSubmitAction, handleSubmitRecommendation, handleExecuteAction,
       handleExecutePreTurn, handleSimStart, handleNextTurnWrapper, handleExitPreTurn,
     } = useEncounterSimulationCallbacks({
@@ -131,6 +131,7 @@ function EncounterSimulation() {
                 setEncounterError(null);
 
                 const data = await getEncounter(eid);
+                console.log("Data: ", data);
                 if (!data) {
                     setEncounterError("Encounter was not found.");
                     setEncounterData(undefined);
@@ -177,8 +178,15 @@ function EncounterSimulation() {
             setActiveEncounter(false);
         } else {
             const storedTurn = getCurrentTurnCreatureFromEncounter(encounterData);
-            if ((storedTurn && storedTurn.name === encounterData.initiative[0].name) ||
-                (!storedTurn && encounterData.initiative[0].name.toLowerCase() == "lair action")) {
+            const firstInitiativeEntry = encounterData.initiative[0];
+            const storedTurnIsLairAction = (storedTurn as any)?._isLairAction === true;
+            const storedTurnMatchesFirst = firstInitiativeEntry && (
+                (storedTurnIsLairAction && isLairActionEntry(firstInitiativeEntry)) ||
+                (!storedTurnIsLairAction && storedTurn && getCreatureCid(storedTurn) === firstInitiativeEntry.cid) ||
+                (!storedTurn && isLairActionEntry(firstInitiativeEntry))
+            );
+
+            if (storedTurnMatchesFirst) {
                 handleSimStart();
             }
             if (storedTurn) {
@@ -229,7 +237,7 @@ function EncounterSimulation() {
             setManualMode(true);
             setInitiativeOpen(true);
             setActionOpen(false);
-            clearManualState({setManualDraft, setInitiativeExpandedCid});
+            clearManualState({setManualDraft, setInitiativeExpandedCid, setSelectedCID});
             setManualLock(false);
             setIsLairAction(true);
             return;
@@ -342,6 +350,7 @@ function EncounterSimulation() {
                                     clearManualState({
                                         setManualDraft,
                                         setInitiativeExpandedCid,
+                                        setSelectedCID,
                                     });
                                 }}
                             >
@@ -353,10 +362,7 @@ function EncounterSimulation() {
                                 className="pa-enc__btn pa-enc__btn--ghost"
                                 aria-pressed={manualMode}
                                 disabled={actionExecutionSession !== undefined || handlingNextTurn || manualLock}
-                                onClick={() => setManualState({
-                                    actionExecutionSession, latestHoverRequestRef,
-                                    setAoeTokens, setManualAoePlacement, setManualMode,
-                                    setInitiativeOpen, setActionOpen, setManualDraft, setInitiativeExpandedCid})}
+                                onClick={handleSetManualState}
                             >
                                 Manual
                             </button>
@@ -370,7 +376,7 @@ function EncounterSimulation() {
                                             manualLock, manualMode, eid, manualDraft,
                                             setManualLock, setEncounterData, setCurrentTurnCreature,
                                             setManualDraft, setInitiativeExpandedCid, setManualMode,
-                                            setInitiativeRefreshKey,
+                                            setInitiativeRefreshKey, setSelectedCID,
                                         })
                                     }
                                 >
@@ -430,6 +436,8 @@ function EncounterSimulation() {
                             expandedCid={initiativeExpandedCid}
                             onExpandedCidChange={setInitiativeExpandedCid}
                             manualDraft={manualDraft}
+                            selectedCID={selectedCID}
+                            onManualMovementSelect={handleManualMovementSelect}
                             onManualCreatureChange={(nextCreature) =>
                                 handleManualCreatureChange({ nextCreature, setManualDraft })
                             }

@@ -7,7 +7,12 @@ import type {
   PendingPreTurnResolution,
 } from "../../types/SimulationTypes.ts";
 
-import {getCreatureName, getCreaturePosition, getCurrentTurnCreatureFromEncounter} from "./CreatureHelpers.ts";
+import {
+  findCreatureByInitiativeEntry,
+  getCreaturePosition,
+  getCurrentTurnCreatureFromEncounter,
+  isLairActionEntry,
+} from "./CreatureHelpers.ts";
 import axiosTokenInstance from "../../api/AxiosTokenInstance.ts";
 import { getEncounter } from "../../api/EncounterGet.ts";
 import { syncPreTurnQueueFromCreature } from "./PreTurnHelpers.ts";
@@ -77,16 +82,15 @@ export function simStart({
   setEncStart(false);
   setActiveEncounter(true);
 
-  const initStart = encounterData.initiative[0]?.name;
+  const initStart = encounterData.initiative[0];
   if (!initStart) return;
 
-  if(initStart.toLowerCase() == "lair action") {
+  if(isLairActionEntry(initStart)) {
     setCurrentTurnCreature({ _isLairAction: true } as unknown as Creature);
+    return;
   }
 
-  const matchingCreature = allCreatures.find(
-    (creature) => getCreatureName(creature) === initStart
-  );
+  const matchingCreature = findCreatureByInitiativeEntry(encounterData, initStart);
 
   if (!matchingCreature) {
     console.warn("Could not find initiative starting creature.");

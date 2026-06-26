@@ -24,6 +24,7 @@ import {
   handleGridCellClick,
   handleGridCellHover,
   handleTokenSelect,
+  selectManualMovementCreature,
 } from "../utils/ActiveSimUtils/tokenHelpers.ts";
 
 import {
@@ -142,6 +143,7 @@ export function useEncounterSimulationCallbacks({
       setActionOpen,
       setManualDraft,
       setInitiativeExpandedCid,
+      setSelectedCID,
     });
   }, [
     actionExecutionSession,
@@ -153,6 +155,7 @@ export function useEncounterSimulationCallbacks({
     setActionOpen,
     setManualDraft,
     setInitiativeExpandedCid,
+    setSelectedCID,
   ]);
 
   const handleClearManualAoePreview = useCallback(() => {
@@ -176,6 +179,7 @@ export function useEncounterSimulationCallbacks({
       actionExecutionSession,
       hasPreTurnQueue,
       manualMode,
+      selectedCID,
       setInitiativeOpen,
       setInitiativeExpandedCid,
       setSelectedCID,
@@ -185,8 +189,24 @@ export function useEncounterSimulationCallbacks({
     actionExecutionSession,
     hasPreTurnQueue,
     manualMode,
+    selectedCID,
     setInitiativeOpen,
     setInitiativeExpandedCid,
+    setSelectedCID,
+  ]);
+
+  const handleManualMovementSelect = useCallback((cid: string) => {
+    selectManualMovementCreature({
+      cid,
+      manualMode,
+      actionExecutionSession,
+      hasPreTurnQueue,
+      setSelectedCID,
+    });
+  }, [
+    manualMode,
+    actionExecutionSession,
+    hasPreTurnQueue,
     setSelectedCID,
   ]);
 
@@ -442,6 +462,7 @@ export function useEncounterSimulationCallbacks({
     handleSetManualState,
     handleClearManualAoePreview,
     handleActiveMapTokenSelect,
+    handleManualMovementSelect,
     handleActiveMapGridCellClick,
     handleActiveMapGridCellHover,
     handleBuildRecommendationAoeToken,

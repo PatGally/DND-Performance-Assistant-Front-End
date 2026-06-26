@@ -19,6 +19,8 @@ type InitiativeListProps = {
   expandedCid?: string | null;
   onExpandedCidChange?: (cid: string | null) => void;
   manualDraft?: ManualDraftState;
+  selectedCID?: string | null;
+  onManualMovementSelect?: (cid: string) => void;
   onManualCreatureChange?: (next: ManualAffectedCreature) => void;
 };
 
@@ -28,6 +30,8 @@ export default function InitiativeList({
   expandedCid,
   onExpandedCidChange,
   manualDraft,
+  selectedCID,
+  onManualMovementSelect,
   onManualCreatureChange,
 }: InitiativeListProps) {
   const [initiative, setInitiative] = useState<InitiativeEntryDisplay[]>([]);
@@ -102,6 +106,8 @@ export default function InitiativeList({
                 initiativeEntry={entry}
                 onToggle={() => toggleExpanded(entry.cid)}
                 draftValue={draftValue}
+                isManualMovementSelected={selectedCID === entry.cid}
+                onManualMovementSelect={() => onManualMovementSelect?.(entry.cid)}
                 onDraftChange={(next) => onManualCreatureChange?.(next)}
               />
             ) : (
