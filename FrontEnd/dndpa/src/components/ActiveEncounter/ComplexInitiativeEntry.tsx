@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import { type Creature, type MonsterCreature, type PlayerCreature } from "../../types/creature.ts";
 import creatureGet from "../../api/CreatureGet";
 import { isPlayerCreature } from "../../api/CreatureGet";
-import type { InitiativeEntry } from "../../types/SimulationTypes";
+import type { InitiativeEntry, InitiativeEntryDisplay } from "../../types/SimulationTypes";
 import { CleanActiveStatusData } from "../../utils/ActiveSimUtils/CleanActiveStatusData";
 
 type ComplexInitiativeEntryProps = {
     eid: string;
     cid: string;
-    initiativeEntry: InitiativeEntry;
+    initiativeEntry: InitiativeEntry | InitiativeEntryDisplay;
     onToggle: () => void;
 };
 

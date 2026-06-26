@@ -29,7 +29,7 @@ import {
 import {
   getCreatureCid,
   getCreaturePosition,
-  getCreatureSize,
+  getCreatureSize, getCurrentTurnCreatureFromEncounter,
 } from "./CreatureHelpers.ts";
 
 import { normalizeAction } from "./actionHelpers.ts";
@@ -42,8 +42,17 @@ export type HandleTokenSelectParams = {
   actionExecutionSession?: ActionExecutionSession;
   hasPreTurnQueue: boolean;
   manualMode: boolean;
+  selectedCID: string | null;
   setInitiativeOpen: StateSetter<boolean>;
   setInitiativeExpandedCid: StateSetter<string | null>;
+  setSelectedCID: StateSetter<string | null>;
+};
+
+export type SelectManualMovementCreatureParams = {
+  cid: string;
+  manualMode: boolean;
+  actionExecutionSession?: ActionExecutionSession;
+  hasPreTurnQueue: boolean;
   setSelectedCID: StateSetter<string | null>;
 };
 
@@ -97,12 +106,126 @@ export type BuildRecommendationAoeTokenParams = {
   currentTurnActions?: CreatureAction[];
 };
 
+type MapBounds = {
+  cols: number;
+  rows: number;
+};
+
+function getCreatureFootprint(creature: Creature): number {
+  const sizeRaw = getCreatureSize(creature);
+
+  if (sizeRaw === "large") return 2;
+  if (sizeRaw === "huge") return 3;
+  if (sizeRaw === "gargantuan") return 4;
+
+  return 1;
+}
+
+function buildFootprintPosition(cellX: number, cellY: number, footprint: number): GridCoord[] {
+  const newPos: GridCoord[] = [];
+
+  for (let dy = 0; dy < footprint; dy++) {
+    for (let dx = 0; dx < footprint; dx++) {
+      newPos.push([cellX + dx, cellY + dy]);
+    }
+  }
+
+  return newPos;
+}
+
+function getEncounterGridBounds(encounterData: Encounter): MapBounds | null {
+  const cellBounds = encounterData.mapdata?.grid?.cellBounds;
+  const cols = Number(cellBounds?.cols ?? 0);
+  const rows = Number(cellBounds?.rows ?? 0);
+
+  if (!Number.isFinite(cols) || !Number.isFinite(rows) || cols <= 0 || rows <= 0) {
+    return null;
+  }
+
+  return { cols, rows };
+}
+
+function isPositionWithinMap(position: GridCoord[], bounds: MapBounds): boolean {
+  return position.every(
+    ([x, y]) => x >= 0 && y >= 0 && x < bounds.cols && y < bounds.rows
+  );
+}
+
+async function moveCreatureFromSelectedCell({
+  cellX,
+  cellY,
+  selectedCID,
+  encounterData,
+  eid,
+  manualMode,
+  setEncounterData,
+  setSelectedCID,
+  setRecommendRefreshKey,
+  setInitiativeRefreshKey,
+}: {
+  cellX: number;
+  cellY: number;
+  selectedCID: string;
+  encounterData: Encounter;
+  eid: string;
+  manualMode: boolean;
+  setEncounterData: StateSetter<Encounter | undefined>;
+  setSelectedCID: StateSetter<string | null>;
+  setRecommendRefreshKey: StateSetter<number>;
+  setInitiativeRefreshKey: StateSetter<number>;
+}): Promise<void> {
+  const allCreatures: Creature[] = [
+    ...(encounterData.players ?? []),
+    ...(encounterData.monsters ?? []),
+  ];
+
+  const movedCreature = allCreatures.find(
+    (creature) => getCreatureCid(creature) === selectedCID
+  );
+
+  if (!movedCreature) {
+    console.error("Could not find selected creature.");
+    return;
+  }
+
+  const newPos = buildFootprintPosition(
+    cellX,
+    cellY,
+    getCreatureFootprint(movedCreature)
+  );
+
+  const bounds = getEncounterGridBounds(encounterData);
+
+  if (!bounds || !isPositionWithinMap(newPos, bounds)) {
+    console.error("Selected movement target is outside the map bounds.");
+    return;
+  }
+
+  const endpoint = manualMode
+    ? `/encounter/${eid}/creature/${selectedCID}/simulate/manual-movement`
+    : `/encounter/${eid}/creature/${selectedCID}/simulate/movement`
+
+  await axiosTokenInstance.post(endpoint, newPos);
+
+  const updatedEncounter = await getEncounter(eid);
+  if (!updatedEncounter) {
+    console.error("Encounter reload failed after movement.");
+    return;
+  }
+
+  setEncounterData(updatedEncounter);
+  setSelectedCID(null);
+  setRecommendRefreshKey((prev) => prev + 1);
+  setInitiativeRefreshKey((prev) => prev + 1);
+}
+
 export function handleTokenSelect({
   cid,
   encounterData,
   actionExecutionSession,
   hasPreTurnQueue,
   manualMode,
+  selectedCID,
   setInitiativeOpen,
   setInitiativeExpandedCid,
   setSelectedCID,
@@ -110,10 +233,36 @@ export function handleTokenSelect({
   if (!encounterData || actionExecutionSession || hasPreTurnQueue) return;
 
   if (manualMode) {
+    if (selectedCID) {
+      if (selectedCID === cid) {
+        setSelectedCID(null);
+      }
+
+      return;
+    }
+
     setInitiativeOpen(true);
     setInitiativeExpandedCid((prev) => (prev === cid ? null : cid));
     return;
   }
+
+    //Creatures that aren't currentTurnCreature can no longer move.
+  const currentTurnCreature = getCurrentTurnCreatureFromEncounter(encounterData);
+  if (currentTurnCreature && cid !== getCreatureCid(currentTurnCreature)) {
+    return;
+  }
+
+  setSelectedCID((prev) => (prev === cid ? null : cid));
+}
+
+export function selectManualMovementCreature({
+  cid,
+  manualMode,
+  actionExecutionSession,
+  hasPreTurnQueue,
+  setSelectedCID,
+}: SelectManualMovementCreatureParams): void {
+  if (!manualMode || actionExecutionSession || hasPreTurnQueue) return;
 
   setSelectedCID((prev) => (prev === cid ? null : cid));
 }
@@ -315,55 +464,26 @@ export async function handleGridCellClick({
     }
   }
 
-  if (manualMode) return;
   if (!selectedCID || !encounterData || actionExecutionSession || hasPreTurnQueue || !eid) return;
 
   try {
-    const allCreatures: Creature[] = [
-      ...(encounterData.players ?? []),
-      ...(encounterData.monsters ?? []),
-    ];
-
-    const movedCreature = allCreatures.find(
-      (creature) => getCreatureCid(creature) === selectedCID
-    );
-
-    if (!movedCreature) {
-      console.error("Could not find selected creature.");
-      return;
-    }
-
-    const sizeRaw = getCreatureSize(movedCreature);
-
-    let footprint = 1;
-    if (sizeRaw === "large") footprint = 2;
-    else if (sizeRaw === "huge") footprint = 3;
-    else if (sizeRaw === "gargantuan") footprint = 4;
-
-    const newPos: number[][] = [];
-    for (let dy = 0; dy < footprint; dy++) {
-      for (let dx = 0; dx < footprint; dx++) {
-        newPos.push([cellX + dx, cellY + dy]);
-      }
-    }
-
-    await axiosTokenInstance.post(
-      `/encounter/${eid}/creature/${selectedCID}/simulate/movement`,
-      newPos
-    );
-
-    const updatedEncounter = await getEncounter(eid);
-    if (!updatedEncounter) {
-      console.error("Encounter reload failed after movement.");
-      return;
-    }
-
-    setEncounterData(updatedEncounter);
-    setSelectedCID(null);
-    setRecommendRefreshKey((prev) => prev + 1);
-    setInitiativeRefreshKey((prev) => prev + 1);
+    await moveCreatureFromSelectedCell({
+      cellX,
+      cellY,
+      selectedCID,
+      encounterData,
+      eid,
+      manualMode,
+      setEncounterData,
+      setSelectedCID,
+      setRecommendRefreshKey,
+      setInitiativeRefreshKey,
+    });
   } catch (error) {
-    console.error("Movement simulation failed:", error);
+    console.error(
+      manualMode ? "Manual movement simulation failed:" : "Movement simulation failed:",
+      error
+    );
   }
 }
 

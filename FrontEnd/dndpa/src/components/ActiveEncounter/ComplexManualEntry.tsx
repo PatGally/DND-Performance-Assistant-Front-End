@@ -12,6 +12,7 @@ import type {
 
 import type {
     InitiativeEntry,
+    InitiativeEntryDisplay,
     ManualAffectedCreature,
     ManualStatBlock,
 } from "../../types/SimulationTypes";
@@ -353,11 +354,15 @@ export default function ComplexManualEntry({
     draftValue,
     onDraftChange,
     onToggle,
+    isManualMovementSelected = false,
+    onManualMovementSelect,
 }: {
     eid: string;
     cid: string;
-    initiativeEntry: InitiativeEntry;
+    initiativeEntry: InitiativeEntry | InitiativeEntryDisplay;
     onToggle?: () => void;
+    isManualMovementSelected?: boolean;
+    onManualMovementSelect?: () => void;
     draftValue?: ManualAffectedCreature;
     onDraftChange: (next: ManualAffectedCreature) => void;
 }) {
@@ -575,6 +580,20 @@ export default function ComplexManualEntry({
                     checked={currentEnemy}
                     onChange={(next) => update("enemy", next, baselineEnemy)}
                 />
+
+                {onManualMovementSelect && (
+                    <button
+                        type="button"
+                        className={
+                            "manual-entry-btn manual-entry-btn-wide" +
+                            (isManualMovementSelected ? " manual-entry-btn-active" : "")
+                        }
+                        aria-pressed={isManualMovementSelected}
+                        onClick={onManualMovementSelect}
+                    >
+                        {isManualMovementSelected ? "Cancel Move" : "Move Token"}
+                    </button>
+                )}
             </ComplexManualEntrySection>
 
             <ComplexManualEntryStatBlockEditor

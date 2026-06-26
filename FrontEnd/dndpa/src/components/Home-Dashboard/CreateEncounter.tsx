@@ -8,13 +8,14 @@ import AddCharacters from "./AddCharacters.tsx";
 import AddMonsters from "./AddMonsters.tsx";
 import AddMapLink from "./AddMapLink.tsx";
 import AddGridSize from "./AddGridSize.tsx";
-import AddInitiative, { type InitiativeEntry } from "./AddInitiative.tsx";
+import AddInitiative from "./AddInitiative.tsx";
 
 import { type MonsterCreature, type CharacterPayload } from "../../types/creature.ts";
 import { getCharacters } from "../../api/CharactersGet.ts";
 
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
+import type {InitiativeEntry} from "../../types/SimulationTypes.ts";
 
 export interface EncounterFormData {
     name: string;

@@ -20,11 +20,27 @@ export function getCreatureName(creature: Creature): string {
 export function getCreatureSize(creature: Creature): string {
     return isPlayerCreature(creature) ? "medium" : String(creature.size ?? "medium").toLowerCase();
 }
-export function resolveTargetToCid(target: string, encounter: Encounter): string | null {
-  const allCreatures: Creature[] = [
+export function getEncounterCreatures(encounter: Encounter): Creature[] {
+  return [
     ...(encounter.players ?? []),
     ...(encounter.monsters ?? []),
   ];
+}
+export function isLairActionEntry(entry?: InitiativeEntry): boolean {
+  return entry?.turnType === "lairAction";
+}
+export function findCreatureByInitiativeEntry(
+  encounter: Encounter,
+  entry?: InitiativeEntry,
+): Creature | undefined {
+  if (!entry || isLairActionEntry(entry)) return undefined;
+
+  return getEncounterCreatures(encounter).find(
+    (creature) => getCreatureCid(creature) === entry.cid
+  );
+}
+export function resolveTargetToCid(target: string, encounter: Encounter): string | null {
+  const allCreatures = getEncounterCreatures(encounter);
   const found = allCreatures.find(
     (creature) =>
       getCreatureCid(creature) === target ||
@@ -35,18 +51,10 @@ export function resolveTargetToCid(target: string, encounter: Encounter): string
 export function getCurrentTurnCreatureFromEncounter(encounter: Encounter): Creature | undefined {
         const currentTurnEntry = encounter.initiative.find((entry : InitiativeEntry) => entry.currentTurn);
         if (!currentTurnEntry) return undefined;
-    if (currentTurnEntry.turnType === "lairAction") {
+    if (isLairActionEntry(currentTurnEntry)) {
         const sentinel = { _isLairAction: true } as unknown as Creature;
         return sentinel;
     }
 
-        const allCreatures: Creature[] = [
-            ...(encounter.players ?? []),
-            ...(encounter.monsters ?? []),
-        ];
-
-        //TODO: Matches by name! We need to add a CID attribute to initiative entries.
-        return allCreatures.find(
-            (creature) => getCreatureName(creature).toLowerCase() === currentTurnEntry.name.toLowerCase()
-        );
+        return findCreatureByInitiativeEntry(encounter, currentTurnEntry);
     }

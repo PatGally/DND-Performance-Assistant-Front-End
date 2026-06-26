@@ -12,6 +12,7 @@ import {fetchUUID} from "../../api/UUIDGet.ts"
 import { uuidPolyfill } from '../../api/uuidPolyfill.ts';
 import Container from "react-bootstrap/Container";
 import '../../css/CharCreation.css';
+import calculateMovementMax from "../../utils/calculateMovementMax.ts";
 
 uuidPolyfill();
 
@@ -147,6 +148,7 @@ function CharCreation({onCharacterCreated}: Props) {
         const attributes = calcAttributes(data.level, data.characterClass);
         const spellSlots = calcSpellSlots(data.level, data.characterClass);
         const calculatedHP = calculateHP(data.level, data.characterClass, data.constitution);
+        const movementMax = calculateMovementMax();
 
 
         const payload = {
@@ -158,7 +160,7 @@ function CharCreation({onCharacterCreated}: Props) {
                 maxhp: calculatedHP.toString(),
                 cid: characterId,
                 position: [[0, 0]],
-
+                movementMax: movementMax,
                 characterClass: data.characterClass.toLowerCase(),
                 conImmunes: [],
                 activeStatusEffects: [],

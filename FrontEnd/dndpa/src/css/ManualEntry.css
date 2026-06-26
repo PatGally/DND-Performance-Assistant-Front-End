@@ -383,6 +383,16 @@
     background: #f0ddb8;
 }
 
+.manual-entry-btn-active {
+    background: #8b1a1a;
+    color: #fdf1dc;
+}
+
+.manual-entry-btn-wide {
+    width: 100%;
+    margin-top: 8px;
+}
+
 .manual-entry-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;

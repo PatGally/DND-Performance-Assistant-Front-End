@@ -1,23 +1,17 @@
 import { useState, useEffect } from "react";
 import type { EncounterFormData } from "./CreateEncounter";
 import "../../css/AddInitiative.css"
+import type {InitiativeEntry} from "../../types/SimulationTypes.ts";
+import type {GridCoord} from "../../types/creature.ts";
 
-export interface InitiativeEntry {
-    key: string;
-    name: string;
-    iValue: number;
-    turnType: "Player" | "Monster" | "lairAction";
-    currentTurn: boolean;
-    actionResource: number;
-    bonusActionResource: number;
-    movementResource: number;
-}
 
 type Participant = {
     key: string;
+    cid: string;
     name: string;
     type: "player" | "monster";
-    movement: number;
+    movementMax: number;
+    startingAnchor: GridCoord[];
     dex: number;
 };
 
@@ -31,6 +25,10 @@ const LAIR_NAME = "Lair Action";
 
 function getDex(statArray: Record<string, string | number>): number {
     return parseInt(String(statArray?.DEX ?? 0), 10);
+}
+
+function getEntryKey(entry: InitiativeEntry): string {
+    return entry.key ?? entry.cid;
 }
 
 function sortInitiative(
@@ -52,7 +50,7 @@ function sortInitiative(
 
         const dexGroups: Record<number, InitiativeEntry[]> = {};
         for (const e of subgroup) {
-            const dex = dexMap[e.key] ?? 0;
+            const dex = dexMap[e.cid] ?? 0;
             if (!dexGroups[dex]) dexGroups[dex] = [];
             dexGroups[dex].push(e);
         }
@@ -95,16 +93,20 @@ function AddInitiative({ formData, updateFormData }: Props) {
     const allParticipants: Participant[] = [
         ...formData.characters.map((c) => ({
             key:      c.stats.cid,
+            cid:      c.stats.cid,
             name:     c.stats.name,
             type:     "player" as const,
-            movement: 30,
+            movementMax: Number(c.stats.movementMax ?? 0),
+            startingAnchor: c.stats.position,
             dex:      getDex(c.stats.statArray),
         })),
         ...formData.monsters.map((m) => ({
-            key:      m.name,
+            key:      m.cid || m.name,
+            cid:      m.cid,
             name:     m.name,
             type:     "monster" as const,
-            movement: m.movement,
+            movementMax: Number(m.movementMax ?? m.movement ?? 0),
+            startingAnchor: m.position,
             dex:      getDex(m.statArray),
         })),
     ];
@@ -124,7 +126,7 @@ function AddInitiative({ formData, updateFormData }: Props) {
             ? new Set([...participantKeys, LAIR_KEY])
             : participantKeys;
 
-        const hasStale = formData.initiative.some((e) => !validKeys.has(e.key));
+        const hasStale = formData.initiative.some((e) => !validKeys.has(getEntryKey(e)));
         if (hasStale) {
             setInputValues((prev) => {
                 const cleaned: Record<string, string> = {};
@@ -134,7 +136,7 @@ function AddInitiative({ formData, updateFormData }: Props) {
                 return cleaned;
             });
             updateFormData({
-                initiative: formData.initiative.filter((e) => validKeys.has(e.key)),
+                initiative: formData.initiative.filter((e) => validKeys.has(getEntryKey(e))),
             });
         }
     }, [allParticipants.length, hasLairAction]);
@@ -142,12 +144,12 @@ function AddInitiative({ formData, updateFormData }: Props) {
     // ── Auto-manage the single shared lair action entry ───────────────────────
     // One entry exists whenever hasLairAction is true; it is removed when false.
     useEffect(() => {
-        const alreadyPresent = formData.initiative.some((e) => e.key === LAIR_KEY);
+        const alreadyPresent = formData.initiative.some((e) => getEntryKey(e) === LAIR_KEY);
 
         if (hasLairAction && !alreadyPresent) {
             // Add the single lair action entry
             const lairEntry: InitiativeEntry = {
-                key:                 LAIR_KEY,
+                cid:                 LAIR_KEY,
                 name:                LAIR_NAME,
                 iValue:              20,
                 turnType:            "lairAction",
@@ -155,6 +157,7 @@ function AddInitiative({ formData, updateFormData }: Props) {
                 actionResource:      0,
                 bonusActionResource: 0,
                 movementResource:    0,
+                startingAnchor:      [],
             };
 
             const combined = [...formData.initiative, lairEntry];
@@ -166,7 +169,7 @@ function AddInitiative({ formData, updateFormData }: Props) {
 
         } else if (!hasLairAction && alreadyPresent) {
             // Remove the lair action entry — no lair monsters remain
-            const filtered = formData.initiative.filter((e) => e.key !== LAIR_KEY);
+            const filtered = formData.initiative.filter((e) => getEntryKey(e) !== LAIR_KEY);
             const sorted   = sortInitiative(filtered, dexMap).map((e, i) => ({
                 ...e,
                 currentTurn: i === 0,
@@ -176,7 +179,7 @@ function AddInitiative({ formData, updateFormData }: Props) {
         // If both flags agree, nothing needs to change
     }, [hasLairAction]);
 
-    const getEntry = (key: string) => formData.initiative.find((e) => e.key === key);
+    const getEntry = (key: string) => formData.initiative.find((e) => getEntryKey(e) === key);
 
     const handleChange = (key: string, raw: string) => {
         setInputValues((prev) => ({ ...prev, [key]: raw }));
@@ -189,19 +192,29 @@ function AddInitiative({ formData, updateFormData }: Props) {
         const existing = getEntry(p.key);
         const updated: InitiativeEntry[] = existing
             ? formData.initiative.map((e) =>
-                e.key === p.key ? { ...e, iValue: parsed } : e
+                getEntryKey(e) === p.key
+                    ? {
+                        ...e,
+                        cid: p.cid,
+                        iValue: parsed,
+                        movementResource: p.movementMax,
+                        startingAnchor: p.startingAnchor,
+                    }
+                    : e
             )
             : [
                 ...formData.initiative,
                 {
                     key:                 p.key,
+                    cid:                 p.cid,
                     name:                p.name,
                     iValue:              parsed,
                     turnType:            p.type === "player" ? "Player" : "Monster",
                     currentTurn:         false,
                     actionResource:      1,
                     bonusActionResource: 1,
-                    movementResource:    p.movement,
+                    movementResource:    p.movementMax,
+                    startingAnchor:      p.startingAnchor,
                 },
             ];
 
@@ -215,7 +228,7 @@ function AddInitiative({ formData, updateFormData }: Props) {
     const handleClear = (key: string) => {
         setInputValues((prev) => ({ ...prev, [key]: "" }));
         updateFormData({
-            initiative: formData.initiative.filter((e) => e.key !== key),
+            initiative: formData.initiative.filter((e) => getEntryKey(e) !== key),
         });
     };
 
@@ -351,7 +364,7 @@ function AddInitiative({ formData, updateFormData }: Props) {
                                                 : "turn-monster";
 
                                     return (
-                                        <li key={entry.key} className="turn-item">
+                                        <li key={entry.key ?? entry.cid} className="turn-item">
 
                                     <span className={colorClass} style={{ fontWeight: i === 0 ? 600 : 400 }}>
                                         {entry.name}

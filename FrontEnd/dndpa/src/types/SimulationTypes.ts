@@ -3,13 +3,16 @@ import type {GridCoord} from "./creature.ts";
 import type {CreatureAction} from "./action.ts";
 
 export type InitiativeEntry = {
+    key?: string;
     name: string;
+    cid: string;
     iValue: number;
-    turnType: string;
+    turnType: "Player" | "Monster" | "lairAction";
     currentTurn: boolean;
     actionResource?: number;
     bonusActionResource?: number;
     movementResource?: number;
+    startingAnchor?: GridCoord[];
 };
 export type InitiativeEntryDisplay = {
   name: string;
@@ -110,8 +113,9 @@ export type ManualAffectedCreature = {
   activeConditions?: (ActiveCondition | string)[];
   activeStatusEffects?: Record<string, unknown>[];
   hp?: number;
-  position?: number[][];
+  position?: GridCoord[];
   ac?: number;
+  movementMax?: number;
   lResists?: number;
   enemy?: boolean;
   spellSlots?: number[][];

@@ -7,6 +7,8 @@ import { uuidPolyfill } from "../../api/uuidPolyfill.ts";
 import { EncounterPost } from "../../api/EncounterPost.ts";
 import { normalizePlayer } from "../../utils/normalizePlayer.ts";
 import { normalizeMonster } from "../../utils/normalizeMonster";
+import type {GridCoord, MonsterCreature, PlayerCreature} from "../../types/creature";
+import type {InitiativeEntry} from "../../types/SimulationTypes";
 import '../../css/EncounterCreationNav.css'
 
 import {
@@ -107,6 +109,58 @@ const getPlayerTokenImage = (characterClass: string | undefined): string => {
 const getMonsterTokenImage = (creatureType: string | undefined): string => {
     return monsterTokenMap[normalizeKey(creatureType)] ?? MonstrosityToken;
 };
+
+const clonePosition = (position: GridCoord[] | undefined): GridCoord[] => {
+    if (!Array.isArray(position)) return [[0, 0]];
+    return position.map(([row, col]) => [row, col]);
+};
+
+function buildInitiativePayload(
+    initiative: InitiativeEntry[],
+    players: PlayerCreature[],
+    monsters: MonsterCreature[],
+): InitiativeEntry[] {
+    const playersByKey = new Map<string, PlayerCreature>();
+    const monstersByKey = new Map<string, MonsterCreature>();
+
+    players.forEach((player) => {
+        playersByKey.set(player.stats.cid, player);
+    });
+
+    monsters.forEach((monster) => {
+        monstersByKey.set(monster.cid, monster);
+    });
+
+    return initiative.map(({key, ...entry}) => {
+        const lookupKey = entry.cid;
+
+        if (entry.turnType === "Player") {
+            const player = playersByKey.get(lookupKey);
+            return {
+                ...entry,
+                cid: player?.stats.cid ?? entry.cid,
+                movementResource: Number(player?.stats.movementMax ?? entry.movementResource ?? 0),
+                startingAnchor: clonePosition(player?.stats.position ?? entry.startingAnchor),
+            };
+        }
+
+        if (entry.turnType === "Monster") {
+            const monster = monstersByKey.get(lookupKey);
+            return {
+                ...entry,
+                cid: monster?.cid ?? entry.cid,
+                movementResource: Number(monster?.movementMax ?? entry.movementResource ?? 0),
+                startingAnchor: clonePosition(monster?.position ?? entry.startingAnchor),
+            };
+        }
+
+        return {
+            ...entry,
+            movementResource: Number(entry.movementResource ?? 0),
+            startingAnchor: clonePosition(entry.startingAnchor ?? []),
+        };
+    });
+}
 
 function isPanelValid(panel: ActivePanel, formData: EncounterFormData): boolean {
     switch (panel) {
@@ -231,7 +285,7 @@ function EncounterCreationNavAndSubmit({
                 date: new Date().toISOString(),
                 players: normalizedPlayers,
                 monsters: normalizedMonsters,
-                initiative: rest.initiative.map(({key, ...entry }) => entry),
+                initiative: buildInitiativePayload(rest.initiative, normalizedPlayers, normalizedMonsters),
                 mapdata,
                 completed: false,
             };
