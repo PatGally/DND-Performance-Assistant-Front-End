@@ -131,6 +131,7 @@ export type Recommendation = {
     eDam : number;
     impact: number;
     target : string[] | {targetsHit : string[]; positioning : GridCoord[]};
+    movementRecc : GridCoord[];
     "probDisplay": number;
     "probInit": number;
     "probParts": unknown[];

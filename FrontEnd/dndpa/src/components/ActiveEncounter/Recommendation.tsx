@@ -10,18 +10,21 @@ import type {
   RecommendationAoeTarget,
   RecommendationTarget,
   AoeToken,
+  Encounter,
 } from "../../types/SimulationTypes.ts";
-
-import '../../css/Recommendation.css'
+import { getCreatureNameByCid } from "../../utils/ActiveSimUtils/CreatureHelpers.ts";
+import '../../css/Recommendation.css';
 
 type RecommendationProps = {
   eid: string;
   cid: string;
+  encounter: Encounter;
   setAoeTokens: Dispatch<SetStateAction<AoeToken[]>>;
   buildRecommendationAoeToken: (
     recommendation: RecommendationType,
     previewResultID: string
   ) => AoeToken | null;
+  onMovementRecommendationChange: (cells: [number, number][]) => void;
   handlePASubmission: (
     name: string,
     prob: number,
@@ -53,8 +56,10 @@ function isAoeTarget(
 export default function Recommendation({
   eid,
   cid,
+  encounter,
   setAoeTokens,
   buildRecommendationAoeToken,
+  onMovementRecommendationChange,
   handlePASubmission,
 }: RecommendationProps) {
   const [recommendations, setRecommendations] = useState<RecommendationType[]>([]);
@@ -87,6 +92,7 @@ export default function Recommendation({
         setCurrentIndex(0);
 
         const data = await recommendationGet(eid, cid);
+        console.log("Recommendation data", data);
         setRecommendations(Array.isArray(data) ? data : []);
       } catch (err) {
         if (err instanceof Error) {
@@ -102,6 +108,16 @@ export default function Recommendation({
 
     loadRecommendations();
   }, [eid, cid]);
+
+  useEffect(() => {
+    onMovementRecommendationChange(
+      Array.isArray(currentRecommendation?.movementRecc)
+        ? currentRecommendation.movementRecc
+        : []
+    );
+
+    return () => onMovementRecommendationChange([]);
+  }, [currentRecommendation, onMovementRecommendationChange]);
 
   useEffect(() => {
     const clearRecommendationPreviews = () => {
@@ -194,10 +210,14 @@ export default function Recommendation({
         try {
             targetDisplay = Array.isArray(currentRecommendation.target)
                 ? currentRecommendation.target.length > 0
-                    ? currentRecommendation.target.join(', ')
+                    ? currentRecommendation.target
+                        .map((targetCid) => getCreatureNameByCid(encounter, targetCid))
+                        .join(', ')
                     : 'None'
                 : currentRecommendation.target.targetsHit.length > 0
-                    ? currentRecommendation.target.targetsHit.join(', ')
+                    ? currentRecommendation.target.targetsHit
+                        .map((targetCid) => getCreatureNameByCid(encounter, targetCid))
+                        .join(', ')
                     : 'AOE placement';
         } catch (e) {
             console.error('Recommendation targetDisplay error', e);

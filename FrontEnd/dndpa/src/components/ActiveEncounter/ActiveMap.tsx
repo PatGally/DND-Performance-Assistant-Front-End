@@ -154,6 +154,10 @@ type ActiveMapProps = {
   activeEncounter: boolean;
   selectedCID: string | null;
   isAoePlacementActive: boolean;
+  movementHighlightAnchors: Set<string>;
+  movementPreviewCells: GridCoord[];
+  recommendationMovementCells: GridCoord[];
+  recommendationCreatureCID: string | null;
   onTokenSelect: (cid: string) => void;
   onGridCellClick: (x: number, y: number) => void;
   onGridCellHover: (x: number, y: number) => void;
@@ -364,6 +368,10 @@ export default function ActiveMap({
   aoeTokens,
   selectedCID,
     isAoePlacementActive,
+  movementHighlightAnchors,
+  movementPreviewCells,
+  recommendationMovementCells,
+  recommendationCreatureCID,
   onTokenSelect,
   onGridCellClick,
     onGridCellHover,
@@ -415,6 +423,17 @@ export default function ActiveMap({
 }, [mapLink, cols, rows, onMapSizeLoaded]);
 
   const creaturesByCid = useMemo(() => normalizeCreatures(encounter), [encounter]);
+  const movementPreviewCellSet = useMemo(
+    () => new Set(movementPreviewCells.map(([x, y]) => `${x},${y}`)),
+    [movementPreviewCells]
+  );
+  const validRecommendationMovementCells = useMemo(
+    () =>
+      normalizePosition(recommendationMovementCells).filter(
+        ([x, y]) => x >= 0 && x < cols && y >= 0 && y < rows
+      ),
+    [recommendationMovementCells, cols, rows]
+  );
   const creatureTokens = useMemo(() => {
     const seen = new Set<string>();
 
@@ -448,6 +467,27 @@ export default function ActiveMap({
   const mapHeight = mapSize.height;
   const cellWidth = mapWidth / cols;
   const cellHeight = mapHeight / rows;
+  const recommendationCreature = recommendationCreatureCID
+    ? creaturesByCid[recommendationCreatureCID]
+    : undefined;
+  const recommendationLine =
+    recommendationCreature &&
+    recommendationCreature.position.length > 0 &&
+    validRecommendationMovementCells.length > 0
+      ? (() => {
+          const sourceXs = recommendationCreature.position.map(([x]) => x);
+          const sourceYs = recommendationCreature.position.map(([, y]) => y);
+          const destinationXs = validRecommendationMovementCells.map(([x]) => x);
+          const destinationYs = validRecommendationMovementCells.map(([, y]) => y);
+
+          return {
+            x1: ((Math.min(...sourceXs) + Math.max(...sourceXs) + 1) / 2) * cellWidth,
+            y1: ((Math.min(...sourceYs) + Math.max(...sourceYs) + 1) / 2) * cellHeight,
+            x2: ((Math.min(...destinationXs) + Math.max(...destinationXs) + 1) / 2) * cellWidth,
+            y2: ((Math.min(...destinationYs) + Math.max(...destinationYs) + 1) / 2) * cellHeight,
+          };
+        })()
+      : null;
 
   return (
     <div
@@ -490,6 +530,10 @@ export default function ActiveMap({
         {Array.from({ length: cols * rows }).map((_, index) => {
           const x = index % cols;
           const y = Math.floor(index / cols);
+          const isMovementHighlighted =
+            !isAoePlacementActive && movementHighlightAnchors.has(`${x},${y}`);
+          const isMovementPreviewed =
+            !isAoePlacementActive && movementPreviewCellSet.has(`${x},${y}`);
 
           return (
             <div
@@ -509,12 +553,19 @@ export default function ActiveMap({
               style={{
                 border: "1px solid rgba(255,255,255,0.25)",
                 boxSizing: "border-box",
+                boxShadow: isMovementHighlighted
+                  ? "inset 0 0 0 2px rgba(255,255,255,0.62)"
+                  : "none",
                 cursor: selectedCID || isAoePlacementActive ? "pointer" : "default",
-                background: isAoePlacementActive
-                  ? "rgba(255,180,0,0.04)"
-                  : selectedCID
-                    ? "rgba(0,180,255,0.04)"
-                    : "transparent",
+                background: isMovementPreviewed
+                  ? "rgba(255,255,255,0.16)"
+                  : isMovementHighlighted
+                    ? "rgba(180,180,180,0.12)"
+                    : isAoePlacementActive
+                      ? "rgba(255,180,0,0.04)"
+                      : selectedCID
+                        ? "rgba(0,180,255,0.04)"
+                        : "transparent",
               }}
             />
           );
@@ -660,6 +711,94 @@ export default function ActiveMap({
     </div>
   );
 })}
+
+      {movementPreviewCells.map(([x, y]) => (
+        <div
+          key={`movement-preview-${x},${y}`}
+          style={{
+            position: "absolute",
+            left: x * cellWidth,
+            top: y * cellHeight,
+            width: cellWidth,
+            height: cellHeight,
+            zIndex: 2,
+            pointerEvents: "none",
+            boxSizing: "border-box",
+            background: "rgba(255,255,255,0.14)",
+            boxShadow: "inset 0 0 0 2px rgba(255,255,255,0.85)",
+          }}
+        />
+      ))}
+
+      {validRecommendationMovementCells.map(([x, y]) => (
+        <div
+          key={`recommendation-movement-${x},${y}`}
+          title="Recommended movement destination"
+          style={{
+            position: "absolute",
+            left: x * cellWidth,
+            top: y * cellHeight,
+            width: cellWidth,
+            height: cellHeight,
+            zIndex: 2,
+            pointerEvents: "none",
+            boxSizing: "border-box",
+            background: "rgba(45, 212, 191, 0.28)",
+            boxShadow:
+              "inset 0 0 0 3px rgba(94, 234, 212, 0.95), inset 0 0 12px rgba(45, 212, 191, 0.5)",
+          }}
+        />
+      ))}
+
+      {recommendationLine && (
+        <svg
+          aria-hidden="true"
+          width={mapWidth}
+          height={mapHeight}
+          viewBox={`0 0 ${mapWidth} ${mapHeight}`}
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 2,
+            overflow: "visible",
+            pointerEvents: "none",
+          }}
+        >
+          <defs>
+            <marker
+              id="recommendation-movement-arrow"
+              markerWidth="8"
+              markerHeight="8"
+              refX="7"
+              refY="4"
+              orient="auto"
+              markerUnits="strokeWidth"
+            >
+              <path d="M 0 0 L 8 4 L 0 8 z" fill="rgba(94, 234, 212, 0.95)" />
+            </marker>
+          </defs>
+          <line
+            x1={recommendationLine.x1}
+            y1={recommendationLine.y1}
+            x2={recommendationLine.x2}
+            y2={recommendationLine.y2}
+            stroke="rgba(15, 23, 42, 0.8)"
+            strokeWidth={Math.max(5, Math.min(cellWidth, cellHeight) * 0.12)}
+            strokeLinecap="round"
+          />
+          <line
+            x1={recommendationLine.x1}
+            y1={recommendationLine.y1}
+            x2={recommendationLine.x2}
+            y2={recommendationLine.y2}
+            stroke="rgba(94, 234, 212, 0.95)"
+            strokeWidth={Math.max(2, Math.min(cellWidth, cellHeight) * 0.055)}
+            strokeDasharray={`${Math.max(5, cellWidth * 0.16)} ${Math.max(4, cellWidth * 0.1)}`}
+            strokeLinecap="round"
+            markerEnd="url(#recommendation-movement-arrow)"
+          />
+        </svg>
+      )}
 
       {creatureTokens.map((token) => {
         const creature = creaturesByCid[token.cid];

@@ -11,7 +11,7 @@ import Recommendation from "../../components/ActiveEncounter/Recommendation.tsx"
 import InputHandler from "../../components/ActiveEncounter/InputHandler.tsx";
 
 import {
-    getCreatureCid, getCreaturePosition,
+    getCreatureCid,
     getCurrentTurnCreatureFromEncounter,
     isLairActionEntry
 } from "../../utils/ActiveSimUtils/CreatureHelpers.ts";
@@ -19,7 +19,7 @@ import {
 import {getEncounter} from "../../api/EncounterGet.ts";
 import {isPlayerCreature} from "../../api/CreatureGet.ts";
 
-import type {Creature} from "../../types/creature.ts";
+import type {Creature, GridCoord} from "../../types/creature.ts";
 import type {CreatureAction} from "../../types/action.ts";
 import type {
     Encounter,
@@ -63,6 +63,8 @@ function EncounterSimulation() {
     const [encounterError, setEncounterError] = useState<string | null>(null);
     const [currentTurnCreature, setCurrentTurnCreature] = useState<Creature>();
     const [aoeTokens, setAoeTokens] = useState<AoeToken[]>([]);
+    const [movementPreviewCells, setMovementPreviewCells] = useState<GridCoord[]>([]);
+    const [recommendationMovementCells, setRecommendationMovementCells] = useState<GridCoord[]>([]);
     const [manualAoePlacement, setManualAoePlacement] = useState<ManualAoePlacement | null>(null);
 
     //selectedCID used for token selection
@@ -102,10 +104,12 @@ function EncounterSimulation() {
       handleManualMovementSelect, handleActiveMapGridCellClick, handleActiveMapGridCellHover, handleBuildRecommendationAoeToken,
       handleSubmitAction, handleSubmitRecommendation, handleExecuteAction,
       handleExecutePreTurn, handleSimStart, handleNextTurnWrapper, handleExitPreTurn,
+      movementHighlightAnchors,
     } = useEncounterSimulationCallbacks({
       eid, encounterData, currentTurnCreature, currentTurnActions, actionExecutionSession, aoeTokens,
       manualAoePlacement, manualDraft, preTurnQueue, latestHoverRequestRef, hasPreTurnQueue, manualMode,
       handlingNextTurn, endOfEncounter, encStart, activeEncounter, selectedCID, setAoeTokens, setManualAoePlacement,
+      setMovementPreviewCells,
       setManualMode, setInitiativeOpen, setActionOpen, setManualDraft, setInitiativeExpandedCid, setSelectedCID,
       setManualLock, setActionExecutionSession, setEncounterData, setCurrentTurnCreature, setPreTurnQueue,
       setRecommendRefreshKey, setInitiativeRefreshKey, setEncStart, setActiveEncounter, setHandlingNextTurn,
@@ -153,49 +157,37 @@ function EncounterSimulation() {
         }
 }, []);
     useEffect(() => {
-        //Checks startup logic -> if not startup, then grab currentTurnCreature.
+        // Encounter lifecycle is explicit; token placement only controls whether Start can succeed.
         if (!encounterData || loadingEncounter || encounterError) return;
 
-        const allCreatures: Creature[] = [
-            ...(encounterData.players ?? []),
-            ...(encounterData.monsters ?? []),
-        ];
+        const startedKey = `${eid}/started`;
+        const storedStarted = localStorage.getItem(startedKey);
+        if (storedStarted === null) {
+            localStorage.setItem(startedKey, "false");
+        }
 
-        const zeroOccupants = allCreatures.filter((creature) => {
-            const position = getCreaturePosition(creature);
-            return position.some(
-                (tile) =>
-                    Array.isArray(tile) &&
-                    tile.length === 2 &&
-                    tile[0] === 0 &&
-                    tile[1] === 0
-            );
-        });
-        const noCollisionAtZero = zeroOccupants.length <= 1;
-
-        if (!noCollisionAtZero) {
+        if (storedStarted !== "true") {
             setEncStart(true);
             setActiveEncounter(false);
+            setCurrentTurnCreature(undefined);
+            return;
+        }
+
+        setEncStart(false);
+        setActiveEncounter(true);
+
+        const storedTurn = getCurrentTurnCreatureFromEncounter(encounterData);
+        if (storedTurn) {
+          setCurrentTurnCreature(storedTurn);
+
+          if (!didHydrateInitialPreTurnRef.current) {
+            syncPreTurnQueueFromCreature(setPreTurnQueue, storedTurn);
+            didHydrateInitialPreTurnRef.current = true;
+          }
         } else {
-            const storedTurn = getCurrentTurnCreatureFromEncounter(encounterData);
             const firstInitiativeEntry = encounterData.initiative[0];
-            const storedTurnIsLairAction = (storedTurn as any)?._isLairAction === true;
-            const storedTurnMatchesFirst = firstInitiativeEntry && (
-                (storedTurnIsLairAction && isLairActionEntry(firstInitiativeEntry)) ||
-                (!storedTurnIsLairAction && storedTurn && getCreatureCid(storedTurn) === firstInitiativeEntry.cid) ||
-                (!storedTurn && isLairActionEntry(firstInitiativeEntry))
-            );
-
-            if (storedTurnMatchesFirst) {
-                handleSimStart();
-            }
-            if (storedTurn) {
-              setCurrentTurnCreature(storedTurn);
-
-              if (!didHydrateInitialPreTurnRef.current) {
-                syncPreTurnQueueFromCreature(setPreTurnQueue, storedTurn);
-                didHydrateInitialPreTurnRef.current = true;
-              }
+            if (firstInitiativeEntry && isLairActionEntry(firstInitiativeEntry)) {
+                setCurrentTurnCreature({ _isLairAction: true } as unknown as Creature);
             }
         }
     }, [encounterData]);
@@ -230,6 +222,9 @@ function EncounterSimulation() {
     useEffect(() => {
       didHydrateInitialPreTurnRef.current = false;
     }, [eid]);
+    useEffect(() => {
+      setMovementPreviewCells([]);
+    }, [selectedCID, currentTurnCreature, manualAoePlacement, actionExecutionSession]);
     useEffect(() => {
 
         if (!currentTurnCreature) return;
@@ -303,6 +298,12 @@ function EncounterSimulation() {
                                 activeEncounter={activeEncounter}
                                 selectedCID={selectedCID}
                                 isAoePlacementActive={manualAoePlacement !== null}
+                                movementHighlightAnchors={movementHighlightAnchors}
+                                movementPreviewCells={movementPreviewCells}
+                                recommendationMovementCells={recommendationMovementCells}
+                                recommendationCreatureCID={
+                                    currentTurnCreature ? getCreatureCid(currentTurnCreature) : null
+                                }
                                 onTokenSelect={handleActiveMapTokenSelect}
                                 onGridCellClick={handleActiveMapGridCellClick}
                                 onGridCellHover={handleActiveMapGridCellHover}
@@ -521,12 +522,14 @@ function EncounterSimulation() {
                             handleActionExecution={handleExecuteAction}
                             aoePlacementStage={manualAoePlacement?.stage ?? 'ready'}
                         />
-                    ) : !endOfEncounter ? (
+                    ) : encounterData && !endOfEncounter ? (
                         <Recommendation
                             eid={eid}
                             cid={getCreatureCid(currentTurnCreature)}
+                            encounter={encounterData}
                             setAoeTokens={setAoeTokens}
                             buildRecommendationAoeToken={handleBuildRecommendationAoeToken}
+                            onMovementRecommendationChange={setRecommendationMovementCells}
                             handlePASubmission={handleSubmitRecommendation}
                             key={recommendRefreshKey}
                         />
