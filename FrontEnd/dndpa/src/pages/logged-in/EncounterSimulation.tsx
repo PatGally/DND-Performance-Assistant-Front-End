@@ -35,6 +35,7 @@ import {
 } from "../../utils/ActiveSimUtils/PreTurnHelpers.ts";
 import {loadActions} from "../../utils/ActiveSimUtils/actionHelpers.ts";
 import {onPanEnd, onPanMove, onPanStart, onWheel} from "../../utils/ActiveSimUtils/panningHelpers.ts";
+import {onTouchStart, onTouchEnd, onTouchMove} from '../../utils/ActiveSimUtils/PinchingHelpers.ts'
 import {
     clearManualState, handleManualCreatureChange,
     handleManualSimulate
@@ -80,6 +81,13 @@ function EncounterSimulation() {
     const [initiativeExpandedCid, setInitiativeExpandedCid] = useState<string | null>(null);
     const hasPreTurnQueue = preTurnQueue.length > 0;
     const [isLairAction, setIsLairAction] = useState(false);
+
+    //Finger Scroll/ Touch Screen state
+    const lastPinchDist = useRef<number | null>(null);
+    const lastPinchMid = useRef<{ x: number; y: number } | null>(null);
+    const touchStartPos = useRef<{ x: number; y: number } | null>(null);
+    const didPan = useRef<boolean>(false);
+    const suppressNextClick = useRef<boolean>(false);
 
     //Pan/zoom state
     const mapViewportRef = useRef<HTMLDivElement>(null);
@@ -285,6 +293,23 @@ function EncounterSimulation() {
                     onWheel={(e) =>
                         onWheel(e, mapViewportRef, mapContentRef, pan, zoom,
                             mapNaturalWidth, mapNaturalHeight, MIN_ZOOM, MAX_ZOOM)
+                    }
+                    onTouchStart={(e) =>
+                        onTouchStart(e, isPanning, lastPanPos, lastPinchDist, lastPinchMid,
+                            touchStartPos, didPan)
+                    }
+                    onTouchMove={(e) =>
+                        onTouchMove(e, isPanning, lastPanPos, lastPinchDist, lastPinchMid,
+                            touchStartPos, didPan, mapViewportRef, mapContentRef,
+                            pan, zoom, mapNaturalWidth, mapNaturalHeight, MIN_ZOOM, MAX_ZOOM)
+                    }
+                    onTouchEnd={(e) =>
+                        onTouchEnd(e, isPanning, lastPanPos, lastPinchDist, lastPinchMid,
+                            touchStartPos, didPan, suppressNextClick, mapViewportRef)
+                    }
+                    onTouchCancel={(e) =>
+                        onTouchEnd(e, isPanning, lastPanPos, lastPinchDist, lastPinchMid,
+                            touchStartPos, didPan, suppressNextClick, mapViewportRef)
                     }
                 >
                     <div
