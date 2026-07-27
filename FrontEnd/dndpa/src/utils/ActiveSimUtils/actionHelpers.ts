@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { CreatureAction } from "../../types/action.ts";
-import type {Creature, PlayerCreature} from "../../types/creature.ts";
+import type {Creature, GridCoord, PlayerCreature} from "../../types/creature.ts";
 import type {
   ActionExecutionSession,
   ActionRequestDraft,
@@ -89,6 +89,7 @@ export type HandlePASubmissionParams = {
   final_weight : number;
   candidateCount : number;
   targets: RecommendationTarget;
+  movementRecc: GridCoord[];
   previewResultID?: string;
   currentTurnCreature?: Creature;
   encounterData?: Encounter;
@@ -637,6 +638,7 @@ export async function handleActionSubmission({
 export async function handlePASubmission({
   name, prob, eDam, impact, overallRank, base_weight, ml_weight, useML, final_weight, candidateCount,
   targets,
+  movementRecc,
   previewResultID,
   currentTurnCreature,
   encounterData,
@@ -684,7 +686,7 @@ export async function handlePASubmission({
 
   const draft: ActionRequestDraft = {
     resultID,
-    actor: getCreatureName(currentTurnCreature),
+    actor: getCreatureCid(currentTurnCreature),
     action: isSpellAction(action) ? action.spellname : action.name,
     actionType: isBasicAction(action) ? `Basic` : (isSpellAction(action))
       ? `Lvl ${action.level} Spell`
@@ -701,6 +703,7 @@ export async function handlePASubmission({
     final_weight : final_weight,
     candidateCount : candidateCount,
     targets: resolvedTargets,
+    movementRecc,
     conditions,
     statusEffects,
     outcome: {
@@ -713,6 +716,7 @@ export async function handlePASubmission({
     },
     timestamp: "",
   };
+
   setActionExecutionSession({
     action: normalized,
     requiredInputs,
@@ -763,7 +767,6 @@ export async function handleActionExecution({
       ...finalDraft,
       token: executedAoeToken ?? null,
     };
-
 
     try {
       await axiosTokenInstance.post(`/encounter/${eid}/simulate/ruleset`, payload);

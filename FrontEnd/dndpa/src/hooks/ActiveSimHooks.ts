@@ -1,6 +1,6 @@
-import { useCallback, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
+import { useCallback, useMemo, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
 
-import type { Creature } from "../types/creature.ts";
+import type { Creature, GridCoord } from "../types/creature.ts";
 import type { CreatureAction } from "../types/action.ts";
 import type {
   Encounter,
@@ -21,6 +21,7 @@ import {
 
 import {
   buildRecommendationAoeToken,
+  getReachableMovementAnchors,
   handleGridCellClick,
   handleGridCellHover,
   handleTokenSelect,
@@ -66,6 +67,7 @@ export type UseEncounterSimulationCallbacksParams = {
   selectedCID: string | null;
 
   setAoeTokens: StateSetter<AoeToken[]>;
+  setMovementPreviewCells: StateSetter<GridCoord[]>;
   setManualAoePlacement: StateSetter<ManualAoePlacement | null>;
   setManualMode: StateSetter<boolean>;
   setInitiativeOpen: StateSetter<boolean>;
@@ -111,6 +113,7 @@ export function useEncounterSimulationCallbacks({
   selectedCID,
 
   setAoeTokens,
+  setMovementPreviewCells,
   setManualAoePlacement,
   setManualMode,
   setInitiativeOpen,
@@ -132,6 +135,17 @@ export function useEncounterSimulationCallbacks({
   setActiveEncounter,
   setHandlingNextTurn,
 }: UseEncounterSimulationCallbacksParams) {
+  const movementHighlightAnchors = useMemo(
+    () =>
+      getReachableMovementAnchors({
+        encounterData,
+        currentTurnCreature,
+        selectedCID,
+        setupMode: encStart && !activeEncounter,
+      }),
+    [encounterData, currentTurnCreature, selectedCID, encStart, activeEncounter]
+  );
+
   const handleSetManualState = useCallback(() => {
     setManualState({
       actionExecutionSession,
@@ -173,12 +187,15 @@ export function useEncounterSimulationCallbacks({
   ]);
 
   const handleActiveMapTokenSelect = useCallback((cid: string) => {
+    setMovementPreviewCells([]);
+
     handleTokenSelect({
       cid,
       encounterData,
       actionExecutionSession,
       hasPreTurnQueue,
       manualMode,
+      setupMode: encStart && !activeEncounter,
       selectedCID,
       setInitiativeOpen,
       setInitiativeExpandedCid,
@@ -189,10 +206,13 @@ export function useEncounterSimulationCallbacks({
     actionExecutionSession,
     hasPreTurnQueue,
     manualMode,
+    encStart,
+    activeEncounter,
     selectedCID,
     setInitiativeOpen,
     setInitiativeExpandedCid,
     setSelectedCID,
+    setMovementPreviewCells,
   ]);
 
   const handleManualMovementSelect = useCallback((cid: string) => {
@@ -219,6 +239,7 @@ export function useEncounterSimulationCallbacks({
       actionExecutionSession,
       encounterData,
       manualMode,
+      setupMode: encStart && !activeEncounter,
       selectedCID,
       hasPreTurnQueue,
       eid,
@@ -228,6 +249,7 @@ export function useEncounterSimulationCallbacks({
       setRecommendRefreshKey,
       setActionExecutionSession,
       setAoeTokens,
+      setMovementPreviewCells,
       setInitiativeRefreshKey,
     });
   }, [
@@ -236,6 +258,8 @@ export function useEncounterSimulationCallbacks({
     actionExecutionSession,
     encounterData,
     manualMode,
+    encStart,
+    activeEncounter,
     selectedCID,
     hasPreTurnQueue,
     eid,
@@ -245,6 +269,7 @@ export function useEncounterSimulationCallbacks({
     setRecommendRefreshKey,
     setActionExecutionSession,
     setAoeTokens,
+    setMovementPreviewCells,
     setInitiativeRefreshKey,
   ]);
 
@@ -252,14 +277,27 @@ export function useEncounterSimulationCallbacks({
     await handleGridCellHover({
       cellX,
       cellY,
+      encounterData,
+      currentTurnCreature,
+      setupMode: encStart && !activeEncounter,
       manualAoePlacement,
+      selectedCID,
+      movementHighlightAnchors,
       latestHoverRequestRef,
       setAoeTokens,
+      setMovementPreviewCells,
     });
   }, [
+    encounterData,
+    currentTurnCreature,
+    encStart,
+    activeEncounter,
     manualAoePlacement,
+    selectedCID,
+    movementHighlightAnchors,
     latestHoverRequestRef,
     setAoeTokens,
+    setMovementPreviewCells,
   ]);
 
   const handleBuildRecommendationAoeToken = useCallback((
@@ -304,6 +342,7 @@ export function useEncounterSimulationCallbacks({
     final_weight: number,
     candidateCount: number,
     targets: RecommendationTarget,
+    movementRecc: GridCoord[],
     previewResultID?: string
   ) => {
     void handlePASubmission({
@@ -318,6 +357,7 @@ export function useEncounterSimulationCallbacks({
       final_weight,
       candidateCount,
       targets,
+      movementRecc,
       previewResultID,
       currentTurnCreature,
       encounterData,
@@ -397,13 +437,18 @@ export function useEncounterSimulationCallbacks({
   ]);
 
   const handleSimStart = useCallback(() => {
-    simStart({
+    const didStart = simStart({
       encounterData,
       setEncStart,
       setActiveEncounter,
       setCurrentTurnCreature,
     });
+
+    if (didStart && eid) {
+      localStorage.setItem(`${eid}/started`, "true");
+    }
   }, [
+    eid,
     encounterData,
     setEncStart,
     setActiveEncounter,
@@ -473,5 +518,6 @@ export function useEncounterSimulationCallbacks({
     handleSimStart,
     handleNextTurnWrapper,
     handleExitPreTurn,
+    movementHighlightAnchors,
   };
 }

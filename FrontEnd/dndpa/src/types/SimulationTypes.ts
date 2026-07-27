@@ -85,6 +85,7 @@ export type ActionRequestDraft = {
     final_weight: number,
     candidateCount: number,
   targets: string[];
+  movementRecc?: GridCoord[];
   conditions: string[];
   statusEffects: Record<string, any>[];
   outcome: OutcomeDraft;
@@ -131,6 +132,7 @@ export type Recommendation = {
     eDam : number;
     impact: number;
     target : string[] | {targetsHit : string[]; positioning : GridCoord[]};
+    movementRecc : GridCoord[];
     "probDisplay": number;
     "probInit": number;
     "probParts": unknown[];

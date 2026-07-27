@@ -55,8 +55,8 @@ export function simStart({
   setEncStart,
   setActiveEncounter,
   setCurrentTurnCreature,
-}: SimStartParams): void {
-  if (!encounterData || encounterData.initiative.length === 0) return;
+}: SimStartParams): boolean {
+  if (!encounterData || encounterData.initiative.length === 0) return false;
 
   const allCreatures: Creature[] = [
     ...(encounterData.players ?? []),
@@ -76,18 +76,18 @@ export function simStart({
   const noCollisionAtZero = zeroOccupants.length <= 1;
 
   if(!noCollisionAtZero) {
-    return;
+    return false;
   }
 
   setEncStart(false);
   setActiveEncounter(true);
 
   const initStart = encounterData.initiative[0];
-  if (!initStart) return;
+  if (!initStart) return false;
 
   if(isLairActionEntry(initStart)) {
     setCurrentTurnCreature({ _isLairAction: true } as unknown as Creature);
-    return;
+    return true;
   }
 
   const matchingCreature = findCreatureByInitiativeEntry(encounterData, initStart);
@@ -95,10 +95,11 @@ export function simStart({
   if (!matchingCreature) {
     console.warn("Could not find initiative starting creature.");
     setCurrentTurnCreature(undefined);
-    return;
+    return true;
   }
 
   setCurrentTurnCreature(matchingCreature);
+  return true;
 }
 
 export async function handleNextTurn({
