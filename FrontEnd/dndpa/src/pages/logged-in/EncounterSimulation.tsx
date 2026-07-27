@@ -135,7 +135,6 @@ function EncounterSimulation() {
                 setEncounterError(null);
 
                 const data = await getEncounter(eid);
-                console.log("Data: ", data);
                 if (!data) {
                     setEncounterError("Encounter was not found.");
                     setEncounterData(undefined);

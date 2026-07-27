@@ -342,6 +342,7 @@ export function useEncounterSimulationCallbacks({
     final_weight: number,
     candidateCount: number,
     targets: RecommendationTarget,
+    movementRecc: GridCoord[],
     previewResultID?: string
   ) => {
     void handlePASubmission({
@@ -356,6 +357,7 @@ export function useEncounterSimulationCallbacks({
       final_weight,
       candidateCount,
       targets,
+      movementRecc,
       previewResultID,
       currentTurnCreature,
       encounterData,

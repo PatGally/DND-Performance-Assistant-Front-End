@@ -14,6 +14,7 @@ import type {
 } from "../../types/SimulationTypes.ts";
 import { getCreatureNameByCid } from "../../utils/ActiveSimUtils/CreatureHelpers.ts";
 import '../../css/Recommendation.css';
+import type {GridCoord} from "../../types/creature.ts";
 
 type RecommendationProps = {
   eid: string;
@@ -24,7 +25,7 @@ type RecommendationProps = {
     recommendation: RecommendationType,
     previewResultID: string
   ) => AoeToken | null;
-  onMovementRecommendationChange: (cells: [number, number][]) => void;
+  onMovementRecommendationChange: (cells: GridCoord[]) => void;
   handlePASubmission: (
     name: string,
     prob: number,
@@ -37,6 +38,7 @@ type RecommendationProps = {
     final_weight : number,
     candidateCount : number,
     targets: RecommendationTarget,
+    movementRecc: GridCoord[],
     previewResultID?: string
   ) => void;
 };
@@ -92,7 +94,6 @@ export default function Recommendation({
         setCurrentIndex(0);
 
         const data = await recommendationGet(eid, cid);
-        console.log("Recommendation data", data);
         setRecommendations(Array.isArray(data) ? data : []);
       } catch (err) {
         if (err instanceof Error) {
@@ -191,6 +192,7 @@ export default function Recommendation({
         currentRecommendation.final_weight,
         recommendations.length,
         currentRecommendation.target,
+        currentRecommendation.movementRecc,
         isAoeTarget(currentRecommendation.target) ? activePreviewResultID : undefined
     );
   }
