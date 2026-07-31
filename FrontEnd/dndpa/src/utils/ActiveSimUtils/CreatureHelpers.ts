@@ -26,6 +26,12 @@ export function getEncounterCreatures(encounter: Encounter): Creature[] {
     ...(encounter.monsters ?? []),
   ];
 }
+export function getCreatureNameByCid(encounter: Encounter, cid: string): string {
+  const creature = getEncounterCreatures(encounter).find(
+    (candidate) => getCreatureCid(candidate) === cid
+  );
+  return creature ? getCreatureName(creature) : cid;
+}
 export function isLairActionEntry(entry?: InitiativeEntry): boolean {
   return entry?.turnType === "lairAction";
 }
