@@ -306,9 +306,10 @@ function EncounterSimulation() {
             finalWeight,
             candidateCount,
             targets,
+            recommendationMovementCells,
             previewResultID
         );
-    }, [handleSubmitRecommendation]);
+    }, [handleSubmitRecommendation, recommendationMovementCells]);
 
     const handleMultiattackComplete = useCallback(async () => {
         await refreshEncounterState();
