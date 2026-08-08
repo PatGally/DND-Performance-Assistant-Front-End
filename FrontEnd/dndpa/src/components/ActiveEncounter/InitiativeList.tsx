@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
 import initiativeGet from "../../api/InitiativeGet";
 import SimpleInitiativeEntry from "./SimpleInitiativeEntry";
-import ComplexInitiativeEntry from "./ComplexInitiativeEntry";
+import ComplexInitiativeEntry from "./ComplexInitiativeEntry.tsx";
 import ComplexManualEntry from "./ComplexManualEntry";
 
-import {
-  type ManualAffectedCreature,
+import type {
+  ManualAffectedCreature,
+  InitiativeEntryDisplay,
 } from "../../types/SimulationTypes.ts";
-import type { InitiativeEntryDisplay } from "../../types/SimulationTypes.ts";
+import type {
+  EncounterFull,
+  EncounterResult,
+} from "../../types/encounter.ts";
 
 type ManualDraftState = {
   affectedCreatures: ManualAffectedCreature[];
@@ -19,34 +23,41 @@ type InitiativeListProps = {
   expandedCid?: string | null;
   onExpandedCidChange?: (cid: string | null) => void;
   manualDraft?: ManualDraftState;
+  results?: EncounterResult[];
+  onEncounterChange?: (encounter: EncounterFull) => void;
   selectedCID?: string | null;
   onManualMovementSelect?: (cid: string) => void;
   onManualCreatureChange?: (next: ManualAffectedCreature) => void;
 };
 
 export default function InitiativeList({
-  eid,
-  manualMode = false,
-  expandedCid,
-  onExpandedCidChange,
-  manualDraft,
-  selectedCID,
-  onManualMovementSelect,
-  onManualCreatureChange,
-}: InitiativeListProps) {
+                                         eid,
+                                         manualMode = false,
+                                         expandedCid,
+                                         onExpandedCidChange,
+                                         manualDraft,
+                                         results = [],
+                                         onEncounterChange,
+                                         selectedCID,
+                                         onManualMovementSelect,
+                                         onManualCreatureChange,
+                                       }: InitiativeListProps) {
   const [initiative, setInitiative] = useState<InitiativeEntryDisplay[]>([]);
   const [localExpandedCid, setLocalExpandedCid] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
 
   const activeExpandedCid =
-    manualMode && expandedCid !== undefined ? expandedCid : localExpandedCid;
+      manualMode && expandedCid !== undefined
+          ? expandedCid
+          : localExpandedCid;
 
   useEffect(() => {
     async function loadInitiative() {
       try {
         setLoading(true);
         setError("");
+
         const data = await initiativeGet(eid);
         setInitiative(data);
       } catch (err) {
@@ -60,7 +71,7 @@ export default function InitiativeList({
       }
     }
 
-    loadInitiative();
+    void loadInitiative();
   }, [eid]);
 
   function toggleExpanded(cid: string) {
@@ -74,53 +85,65 @@ export default function InitiativeList({
     setLocalExpandedCid(next);
   }
 
-  if (loading) return <div>Loading initiative...</div>;
-  if (error) return <div>Error: {error}</div>;
-  if (initiative.length === 0) return <div>No initiative entries found.</div>;
+  if (loading) {
+    return <div>Loading initiative...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
+  if (initiative.length === 0) {
+    return <div>No initiative entries found.</div>;
+  }
 
   return (
-    <div style={{ width: "100%" }}>
-      {initiative.map((entry) => {
-        const isExpanded = activeExpandedCid === entry.cid;
-        const draftValue = manualDraft?.affectedCreatures.find(
-          (creature) => creature.cid === entry.cid
+      <div style={{ width: "100%" }}>
+        {initiative.map((entry) => {
+          const isExpanded = activeExpandedCid === entry.cid;
 
-        );
+          const draftValue = manualDraft?.affectedCreatures.find(
+              (creature) => creature.cid === entry.cid
+          );
 
-        return (
-          <div
-            key={entry.cid}
-            style={{
-              marginBottom: "10px",
-            }}
-          >
-            {!isExpanded ? (
-              <SimpleInitiativeEntry
-                entry={entry}
-                onToggle={() => toggleExpanded(entry.cid)}
-              />
-            ) : manualMode ? (
-              <ComplexManualEntry
-                eid={eid}
-                cid={entry.cid}
-                initiativeEntry={entry}
-                onToggle={() => toggleExpanded(entry.cid)}
-                draftValue={draftValue}
-                isManualMovementSelected={selectedCID === entry.cid}
-                onManualMovementSelect={() => onManualMovementSelect?.(entry.cid)}
-                onDraftChange={(next) => onManualCreatureChange?.(next)}
-              />
-            ) : (
-              <ComplexInitiativeEntry
-                eid={eid}
-                cid={entry.cid}
-                initiativeEntry={entry}
-                onToggle={() => toggleExpanded(entry.cid)}
-              />
-            )}
-          </div>
-        );
-      })}
-    </div>
+          return (
+              <div
+                  key={entry.cid}
+                  style={{
+                    marginBottom: "10px",
+                  }}
+              >
+                {!isExpanded ? (
+                    <SimpleInitiativeEntry
+                        entry={entry}
+                        onToggle={() => toggleExpanded(entry.cid)}
+                    />
+                ) : manualMode ? (
+                    <ComplexManualEntry
+                        eid={eid}
+                        cid={entry.cid}
+                        initiativeEntry={entry}
+                        onToggle={() => toggleExpanded(entry.cid)}
+                        draftValue={draftValue}
+                        isManualMovementSelected={selectedCID === entry.cid}
+                        onManualMovementSelect={() =>
+                            onManualMovementSelect?.(entry.cid)
+                        }
+                        onDraftChange={(next) => onManualCreatureChange?.(next)}
+                    />
+                ) : (
+                    <ComplexInitiativeEntry
+                        eid={eid}
+                        cid={entry.cid}
+                        initiativeEntry={entry}
+                        results={results}
+                        onEncounterChange={onEncounterChange}
+                        onToggle={() => toggleExpanded(entry.cid)}
+                    />
+                )}
+              </div>
+          );
+        })}
+      </div>
   );
 }

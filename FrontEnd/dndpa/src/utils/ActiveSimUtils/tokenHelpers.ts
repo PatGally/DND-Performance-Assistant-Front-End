@@ -140,7 +140,7 @@ function getCreatureFootprint(creature: Creature): number {
 
 function getCreatureMovementMaxTiles(creature: Creature): number {
   const movementMaxFeet = Number(
-    isPlayerCreature(creature) ? creature.stats.movementMax : creature.movementMax
+      isPlayerCreature(creature) ? creature.stats.movementMax : creature.movementMax
   );
 
   if (!Number.isFinite(movementMaxFeet) || movementMaxFeet <= 0) return 0;
@@ -162,15 +162,15 @@ function buildFootprintPosition(cellX: number, cellY: number, footprint: number)
 
 function getEncounterGridBounds(encounterData: Encounter): MapBounds | null {
   const cellBounds =
-    encounterData.mapdata?.grid?.cellBounds ??
-    (encounterData as { mapgrid?: { grid?: { cellBounds?: unknown } } }).mapgrid?.grid?.cellBounds;
+      encounterData.mapdata?.grid?.cellBounds ??
+      (encounterData as { mapgrid?: { grid?: { cellBounds?: unknown } } }).mapgrid?.grid?.cellBounds;
   const cols = Number(
-    (cellBounds as { cols?: number; col?: number } | undefined)?.cols ??
+      (cellBounds as { cols?: number; col?: number } | undefined)?.cols ??
       (cellBounds as { cols?: number; col?: number } | undefined)?.col ??
       0
   );
   const rows = Number(
-    (cellBounds as { rows?: number; row?: number } | undefined)?.rows ??
+      (cellBounds as { rows?: number; row?: number } | undefined)?.rows ??
       (cellBounds as { rows?: number; row?: number } | undefined)?.row ??
       0
   );
@@ -184,7 +184,7 @@ function getEncounterGridBounds(encounterData: Encounter): MapBounds | null {
 
 function isPositionWithinMap(position: GridCoord[], bounds: MapBounds): boolean {
   return position.every(
-    ([x, y]) => x >= 0 && y >= 0 && x < bounds.cols && y < bounds.rows
+      ([x, y]) => x >= 0 && y >= 0 && x < bounds.cols && y < bounds.rows
   );
 }
 
@@ -213,11 +213,11 @@ function areGridCoordListsEqual(a: GridCoord[], b: GridCoord[]): boolean {
 }
 
 function setGridCoordsIfChanged(
-  setter: StateSetter<GridCoord[]>,
-  nextCoords: GridCoord[]
+    setter: StateSetter<GridCoord[]>,
+    nextCoords: GridCoord[]
 ): void {
   setter((prevCoords) =>
-    areGridCoordListsEqual(prevCoords, nextCoords) ? prevCoords : nextCoords
+      areGridCoordListsEqual(prevCoords, nextCoords) ? prevCoords : nextCoords
   );
 }
 
@@ -240,10 +240,10 @@ function buildOccupiedCellSet(encounterData: Encounter, excludedCid: string): Se
 }
 
 function doesFootprintCollide(
-  cellX: number,
-  cellY: number,
-  footprint: number,
-  occupiedCells: Set<string>
+    cellX: number,
+    cellY: number,
+    footprint: number,
+    occupiedCells: Set<string>
 ): boolean {
   for (let dy = 0; dy < footprint; dy++) {
     for (let dx = 0; dx < footprint; dx++) {
@@ -257,12 +257,12 @@ function doesFootprintCollide(
 }
 
 function canFootprintOccupyAnchor({
-  cellX,
-  cellY,
-  footprint,
-  bounds,
-  occupiedCells,
-}: {
+                                    cellX,
+                                    cellY,
+                                    footprint,
+                                    bounds,
+                                    occupiedCells,
+                                  }: {
   cellX: number;
   cellY: number;
   footprint: number;
@@ -270,17 +270,17 @@ function canFootprintOccupyAnchor({
   occupiedCells: Set<string>;
 }): boolean {
   return (
-    cellX >= 0 &&
-    cellY >= 0 &&
-    cellX + footprint <= bounds.cols &&
-    cellY + footprint <= bounds.rows &&
-    !doesFootprintCollide(cellX, cellY, footprint, occupiedCells)
+      cellX >= 0 &&
+      cellY >= 0 &&
+      cellX + footprint <= bounds.cols &&
+      cellY + footprint <= bounds.rows &&
+      !doesFootprintCollide(cellX, cellY, footprint, occupiedCells)
   );
 }
 
 export function findEncounterCreatureByCid(
-  encounterData: Encounter,
-  cid: string
+    encounterData: Encounter,
+    cid: string
 ): Creature | undefined {
   const allCreatures: Creature[] = [
     ...(encounterData.players ?? []),
@@ -291,29 +291,29 @@ export function findEncounterCreatureByCid(
 }
 
 function getCurrentTurnInitiativeStartingAnchor(
-  encounterData: Encounter,
-  currentTurnCreature: Creature
+    encounterData: Encounter,
+    currentTurnCreature: Creature
 ): GridCoord[] {
   const currentTurnCid = getCreatureCid(currentTurnCreature);
   const currentTurnEntry =
-    encounterData.initiative.find(
-      (entry) => entry.currentTurn && entry.cid === currentTurnCid
-    ) ??
-    encounterData.initiative.find((entry) => entry.cid === currentTurnCid);
+      encounterData.initiative.find(
+          (entry) => entry.currentTurn && entry.cid === currentTurnCid
+      ) ??
+      encounterData.initiative.find((entry) => entry.cid === currentTurnCid);
 
   const startingAnchor = normalizeGridCoords(currentTurnEntry?.startingAnchor);
 
   return startingAnchor.length > 0
-    ? startingAnchor
-    : normalizeGridCoords(getCreaturePosition(currentTurnCreature));
+      ? startingAnchor
+      : normalizeGridCoords(getCreaturePosition(currentTurnCreature));
 }
 
 export function getReachableMovementAnchors({
-  encounterData,
-  currentTurnCreature,
-  selectedCID,
-  setupMode = false,
-}: {
+                                              encounterData,
+                                              currentTurnCreature,
+                                              selectedCID,
+                                              setupMode = false,
+                                            }: {
   encounterData?: Encounter;
   currentTurnCreature?: Creature;
   selectedCID?: string | null;
@@ -324,8 +324,8 @@ export function getReachableMovementAnchors({
   if (!encounterData) return reachableAnchors;
 
   const movementCreature = setupMode && selectedCID
-    ? findEncounterCreatureByCid(encounterData, selectedCID)
-    : currentTurnCreature;
+      ? findEncounterCreatureByCid(encounterData, selectedCID)
+      : currentTurnCreature;
 
   if (!movementCreature) return reachableAnchors;
   if ((movementCreature as { _isLairAction?: boolean })._isLairAction) {
@@ -351,28 +351,28 @@ export function getReachableMovementAnchors({
 
   const movementMaxTiles = getCreatureMovementMaxTiles(movementCreature);
   const startingAnchor = getCurrentTurnInitiativeStartingAnchor(
-    encounterData,
-    movementCreature
+      encounterData,
+      movementCreature
   );
   const startingBounds = getPositionBounds(startingAnchor);
   if (!startingBounds) return reachableAnchors;
 
   const occupiedCells = buildOccupiedCellSet(
-    encounterData,
-    getCreatureCid(movementCreature)
+      encounterData,
+      getCreatureCid(movementCreature)
   );
   const startX = startingBounds.minX;
   const startY = startingBounds.minY;
   const startKey = `${startX},${startY}`;
 
   if (
-    !canFootprintOccupyAnchor({
-      cellX: startX,
-      cellY: startY,
-      footprint,
-      bounds,
-      occupiedCells,
-    })
+      !canFootprintOccupyAnchor({
+        cellX: startX,
+        cellY: startY,
+        footprint,
+        bounds,
+        occupiedCells,
+      })
   ) {
     return reachableAnchors;
   }
@@ -408,13 +408,13 @@ export function getReachableMovementAnchors({
         continue;
       }
       if (
-        !canFootprintOccupyAnchor({
-          cellX: nextX,
-          cellY: nextY,
-          footprint,
-          bounds,
-          occupiedCells,
-        })
+          !canFootprintOccupyAnchor({
+            cellX: nextX,
+            cellY: nextY,
+            footprint,
+            bounds,
+            occupiedCells,
+          })
       ) {
         continue;
       }
@@ -429,14 +429,14 @@ export function getReachableMovementAnchors({
 }
 
 export function getMovementPreviewFootprint({
-  cellX,
-  cellY,
-  encounterData,
-  currentTurnCreature,
-  setupMode,
-  selectedCID,
-  movementHighlightAnchors,
-}: {
+                                              cellX,
+                                              cellY,
+                                              encounterData,
+                                              currentTurnCreature,
+                                              setupMode,
+                                              selectedCID,
+                                              movementHighlightAnchors,
+                                            }: {
   cellX: number;
   cellY: number;
   encounterData?: Encounter;
@@ -457,9 +457,9 @@ export function getMovementPreviewFootprint({
   if (!selectedCreature) return [];
 
   const footprint = buildFootprintPosition(
-    cellX,
-    cellY,
-    getCreatureFootprint(selectedCreature)
+      cellX,
+      cellY,
+      getCreatureFootprint(selectedCreature)
   );
   const bounds = getEncounterGridBounds(encounterData);
 
@@ -467,17 +467,17 @@ export function getMovementPreviewFootprint({
 }
 
 async function moveCreatureFromSelectedCell({
-  cellX,
-  cellY,
-  selectedCID,
-  encounterData,
-  eid,
-  manualMode,
-  setEncounterData,
-  setSelectedCID,
-  setRecommendRefreshKey,
-  setInitiativeRefreshKey,
-}: {
+                                              cellX,
+                                              cellY,
+                                              selectedCID,
+                                              encounterData,
+                                              eid,
+                                              manualMode,
+                                              setEncounterData,
+                                              setSelectedCID,
+                                              setRecommendRefreshKey,
+                                              setInitiativeRefreshKey,
+                                            }: {
   cellX: number;
   cellY: number;
   selectedCID: string;
@@ -495,7 +495,7 @@ async function moveCreatureFromSelectedCell({
   ];
 
   const movedCreature = allCreatures.find(
-    (creature) => getCreatureCid(creature) === selectedCID
+      (creature) => getCreatureCid(creature) === selectedCID
   );
 
   if (!movedCreature) {
@@ -504,9 +504,9 @@ async function moveCreatureFromSelectedCell({
   }
 
   const newPos = buildFootprintPosition(
-    cellX,
-    cellY,
-    getCreatureFootprint(movedCreature)
+      cellX,
+      cellY,
+      getCreatureFootprint(movedCreature)
   );
 
   const bounds = getEncounterGridBounds(encounterData);
@@ -516,9 +516,27 @@ async function moveCreatureFromSelectedCell({
     return;
   }
 
+  // Avoid sending ruleset movement requests for cells the frontend already
+  // knows are blocked or outside the creature's remaining movement range.
+  // Manual/setup movement intentionally continues to use the override route.
+  if (!manualMode) {
+    const reachableAnchors = getReachableMovementAnchors({
+      encounterData,
+      currentTurnCreature: movedCreature,
+      selectedCID,
+      setupMode: false,
+    });
+
+    if (!reachableAnchors.has(`${cellX},${cellY}`)) {
+      throw new Error(
+          "Selected movement destination is blocked or outside the creature's movement range."
+      );
+    }
+  }
+
   const endpoint = manualMode
-    ? `/encounter/${eid}/creature/${selectedCID}/simulate/manual-movement`
-    : `/encounter/${eid}/creature/${selectedCID}/simulate/movement`
+      ? `/encounter/${eid}/creature/${selectedCID}/simulate/manual-movement`
+      : `/encounter/${eid}/creature/${selectedCID}/simulate/movement`
 
   await axiosTokenInstance.post(endpoint, newPos);
 
@@ -535,17 +553,17 @@ async function moveCreatureFromSelectedCell({
 }
 
 export function handleTokenSelect({
-  cid,
-  encounterData,
-  actionExecutionSession,
-  hasPreTurnQueue,
-  manualMode,
-  setupMode, //encStart && !activeEncounter
-  selectedCID,
-  setInitiativeOpen,
-  setInitiativeExpandedCid,
-  setSelectedCID,
-}: HandleTokenSelectParams): void {
+                                    cid,
+                                    encounterData,
+                                    actionExecutionSession,
+                                    hasPreTurnQueue,
+                                    manualMode,
+                                    setupMode, //encStart && !activeEncounter
+                                    selectedCID,
+                                    setInitiativeOpen,
+                                    setInitiativeExpandedCid,
+                                    setSelectedCID,
+                                  }: HandleTokenSelectParams): void {
   if (!encounterData) return;
 
   if (setupMode) {
@@ -569,7 +587,7 @@ export function handleTokenSelect({
     return;
   }
 
-    //Creatures that aren't currentTurnCreature can no longer move.
+  //Creatures that aren't currentTurnCreature can no longer move.
   const currentTurnCreature = getCurrentTurnCreatureFromEncounter(encounterData);
   if (currentTurnCreature && cid !== getCreatureCid(currentTurnCreature)) {
     return;
@@ -579,21 +597,21 @@ export function handleTokenSelect({
 }
 
 export function selectManualMovementCreature({
-  cid,
-  manualMode,
-  actionExecutionSession,
-  hasPreTurnQueue,
-  setSelectedCID,
-}: SelectManualMovementCreatureParams): void {
+                                               cid,
+                                               manualMode,
+                                               actionExecutionSession,
+                                               hasPreTurnQueue,
+                                               setSelectedCID,
+                                             }: SelectManualMovementCreatureParams): void {
   if (!manualMode || actionExecutionSession || hasPreTurnQueue) return;
 
   setSelectedCID((prev) => (prev === cid ? null : cid));
 }
 
 export function upsertAoePreviewToken({
-  token,
-  setAoeTokens,
-}: UpsertAoePreviewTokenParams): void {
+                                        token,
+                                        setAoeTokens,
+                                      }: UpsertAoePreviewTokenParams): void {
   setAoeTokens((prev) => {
     const withoutOld = prev.filter((existing) => existing.resultID !== token.resultID);
     return [...withoutOld, token];
@@ -601,14 +619,14 @@ export function upsertAoePreviewToken({
 }
 
 export async function commitManualAoePlacement({
-  anchor,
-  cursor,
-  manualAoePlacement,
-  encounterData,
-  setActionExecutionSession,
-  setManualAoePlacement,
-  setAoeTokens,
-}: CommitManualAoePlacementParams): Promise<void> {
+                                                 anchor,
+                                                 cursor,
+                                                 manualAoePlacement,
+                                                 encounterData,
+                                                 setActionExecutionSession,
+                                                 setManualAoePlacement,
+                                                 setAoeTokens,
+                                               }: CommitManualAoePlacementParams): Promise<void> {
   if (!manualAoePlacement || !encounterData) return;
 
   const positioning = await buildManualAoePositioning({
@@ -620,9 +638,9 @@ export async function commitManualAoePlacement({
   });
 
   const targetCids = getAoeTargetsFromPositioning(
-    positioning,
-    encounterData,
-    manualAoePlacement.cid
+      positioning,
+      encounterData,
+      manualAoePlacement.cid
   );
 
   const token = buildAoeTokenFromStats({
@@ -642,45 +660,45 @@ export async function commitManualAoePlacement({
   });
 
   setActionExecutionSession((prev) =>
-    prev
-      ? {
-          ...prev,
-          draft: {
-            ...prev.draft,
-            targets: targetCids,
-          },
-        }
-      : prev
+      prev
+          ? {
+            ...prev,
+            draft: {
+              ...prev.draft,
+              targets: targetCids,
+            },
+          }
+          : prev
   );
 
   setManualAoePlacement(null);
 }
 
 export async function handleGridCellHover({
-  cellX,
-  cellY,
-  encounterData,
-  currentTurnCreature,
-  setupMode,
-  manualAoePlacement,
-  selectedCID,
-  movementHighlightAnchors,
-  latestHoverRequestRef,
-  setAoeTokens,
-  setMovementPreviewCells,
-}: HandleGridCellHoverParams): Promise<void> {
+                                            cellX,
+                                            cellY,
+                                            encounterData,
+                                            currentTurnCreature,
+                                            setupMode,
+                                            manualAoePlacement,
+                                            selectedCID,
+                                            movementHighlightAnchors,
+                                            latestHoverRequestRef,
+                                            setAoeTokens,
+                                            setMovementPreviewCells,
+                                          }: HandleGridCellHoverParams): Promise<void> {
   if (!manualAoePlacement) {
     setGridCoordsIfChanged(
-      setMovementPreviewCells,
-      getMovementPreviewFootprint({
-        cellX,
-        cellY,
-        encounterData,
-        currentTurnCreature,
-        setupMode,
-        selectedCID,
-        movementHighlightAnchors,
-      })
+        setMovementPreviewCells,
+        getMovementPreviewFootprint({
+          cellX,
+          cellY,
+          encounterData,
+          currentTurnCreature,
+          setupMode,
+          selectedCID,
+          movementHighlightAnchors,
+        })
     );
     return;
   }
@@ -726,26 +744,26 @@ export async function handleGridCellHover({
 }
 
 export async function handleGridCellClick({
-  cellX,
-  cellY,
-  endOfEncounter,
-  manualAoePlacement,
-  actionExecutionSession,
-  encounterData,
-  manualMode,
-  setupMode,
-  selectedCID,
-  hasPreTurnQueue,
-  eid,
-  setManualAoePlacement,
-  setEncounterData,
-  setSelectedCID,
-  setRecommendRefreshKey,
-  setActionExecutionSession,
-  setAoeTokens,
-  setMovementPreviewCells,
-    setInitiativeRefreshKey
-}: HandleGridCellClickParams): Promise<void> {
+                                            cellX,
+                                            cellY,
+                                            endOfEncounter,
+                                            manualAoePlacement,
+                                            actionExecutionSession,
+                                            encounterData,
+                                            manualMode,
+                                            setupMode,
+                                            selectedCID,
+                                            hasPreTurnQueue,
+                                            eid,
+                                            setManualAoePlacement,
+                                            setEncounterData,
+                                            setSelectedCID,
+                                            setRecommendRefreshKey,
+                                            setActionExecutionSession,
+                                            setAoeTokens,
+                                            setMovementPreviewCells,
+                                            setInitiativeRefreshKey
+                                          }: HandleGridCellClickParams): Promise<void> {
   const clickedCell: GridCoord = [cellX, cellY];
   if (endOfEncounter) return;
   setMovementPreviewCells([]);
@@ -754,13 +772,13 @@ export async function handleGridCellClick({
     if (manualAoePlacement.stage === "pick_anchor" && !manualAoePlacement.selfOrigin) {
       if (isDirectionalShape(manualAoePlacement.shape)) {
         setManualAoePlacement((prev) =>
-          prev
-            ? {
-                ...prev,
-                anchor: clickedCell,
-                stage: "pick_direction",
-              }
-            : prev
+            prev
+                ? {
+                  ...prev,
+                  anchor: clickedCell,
+                  stage: "pick_direction",
+                }
+                : prev
         );
         return;
       }
@@ -794,9 +812,9 @@ export async function handleGridCellClick({
     }
 
     if (
-      manualAoePlacement.stage === "pick_anchor" &&
-      manualAoePlacement.selfOrigin &&
-      manualAoePlacement.anchor
+        manualAoePlacement.stage === "pick_anchor" &&
+        manualAoePlacement.selfOrigin &&
+        manualAoePlacement.anchor
     ) {
       await commitManualAoePlacement({
         anchor: manualAoePlacement.anchor,
@@ -828,19 +846,40 @@ export async function handleGridCellClick({
       setInitiativeRefreshKey,
     });
   } catch (error) {
+    const responseDetail =
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error
+            ? String(
+                (
+                    error as {
+                      response?: {
+                        data?: {
+                          detail?: unknown;
+                        };
+                      };
+                    }
+                ).response?.data?.detail ?? ""
+            )
+            : "";
+
     console.error(
-      manualMode || setupMode ? "Manual movement simulation failed:" : "Movement simulation failed:",
-      error
+        manualMode || setupMode
+            ? "Manual movement simulation failed:"
+            : "Movement simulation failed:",
+        responseDetail ||
+        (error instanceof Error ? error.message : "Unknown movement error"),
+        error
     );
   }
 }
 
 export function buildRecommendationAoeToken({
-  recommendation,
-  previewResultID,
-  currentTurnCreature,
-  currentTurnActions,
-}: BuildRecommendationAoeTokenParams): AoeToken | null {
+                                              recommendation,
+                                              previewResultID,
+                                              currentTurnCreature,
+                                              currentTurnActions,
+                                            }: BuildRecommendationAoeTokenParams): AoeToken | null {
   if (!currentTurnCreature || !currentTurnActions) return null;
   if (!isRecommendationAoeTarget(recommendation.target)) return null;
 
@@ -851,7 +890,7 @@ export function buildRecommendationAoeToken({
   if (!action) return null;
 
   const casterPosition = normalizeGridCoords(
-    getCreaturePosition(currentTurnCreature) as unknown
+      getCreaturePosition(currentTurnCreature) as unknown
   );
 
   const normalizedShape = normalizeAoeShape(normalizeAction(action).shape);

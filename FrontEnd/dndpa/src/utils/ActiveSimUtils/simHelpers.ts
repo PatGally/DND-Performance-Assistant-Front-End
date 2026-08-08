@@ -15,7 +15,10 @@ import {
 } from "./CreatureHelpers.ts";
 import axiosTokenInstance from "../../api/AxiosTokenInstance.ts";
 import { getEncounter } from "../../api/EncounterGet.ts";
-import { syncPreTurnQueueFromCreature } from "./PreTurnHelpers.ts";
+import {
+  buildPreTurnQueueFromEffects,
+  syncPreTurnQueueFromCreature,
+} from "./PreTurnHelpers.ts";
 
 type StateSetter<T> = Dispatch<SetStateAction<T>>;
 
@@ -51,11 +54,11 @@ export type HandlePreTurnBackParams = {
 };
 
 export function simStart({
-  encounterData,
-  setEncStart,
-  setActiveEncounter,
-  setCurrentTurnCreature,
-}: SimStartParams): boolean {
+                           encounterData,
+                           setEncStart,
+                           setActiveEncounter,
+                           setCurrentTurnCreature,
+                         }: SimStartParams): boolean {
   if (!encounterData || encounterData.initiative.length === 0) return false;
 
   const allCreatures: Creature[] = [
@@ -64,15 +67,15 @@ export function simStart({
   ];
 
   const zeroOccupants = allCreatures.filter((creature) => {
-            const position = getCreaturePosition(creature);
-            return position.some(
-                (tile) =>
-                    Array.isArray(tile) &&
-                    tile.length === 2 &&
-                    tile[0] === 0 &&
-                    tile[1] === 0
-            );
-        });
+    const position = getCreaturePosition(creature);
+    return position.some(
+        (tile) =>
+            Array.isArray(tile) &&
+            tile.length === 2 &&
+            tile[0] === 0 &&
+            tile[1] === 0
+    );
+  });
   const noCollisionAtZero = zeroOccupants.length <= 1;
 
   if(!noCollisionAtZero) {
@@ -103,34 +106,34 @@ export function simStart({
 }
 
 export async function handleNextTurn({
-  currentTurnCreature,
-  handlingNextTurn,
-  actionExecutionSession,
-  encounterData,
-  encStart,
-  activeEncounter,
-  eid,
-  hasPreTurnQueue,
-  endOfEncounter,
-  setHandlingNextTurn,
-  setEncounterData,
-  setCurrentTurnCreature,
-  setPreTurnQueue,
-  setInitiativeRefreshKey,
-  setManualLock,
-}: HandleNextTurnParams): Promise<void> {
+                                       currentTurnCreature,
+                                       handlingNextTurn,
+                                       actionExecutionSession,
+                                       encounterData,
+                                       encStart,
+                                       activeEncounter,
+                                       eid,
+                                       hasPreTurnQueue,
+                                       endOfEncounter,
+                                       setHandlingNextTurn,
+                                       setEncounterData,
+                                       setCurrentTurnCreature,
+                                       setPreTurnQueue,
+                                       setInitiativeRefreshKey,
+                                       setManualLock,
+                                     }: HandleNextTurnParams): Promise<void> {
   const isLairActionTurn = (currentTurnCreature as any)?._isLairAction === true;
 
   if (
-    handlingNextTurn ||
-    actionExecutionSession ||
-    !encounterData ||
-    (!currentTurnCreature && !isLairActionTurn) ||
-    encStart ||
-    !activeEncounter ||
-    !eid ||
-    hasPreTurnQueue ||
-    endOfEncounter
+      handlingNextTurn ||
+      actionExecutionSession ||
+      !encounterData ||
+      (!currentTurnCreature && !isLairActionTurn) ||
+      encStart ||
+      !activeEncounter ||
+      !eid ||
+      hasPreTurnQueue ||
+      endOfEncounter
   ) {
     return;
   }
@@ -138,7 +141,12 @@ export async function handleNextTurn({
   try {
     setHandlingNextTurn(true);
 
-    await axiosTokenInstance.get(`/encounter/${eid}/initiative/nextturn`);
+    const nextTurnResponse = await axiosTokenInstance.get(
+        `/encounter/${eid}/initiative/nextturn`
+    );
+    const responseQueue = buildPreTurnQueueFromEffects(
+        nextTurnResponse.data
+    );
 
     const updatedEncounter = await getEncounter(eid);
     if (!updatedEncounter) {
@@ -152,7 +160,15 @@ export async function handleNextTurn({
 
     if (newCurrentTurnCreature) {
       setCurrentTurnCreature(newCurrentTurnCreature);
-      syncPreTurnQueueFromCreature(setPreTurnQueue, newCurrentTurnCreature);
+
+      if (responseQueue.length > 0) {
+        setPreTurnQueue(responseQueue);
+      } else {
+        syncPreTurnQueueFromCreature(
+            setPreTurnQueue,
+            newCurrentTurnCreature
+        );
+      }
     } else if (isLairActionTurn) {
       console.warn("Sentinel missing but confirmed lair action turn.");
     } else {
@@ -170,10 +186,10 @@ export async function handleNextTurn({
 }
 
 export function handlePreTurnBack({
-  setActionExecutionSession,
-  setManualLock,
-  setPreTurnQueue,
-}: HandlePreTurnBackParams): void {
+                                    setActionExecutionSession,
+                                    setManualLock,
+                                    setPreTurnQueue,
+                                  }: HandlePreTurnBackParams): void {
   setActionExecutionSession(undefined);
   setManualLock(false);
   setPreTurnQueue((prev) => prev.slice(1));

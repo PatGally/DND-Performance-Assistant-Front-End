@@ -1,15 +1,39 @@
 import { useEffect, useState } from "react";
-import { type Creature, type MonsterCreature, type PlayerCreature } from "../../types/creature.ts";
-import creatureGet from "../../api/CreatureGet";
-import { isPlayerCreature } from "../../api/CreatureGet";
+import {
+    type ActiveCondition,
+    type Creature,
+    type MonsterCreature,
+    type PlayerCreature,
+    type ResultID,
+} from "../../types/creature.ts";
+import creatureGet, { isPlayerCreature } from "../../api/CreatureGet";
 import type { InitiativeEntry, InitiativeEntryDisplay } from "../../types/SimulationTypes";
-import { CleanActiveStatusData } from "../../utils/ActiveSimUtils/CleanActiveStatusData";
+import type { EncounterFull, EncounterResult } from "../../types/encounter.ts";
+import { getEncounter } from "../../api/EncounterGet.ts";
+import {
+    removeEffectResult,
+    removeSingleCreatureEffect,
+    type RemovableEffectKind,
+} from "../../api/EffectRemoval.ts";
+import TimedEffectsPanel from "./TimedEffectsPanel.tsx";
 
 type ComplexInitiativeEntryProps = {
     eid: string;
     cid: string;
     initiativeEntry: InitiativeEntry | InitiativeEntryDisplay;
+    results?: EncounterResult[];
+    onEncounterChange?: (encounter: EncounterFull) => void;
     onToggle: () => void;
+};
+
+type ActiveEffectControls = {
+    results: EncounterResult[];
+    busyKey: string | null;
+    onRemoveEffect: (
+        kind: RemovableEffectKind,
+        effectName: string
+    ) => Promise<void>;
+    onRemoveResult: (resultID: ResultID) => Promise<void>;
 };
 
 function renderValue(value: unknown): string {
@@ -17,56 +41,6 @@ function renderValue(value: unknown): string {
     if (typeof value === "boolean") return value ? "true" : "false";
     if (typeof value === "object") return JSON.stringify(value);
     return String(value);
-}
-
-function titleCaseCondition(value: string): string {
-    return value
-        .replace(/[_-]/g, " ")
-        .trim()
-        .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function getResultIdCountFromString(value: string): number {
-    const resultidMatch = value.match(/['"]?resultid['"]?\s*:\s*\[([^\]]*)\]/i);
-
-    if (!resultidMatch) return 0;
-
-    const resultidBody = resultidMatch[1];
-
-    return resultidBody.match(/['"][^'"]+['"]/g)?.length ?? 0;
-}
-
-function getCondNameFromString(value: string): string | null {
-    const condMatch = value.match(/['"]?cond['"]?\s*:\s*['"]([^'"]+)['"]/i);
-
-    return condMatch?.[1] ?? null;
-}
-
-function renderActiveConditionValue(item: unknown): string {
-    if (item && typeof item === "object") {
-        const condition = item as {
-            cond?: string;
-            resultid?: string[];
-        };
-
-        if (condition.cond) {
-            return `${titleCaseCondition(condition.cond)} - (${condition.resultid?.length ?? 0})`;
-        }
-
-        return renderValue(item);
-    }
-
-    if (typeof item === "string") {
-        const condName = getCondNameFromString(item);
-
-        if (condName) {
-            return `${titleCaseCondition(condName)} - Count ${getResultIdCountFromString(item)}`;
-        }
-
-        return titleCaseCondition(item);
-    }
-
-    return renderValue(item);
 }
 
 function renderList(label: string, items: unknown[] | undefined) {
@@ -80,9 +54,12 @@ function renderList(label: string, items: unknown[] | undefined) {
     );
 }
 
-function renderPlayer(creature: PlayerCreature, onToggle?: () => void) {
+function renderPlayer(
+    creature: PlayerCreature,
+    effectControls: ActiveEffectControls,
+    onToggle?: () => void
+) {
     const stats = creature.stats;
-    const cleaned = CleanActiveStatusData(stats.activeStatusEffects);
 
     const s: Record<string, React.CSSProperties> = {
         wrap: {
@@ -321,11 +298,15 @@ function renderPlayer(creature: PlayerCreature, onToggle?: () => void) {
             {renderList("Damage Immunities", stats.damImmunes)}
             {renderList("Damage Vulnerabilities", stats.damVulns)}
             {renderList("Condition Immunities", stats.conImmunes)}
-            {renderList(
-                "Active Conditions",
-                stats.activeConditions?.map(renderActiveConditionValue)
-            )}
-            {renderList("Active Status Effects", cleaned.map((s) => `${s.label}: ${s.description}`))}
+            <TimedEffectsPanel
+                cid={stats.cid}
+                conditions={stats.activeConditions}
+                statusEffects={stats.activeStatusEffects}
+                results={effectControls.results}
+                busyKey={effectControls.busyKey}
+                onRemoveEffect={effectControls.onRemoveEffect}
+                onRemoveResult={effectControls.onRemoveResult}
+            />
 
             <div>
                 <strong>Spell Slots:</strong> {formatSpellSlots(stats.spellSlots)}
@@ -342,7 +323,11 @@ function renderPlayer(creature: PlayerCreature, onToggle?: () => void) {
     );
 }
 
-function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
+function renderMonster(
+    creature: MonsterCreature,
+    effectControls: ActiveEffectControls,
+    onToggle?: () => void
+) {
     const activeConditions = (creature.activeConditions ?? creature.activeCons ?? []) as unknown[];
 
     const statAbbrev: Record<string, string> = {
@@ -663,15 +648,14 @@ function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
             <InlineList title="Damage Immunities" items={creature.damImmunes} />
             <InlineList title="Damage Vulnerabilities" items={creature.damVulns} />
             <InlineList title="Condition Immunities" items={creature.conImmunes} />
-            <InlineList
-                title="Active Conditions"
-                items={activeConditions.map(renderActiveConditionValue)}
-            />
-            <InlineList
-                title="Active Status Effects"
-                items={CleanActiveStatusData(creature.activeStatusEffects).map(
-                    (s) => `${s.label}: ${s.description}`
-                )}
+            <TimedEffectsPanel
+                cid={creature.cid}
+                conditions={activeConditions as Array<ActiveCondition | string>}
+                statusEffects={creature.activeStatusEffects}
+                results={effectControls.results}
+                busyKey={effectControls.busyKey}
+                onRemoveEffect={effectControls.onRemoveEffect}
+                onRemoveResult={effectControls.onRemoveResult}
             />
 
             {shouldRenderSpellInfo && (
@@ -719,29 +703,38 @@ function renderMonster(creature: MonsterCreature, onToggle?: () => void) {
 }
 
 export default function ComplexInitiativeEntry({
-    eid,
-    cid,
-    onToggle,
-}: ComplexInitiativeEntryProps) {
+                                                   eid,
+                                                   cid,
+                                                   initiativeEntry,
+                                                   results = [],
+                                                   onEncounterChange,
+                                                   onToggle,
+                                               }: ComplexInitiativeEntryProps) {
     const [creature, setCreature] = useState<Creature | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>("");
+    const [effectError, setEffectError] = useState<string>("");
+    const [busyKey, setBusyKey] = useState<string | null>(null);
+
+    async function loadCreature(): Promise<Creature | null> {
+        const data = await creatureGet(eid, cid);
+
+        if (!data) {
+            setError("Creature not found.");
+            setCreature(null);
+            return null;
+        }
+
+        setCreature(data);
+        return data;
+    }
 
     useEffect(() => {
-        async function loadCreature() {
+        async function hydrateCreature() {
             try {
                 setLoading(true);
                 setError("");
-
-                const data = await creatureGet(eid, cid);
-
-                if (!data) {
-                    setError("Creature not found.");
-                    setCreature(null);
-                    return;
-                }
-
-                setCreature(data);
+                await loadCreature();
             } catch (err) {
                 if (err instanceof Error) {
                     setError(err.message);
@@ -753,8 +746,75 @@ export default function ComplexInitiativeEntry({
             }
         }
 
-        loadCreature();
-    }, [eid, cid]);
+        void hydrateCreature();
+    }, [eid, cid, initiativeEntry]);
+
+    async function refreshAfterEffectMutation() {
+        const [updatedCreature, updatedEncounter] = await Promise.all([
+            creatureGet(eid, cid),
+            getEncounter(eid),
+        ]);
+
+        if (!updatedCreature) {
+            throw new Error(
+                "The effect changed, but the creature could not be refreshed."
+            );
+        }
+
+        setCreature(updatedCreature);
+
+        if (updatedEncounter) {
+            onEncounterChange?.(updatedEncounter);
+        }
+    }
+
+    async function handleRemoveEffect(
+        kind: RemovableEffectKind,
+        effectName: string
+    ) {
+        const nextBusyKey = `${kind}:${effectName}`;
+
+        try {
+            setBusyKey(nextBusyKey);
+            setEffectError("");
+            await removeSingleCreatureEffect(eid, cid, kind, effectName);
+            await refreshAfterEffectMutation();
+        } catch (err) {
+            setEffectError(
+                err instanceof Error
+                    ? err.message
+                    : `Failed to remove ${effectName}.`
+            );
+        } finally {
+            setBusyKey(null);
+        }
+    }
+
+    async function handleRemoveResult(resultID: ResultID) {
+        const nextBusyKey = `result:${String(resultID)}`;
+
+        try {
+            setBusyKey(nextBusyKey);
+            setEffectError("");
+            await removeEffectResult(eid, cid, resultID);
+            await refreshAfterEffectMutation();
+        } catch (err) {
+            setEffectError(
+                err instanceof Error
+                    ? err.message
+                    : "Failed to end the linked effects."
+            );
+        } finally {
+            setBusyKey(null);
+        }
+    }
+
+    const effectControls: ActiveEffectControls = {
+        results,
+        busyKey,
+        onRemoveEffect: handleRemoveEffect,
+        onRemoveResult: handleRemoveResult,
+    };
 
     return (
         <div>
@@ -769,12 +829,17 @@ export default function ComplexInitiativeEntry({
 
             {loading && <div style={{ marginTop: "10px" }}>Loading creature...</div>}
             {error && <div style={{ marginTop: "10px" }}>Error: {error}</div>}
+            {effectError && (
+                <div style={{ marginTop: "10px", color: "#8b1a1a" }}>
+                    Error: {effectError}
+                </div>
+            )}
 
             {!loading && !error && creature && (
                 <>
                     {isPlayerCreature(creature)
-                        ? renderPlayer(creature, onToggle)
-                        : renderMonster(creature, onToggle)}
+                        ? renderPlayer(creature, effectControls, onToggle)
+                        : renderMonster(creature, effectControls, onToggle)}
                 </>
             )}
         </div>

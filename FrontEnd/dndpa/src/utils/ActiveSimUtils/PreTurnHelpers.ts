@@ -1,55 +1,108 @@
-import type {Creature, PreTurnEffect} from "../../types/creature.ts";
+import type { Dispatch, SetStateAction } from "react";
 import type {
-    ActionExecutionSession,
-    ActionRequestDraft,
-    NormalizedAction,
-    PendingPreTurnResolution
+  ActiveStatusEffect,
+  Creature,
+  PreTurnEffect,
+  ResultID,
+} from "../../types/creature.ts";
+import type {
+  ActionExecutionSession,
+  ActionRequestDraft,
+  NormalizedAction,
+  PendingPreTurnResolution,
 } from "../../types/SimulationTypes.ts";
-import {isPlayerCreature} from "../../api/CreatureGet.ts";
-import type {CreatureAction} from "../../types/action.ts";
-import {getCreatureCid, getCreatureName} from "./CreatureHelpers.ts";
-import {buildRequiredInputs, extractActionEffects, normalizeAction} from "./actionHelpers.ts";
+import { isPlayerCreature } from "../../api/CreatureGet.ts";
+import type { CreatureAction } from "../../types/action.ts";
+import {
+  getCreatureCid,
+  getCreatureName,
+} from "./CreatureHelpers.ts";
+import {
+  buildRequiredInputs,
+  extractActionEffects,
+  normalizeAction,
+} from "./actionHelpers.ts";
 
-export function extractRawPreTurnEffects(creature?: Creature): PreTurnEffect[] {
-  if (!creature) return [];
-
-  const statEffs = isPlayerCreature(creature)
-    ? creature.stats.activeStatusEffects
-    : creature.activeStatusEffects;
-
-  if (!Array.isArray(statEffs)) return [];
-
-  return statEffs.filter((eff) => {
-    const name = typeof eff?.name === "string" ? eff.name.toLowerCase() : "";
-    return name === "lingeffect" || name === "lingsave";
-  }) as PreTurnEffect[];
+function asArray<T>(value: T | T[] | null | undefined): T[] {
+  if (Array.isArray(value)) return value;
+  if (value === null || value === undefined) return [];
+  return [value];
 }
 
-function flattenPreTurnEffects(effects: PreTurnEffect[]): PendingPreTurnResolution[] {
+function isPreTurnEffect(value: unknown): value is PreTurnEffect {
+  if (!value || typeof value !== "object") return false;
+
+  const effect = value as ActiveStatusEffect;
+  const name = String(effect.name ?? "").trim().toLowerCase();
+
+  return name === "lingeffect" || name === "lingsave";
+}
+
+export function extractRawPreTurnEffects(
+    creature?: Creature
+): PreTurnEffect[] {
+  if (!creature) return [];
+
+  const statusEffects = isPlayerCreature(creature)
+      ? creature.stats.activeStatusEffects
+      : creature.activeStatusEffects;
+
+  if (!Array.isArray(statusEffects)) return [];
+
+  return statusEffects.filter(isPreTurnEffect);
+}
+
+/**
+ * Convert backend status-effect payloads into the one-item-at-a-time queue used
+ * by EncounterSimulation. The backend response is preferred because it is
+ * captured before timed effects are advanced or removed at turn start.
+ */
+export function buildPreTurnQueueFromEffects(
+    rawEffects: unknown
+): PendingPreTurnResolution[] {
+  if (!Array.isArray(rawEffects)) return [];
+
   const queue: PendingPreTurnResolution[] = [];
+  const queuedSources = new Set<string>();
 
-  for (const effect of effects) {
-    const effectName = (effect?.name ?? "").trim().toLowerCase();
-    if (effectName !== "lingeffect" && effectName !== "lingsave") continue;
+  for (const rawEffect of rawEffects) {
+    if (!isPreTurnEffect(rawEffect)) continue;
 
-    const actions = Array.isArray((effect.effect as any)?.spell)
-      ? (effect.effect as any).spell
-      : Array.isArray((effect.effect as any)?.action)
-        ? (effect.effect as any).action
-        : [];
+    const effectName = String(rawEffect.name).trim().toLowerCase();
+    const effectData = rawEffect.effect ?? {};
 
-    const resultIDs = Array.isArray(effect?.effect?.resultID)
-      ? effect.effect.resultID
-      : [];
+    const spellActions = asArray(
+        (effectData as { spell?: CreatureAction | CreatureAction[] }).spell
+    );
+    const normalActions = asArray(
+        (effectData as { action?: CreatureAction | CreatureAction[] }).action
+    );
+    const actions = spellActions.length > 0 ? spellActions : normalActions;
 
-    const len = Math.min(actions.length, resultIDs.length);
+    const resultIDs = asArray<ResultID>(effectData.resultID);
+    const actors = asArray(
+        (effectData as { actor?: string | string[] }).actor
+    );
 
-    for (let i = 0; i < len; i++) {
+    const itemCount = Math.min(actions.length, resultIDs.length);
+
+    for (let index = 0; index < itemCount; index += 1) {
+      const resultID = String(resultIDs[index] ?? "").trim();
+      if (!resultID || resultID === "-1") continue;
+
+      const sourceKey = `${effectName}:${resultID}`;
+      if (queuedSources.has(sourceKey)) continue;
+      queuedSources.add(sourceKey);
+
+      const actor = String(
+          actors[index] ?? actors[0] ?? ""
+      ).trim();
+
       queue.push({
         effectName: effectName as "lingeffect" | "lingsave",
-        spell: actions[i] as CreatureAction,
-        resultID: String(resultIDs[i]).trim(),
-        actor: "",
+        spell: actions[index],
+        resultID,
+        actor,
       });
     }
   }
@@ -57,25 +110,37 @@ function flattenPreTurnEffects(effects: PreTurnEffect[]): PendingPreTurnResoluti
   return queue;
 }
 
-export function syncPreTurnQueueFromCreature(setPreTurnQueue : React.Dispatch<React.SetStateAction<PendingPreTurnResolution[]>>,
-                                             creature?: Creature) {
-  const raw = extractRawPreTurnEffects(creature);
-  const flattened = flattenPreTurnEffects(raw);
-  setPreTurnQueue(flattened);
+export function syncPreTurnQueueFromCreature(
+    setPreTurnQueue: Dispatch<SetStateAction<PendingPreTurnResolution[]>>,
+    creature?: Creature
+): void {
+  setPreTurnQueue(
+      buildPreTurnQueueFromEffects(
+          extractRawPreTurnEffects(creature)
+      )
+  );
 }
 
 function getPreTurnActionName(action: CreatureAction): string {
-  const maybe = action as any;
+  const candidate = action as {
+    spellname?: unknown;
+    name?: unknown;
+  };
 
-  if (typeof maybe?.spellname === "string") return maybe.spellname;
-  if (typeof maybe?.name === "string") return maybe.name;
+  if (typeof candidate.spellname === "string") {
+    return candidate.spellname;
+  }
+
+  if (typeof candidate.name === "string") {
+    return candidate.name;
+  }
 
   return "";
 }
 
 export function buildPreTurnSession(
-  item: PendingPreTurnResolution,
-  targetCreature: Creature
+    item: PendingPreTurnResolution,
+    targetCreature: Creature
 ): ActionExecutionSession {
   const base = normalizeAction(item.spell);
   const normalized: NormalizedAction = {
@@ -87,27 +152,26 @@ export function buildPreTurnSession(
     range: "",
   };
 
-  const { conditions, statusEffects } = extractActionEffects(item.spell);
-  const filteredStatusEffects = filterPreTurnStatusEffects(statusEffects);
-  const requiredInputs = buildRequiredInputs(normalized);
+  const { conditions, statusEffects } =
+      extractActionEffects(item.spell);
 
   const draft: ActionRequestDraft = {
     resultID: item.resultID,
-    actor: item.actor, // original caster, NOT current turn creature
+    actor: item.actor,
     action: getPreTurnActionName(item.spell),
     actionType: "PreTurn",
     actionProb: 0,
     actionEDam: 0,
     actionImpact: 0,
-    actionRanking : 0,
-    base_weight : 0,
-    ml_weight : 0,
-    useML : false,
-    final_weight : 0,
-    candidateCount : 0,
+    actionRanking: 0,
+    base_weight: 0,
+    ml_weight: 0,
+    useML: false,
+    final_weight: 0,
+    candidateCount: 0,
     targets: [getCreatureCid(targetCreature)],
     conditions,
-    statusEffects: filteredStatusEffects,
+    statusEffects: filterPreTurnStatusEffects(statusEffects),
     outcome: {
       rollResults: [],
       diceResults: [],
@@ -119,65 +183,67 @@ export function buildPreTurnSession(
     timestamp: "",
   };
 
-
   return {
     action: normalized,
-    requiredInputs,
+    requiredInputs: buildRequiredInputs(normalized),
     draft,
     error: "",
   };
 }
 
 export function filterPreTurnStatusEffects(
-  statusEffects: Record<string, unknown>[]
+    statusEffects: Record<string, unknown>[]
 ): Record<string, unknown>[] {
   return statusEffects.filter((effect) => {
     const name =
-      typeof effect?.name === "string" ? effect.name.trim().toLowerCase() : "";
+        typeof effect?.name === "string"
+            ? effect.name.trim().toLowerCase()
+            : "";
+
     return name !== "concentration";
   });
 }
 
-function getPotentialPreTurnEffectsForCreature(creature: Creature): PreTurnEffect[] {
+function getPotentialPreTurnEffectsForCreature(
+    creature: Creature
+): ActiveStatusEffect[] {
   if (isPlayerCreature(creature)) {
-    return (creature.stats.activeStatusEffects ?? []) as PreTurnEffect[];
+    return creature.stats.activeStatusEffects ?? [];
   }
-  return ((creature as { activeStatusEffects?: PreTurnEffect[] }).activeStatusEffects ?? []);
+
+  return creature.activeStatusEffects ?? [];
 }
 
+/**
+ * Compatibility fallback for older saved effects that do not contain the
+ * actor array. New effects and the next-turn API response include actor data.
+ */
 export function getActorByConcentrationID(
-  resultID: string,
-  allCreatures: Creature[]
+    resultID: string,
+    allCreatures: Creature[]
 ): string {
   const normalizedResultID = String(resultID).trim();
 
   for (const creature of allCreatures) {
-    const statEffects = getPotentialPreTurnEffectsForCreature(creature);
+    const hasMatchingConcentration =
+        getPotentialPreTurnEffectsForCreature(creature).some(
+            (effect) => {
+              const effectName = String(
+                  effect?.name ?? ""
+              ).trim().toLowerCase();
 
-    const hasMatchingConcentration = statEffects.some((eff) => {
-      const effectName =
-        typeof eff?.name === "string" ? eff.name.trim().toLowerCase() : "";
+              if (effectName !== "concentration") return false;
 
-      if (effectName !== "concentration") return false;
-
-      const idArray = eff?.effect?.resultID
-        ? eff.effect.resultID
-        : [];
-
-      if (Array.isArray(idArray)) {
-        return idArray.some((id) => String(id).trim() === normalizedResultID);
-      }
-      else {
-        return idArray === resultID;
-      }
-    });
+              return asArray(effect.effect?.resultID).some(
+                  (id) => String(id).trim() === normalizedResultID
+              );
+            }
+        );
 
     if (hasMatchingConcentration) {
       return getCreatureName(creature);
     }
   }
-  console.error("Actor not found!");
 
   return "";
 }
-

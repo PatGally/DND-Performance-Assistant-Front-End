@@ -1,5 +1,10 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { CreatureAction } from "../../types/action.ts";
+import type {
+  MultiattackDefinition,
+  MultiattackSequenceItem,
+} from "../../types/multiattack.ts";
+import { hasMultiattackDefinition } from "../../types/multiattack.ts";
 import type {Creature, GridCoord, PlayerCreature} from "../../types/creature.ts";
 import type {
   ActionExecutionSession,
@@ -11,7 +16,7 @@ import type {
   PendingPreTurnResolution,
   RecommendationTarget,
   RollMode,
-    StatKey
+  StatKey
 } from "../../types/SimulationTypes.ts";
 
 import {isBasicAction, isMonsterAction, isSpellAction} from "./ActionTypeChecker.ts";
@@ -32,7 +37,7 @@ import {
   normalizeAoeShape,
   normalizeGridCoords,
   resolveAoeTokenImageNameFromStats,
-    extractActionTiming
+  extractActionTiming
 } from "./aoeHelpers.ts";
 import { basicActionGet } from "../../api/BasicActionGet.ts";
 import axiosTokenInstance from "../../api/AxiosTokenInstance.ts";
@@ -89,7 +94,8 @@ export type HandlePASubmissionParams = {
   final_weight : number;
   candidateCount : number;
   targets: RecommendationTarget;
-  movementRecc: GridCoord[];
+  multiattack?: MultiattackDefinition;
+  movementRecc?: GridCoord[];
   previewResultID?: string;
   currentTurnCreature?: Creature;
   encounterData?: Encounter;
@@ -129,9 +135,9 @@ export type HandlePreTurnExecutionParams = {
 
 //ONLOAD EFFECT
 export const loadActions = async (
-  currentTurnCreature: Creature,
-  eid: string,
-  setCurrentTurnActions: StateSetter<CreatureAction[] | undefined>
+    currentTurnCreature: Creature,
+    eid: string,
+    setCurrentTurnActions: StateSetter<CreatureAction[] | undefined>
 ): Promise<void> => {
   if (!currentTurnCreature) return;
   const currentActions = await actionsGet(eid, getCreatureCid(currentTurnCreature));
@@ -157,9 +163,9 @@ export function buildRequiredInputs(normalized: NormalizedAction): string[] {
   return fields;
 }
 export function isCriticalAttackRoll(
-  rollMode: string,
-  rawRoll: string,
-  rollBounds: RollBounds | null
+    rollMode: string,
+    rawRoll: string,
+    rollBounds: RollBounds | null
 ): boolean {
   if (!(rollMode === "toHit" || rollMode === "onHit")) return false;
   if (!rollBounds) return false;
@@ -168,8 +174,8 @@ export function isCriticalAttackRoll(
   return Number.isFinite(rollValue) && rollValue === rollBounds.max;
 }
 export function getCriticalDamageBounds(
-  baseBounds: RollBounds | null,
-  isCrit: boolean
+    baseBounds: RollBounds | null,
+    isCrit: boolean
 ): RollBounds | null {
   if (!baseBounds) return null;
   if (!isCrit) return baseBounds;
@@ -230,27 +236,27 @@ function isSpellActionLike(action: CreatureAction): boolean {
   const maybe = action as any;
 
   return (
-    isSpellAction(action) ||
-    typeof maybe?.spellname === "string" ||
-    Array.isArray(maybe?.targeting)
+      isSpellAction(action) ||
+      typeof maybe?.spellname === "string" ||
+      Array.isArray(maybe?.targeting)
   );
 }
 function isMonsterActionLike(action: CreatureAction): boolean {
   const maybe = action as any;
 
   return (
-    isMonsterAction(action) ||
-    (
-      !isSpellActionLike(action) &&
-      !maybe?.properties &&
-      typeof maybe?.name === "string" &&
+      isMonsterAction(action) ||
       (
-        maybe?.rolls !== undefined ||
-        maybe?.number !== undefined ||
-        maybe?.actionRange !== undefined ||
-        maybe?.shape !== undefined
+          !isSpellActionLike(action) &&
+          !maybe?.properties &&
+          typeof maybe?.name === "string" &&
+          (
+              maybe?.rolls !== undefined ||
+              maybe?.number !== undefined ||
+              maybe?.actionRange !== undefined ||
+              maybe?.shape !== undefined
+          )
       )
-    )
   );
 }
 function getFirstTarget(action: CreatureAction): any | undefined {
@@ -275,14 +281,14 @@ export function normalizeAction(action: CreatureAction, actor?: Creature): Norma
       kind: "spell",
       name: String(maybe?.spellname ?? maybe?.name ?? "Unknown Spell"),
       targetMode: isSelf
-        ? "self"
-        : isAoe
-          ? "aoe"
-          : count === 1
-            ? "single"
-            : (count ?? 0) > 1
-              ? "multi"
-              : "none",
+          ? "self"
+          : isAoe
+              ? "aoe"
+              : count === 1
+                  ? "single"
+                  : (count ?? 0) > 1
+                      ? "multi"
+                      : "none",
       targetCount: isSelf ? 0 : count,
       range: target?.actionRange ?? "",
       shape: target?.shape ?? "",
@@ -313,12 +319,12 @@ export function normalizeAction(action: CreatureAction, actor?: Creature): Norma
       kind: "monster",
       name: String(maybe?.name ?? "Unknown Monster Action"),
       targetMode: isAoe
-        ? "aoe"
-        : count === 1
-          ? "single"
-          : (count ?? 0) > 1
-            ? "multi"
-            : "none",
+          ? "aoe"
+          : count === 1
+              ? "single"
+              : (count ?? 0) > 1
+                  ? "multi"
+                  : "none",
       targetCount: count,
       range: maybe?.actionRange ?? "",
       shape: maybe?.shape ?? "",
@@ -371,8 +377,8 @@ export function extractActionEffects(action: CreatureAction): {
     return {
       conditions: Array.isArray(target?.conditions) ? target.conditions : [],
       statusEffects: Array.isArray(target?.statusEffect)
-        ? (target.statusEffect as Record<string, unknown>[])
-        : [],
+          ? (target.statusEffect as Record<string, unknown>[])
+          : [],
     };
   }
 
@@ -380,8 +386,8 @@ export function extractActionEffects(action: CreatureAction): {
     return {
       conditions: Array.isArray(maybe?.conditions) ? maybe.conditions : [],
       statusEffects: Array.isArray(maybe?.statusEffect)
-        ? (maybe.statusEffect as Record<string, unknown>[])
-        : [],
+          ? (maybe.statusEffect as Record<string, unknown>[])
+          : [],
     };
   }
 
@@ -389,6 +395,33 @@ export function extractActionEffects(action: CreatureAction): {
     conditions: [],
     statusEffects: [],
   };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function normalizeMultiattackSequence(value: unknown): MultiattackSequenceItem[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.filter((item): item is MultiattackSequenceItem => (
+      isRecord(item) &&
+      typeof item.name === "string" &&
+      item.name.trim() !== "" &&
+      isRecord(item.action)
+  ));
+}
+
+function normalizeMultiattackDefinition(value: unknown): MultiattackDefinition | undefined {
+  if (!isRecord(value)) return undefined;
+
+  return {
+    ...value,
+    name: typeof value.name === "string" ? value.name : "Multiattack",
+    total: Number.isFinite(Number(value.total)) ? Number(value.total) : 0,
+    split: Array.isArray(value.split) ? value.split : [],
+    sequence: normalizeMultiattackSequence(value.sequence),
+  } as MultiattackDefinition;
 }
 
 export function isPlayerCreatureLocal(creature: Creature): creature is PlayerCreature {
@@ -483,36 +516,36 @@ export function resolveDamageMod(rawDamageMod: string | undefined, actor?: Creat
 }
 
 function extractActionExecutionErrorMessage(
-  error: unknown,
-  fallback: string
+    error: unknown,
+    fallback: string
 ): string {
   const axiosError = error as any;
   const data = axiosError?.response?.data;
 
   const detail =
-    data?.detail ??
-    data?.message ??
-    data?.error ??
-    data;
+      data?.detail ??
+      data?.message ??
+      data?.error ??
+      data;
 
   if (Array.isArray(detail)) {
     return detail
-      .map((item) => {
-        if (typeof item === "string") return item;
+        .map((item) => {
+          if (typeof item === "string") return item;
 
-        if (item && typeof item === "object") {
-          const record = item as Record<string, unknown>;
+          if (item && typeof item === "object") {
+            const record = item as Record<string, unknown>;
 
-          if (typeof record.msg === "string") return record.msg;
-          if (typeof record.message === "string") return record.message;
-          if (typeof record.detail === "string") return record.detail;
+            if (typeof record.msg === "string") return record.msg;
+            if (typeof record.message === "string") return record.message;
+            if (typeof record.detail === "string") return record.detail;
 
-          return JSON.stringify(record);
-        }
+            return JSON.stringify(record);
+          }
 
-        return String(item);
-      })
-      .join(", ");
+          return String(item);
+        })
+        .join(", ");
   }
 
   if (typeof detail === "string") {
@@ -534,17 +567,24 @@ function extractActionExecutionErrorMessage(
 
 //SIM LOGIC
 export async function handleActionSubmission({
-  action,
-  currentTurnCreature,
-  setManualLock,
-  setActionExecutionSession,
-  setManualAoePlacement,
-}: HandleActionSubmissionParams): Promise<void> {
+                                               action,
+                                               currentTurnCreature,
+                                               setManualLock,
+                                               setActionExecutionSession,
+                                               setManualAoePlacement,
+                                             }: HandleActionSubmissionParams): Promise<void> {
   setManualLock(true);
 
-  const { conditions, statusEffects } = extractActionEffects(action);
-  const normalized = normalizeAction(action, currentTurnCreature);
-  const requiredInputs = buildRequiredInputs(normalized);
+  const multiattack = hasMultiattackDefinition(action)
+      ? normalizeMultiattackDefinition(action.multiattack)
+      : undefined;
+  const firstChildAction = multiattack?.sequence[0]?.action as CreatureAction | undefined;
+  const actionForNormalization = firstChildAction ?? action;
+  const { conditions, statusEffects } = multiattack
+      ? { conditions: [], statusEffects: [] }
+      : extractActionEffects(action);
+  const normalized = normalizeAction(actionForNormalization, currentTurnCreature);
+  const requiredInputs = multiattack ? [] : buildRequiredInputs(normalized);
 
   let resultID = "a";
   try {
@@ -553,25 +593,30 @@ export async function handleActionSubmission({
     console.error("Failed to fetch CID", err);
   }
 
-  const draft: ActionRequestDraft = {
+  const draft: ActionRequestDraft & { multiattack?: MultiattackDefinition } = {
     resultID,
-    actor: currentTurnCreature ? getCreatureName(currentTurnCreature) : "",
-    action: isSpellAction(action) ? action.spellname : action.name,
-    actionType: isBasicAction(action) ? `Basic` : (isSpellAction(action))
-      ? `Lvl ${action.level} Spell`
-      : isMonsterAction(action)
-        ? "MonAction"
-        : "Weapon",
+    actor: currentTurnCreature
+        ? multiattack
+            ? getCreatureCid(currentTurnCreature)
+            : getCreatureName(currentTurnCreature)
+        : "",
+    action: multiattack?.name ?? (isSpellAction(action) ? action.spellname : action.name),
+    actionType: multiattack ? "Multiattack" : isBasicAction(action) ? `Basic` : (isSpellAction(action))
+        ? `Lvl ${action.level} Spell`
+        : isMonsterAction(action)
+            ? "MonAction"
+            : "Weapon",
     actionProb: 0,
     actionEDam: 0,
     actionImpact: 0,
-        actionRanking : 0,
+    actionRanking : 0,
     base_weight :0,
     ml_weight :0,
     useML : false,
     final_weight : 0,
     candidateCount : 0,
     targets: [],
+    multiattack,
     conditions,
     statusEffects,
     outcome: {
@@ -591,23 +636,23 @@ export async function handleActionSubmission({
     error: "",
   });
 
-  if (normalized.targetCount === -1 || normalized.targetCount === -2) {
+  if (!multiattack && (normalized.targetCount === -1 || normalized.targetCount === -2)) {
     const actorCid = currentTurnCreature ? getCreatureCid(currentTurnCreature) : "";
     const lineWidthCells = normalized.shape.includes("line")
-      ? extractLineWidthCells(normalized.shape)
-      : 1;
+        ? extractLineWidthCells(normalized.shape)
+        : 1;
 
     const shape = normalizeAoeShape(normalized.shape);
     const selfOrigin = normalized.targetCount === -2;
     const actorPosition = normalizeGridCoords(
-      currentTurnCreature ? (getCreaturePosition(currentTurnCreature) as unknown) : []
+        currentTurnCreature ? (getCreaturePosition(currentTurnCreature) as unknown) : []
     );
 
     const timing = extractActionTiming(action);
 
     const autoAnchor = selfOrigin
-      ? getFootprintCenterCell(actorPosition)
-      : null;
+        ? getFootprintCenterCell(actorPosition)
+        : null;
 
 
     if (normalized.targetCount === -2 && !normalized.radius) {
@@ -636,20 +681,33 @@ export async function handleActionSubmission({
   }
 }
 export async function handlePASubmission({
-  name, prob, eDam, impact, overallRank, base_weight, ml_weight, useML, final_weight, candidateCount,
-  targets,
-  movementRecc,
-  previewResultID,
-  currentTurnCreature,
-  encounterData,
-  currentTurnActions,
-  setManualLock,
-  setAoeTokens,
-  setActionExecutionSession,
-}: HandlePASubmissionParams): Promise<void> {
+                                           name, prob, eDam, impact, overallRank, base_weight, ml_weight, useML, final_weight, candidateCount,
+                                           targets,
+                                           multiattack,
+                                           movementRecc,
+                                           previewResultID,
+                                           currentTurnCreature,
+                                           encounterData,
+                                           currentTurnActions,
+                                           setManualLock,
+                                           setAoeTokens,
+                                           setActionExecutionSession,
+                                         }: HandlePASubmissionParams): Promise<void> {
   if (!currentTurnCreature || !encounterData || !currentTurnActions) return;
 
+  const normalizedMovementRecc = normalizeGridCoords(movementRecc);
+  const normalizedMultiattack = normalizeMultiattackDefinition(multiattack);
+
   let action = findActionByName(name, currentTurnActions);
+  if (!action && normalizedMultiattack) {
+    const firstChildName = normalizedMultiattack.sequence[0]?.name;
+    if (firstChildName) {
+      action = findActionByName(firstChildName, currentTurnActions);
+    }
+  }
+  if (!action && normalizedMultiattack?.sequence[0]?.action) {
+    action = normalizedMultiattack.sequence[0].action as CreatureAction;
+  }
   if (!action) {
     action = await basicActionGet(name);
   }
@@ -662,12 +720,14 @@ export async function handlePASubmission({
 
   const targetNames = Array.isArray(targets) ? targets : targets.targetsHit;
   const resolvedTargets = targetNames
-    .map((target) => resolveTargetToCid(target, encounterData))
-    .filter((target): target is string => target !== null);
+      .map((target) => resolveTargetToCid(target, encounterData))
+      .filter((target): target is string => target !== null);
 
-  const { conditions, statusEffects } = extractActionEffects(action);
+  const { conditions, statusEffects } = normalizedMultiattack
+      ? { conditions: [], statusEffects: [] }
+      : extractActionEffects(action);
   const normalized = normalizeAction(action, currentTurnCreature);
-  const requiredInputs = buildRequiredInputs(normalized);
+  const requiredInputs = normalizedMultiattack ? [] : buildRequiredInputs(normalized);
 
   let resultID = "-1";
   try {
@@ -678,21 +738,21 @@ export async function handlePASubmission({
 
   if (previewResultID) {
     setAoeTokens((prev) =>
-      prev.map((token) =>
-        token.resultID === previewResultID ? { ...token, resultID } : token
-      )
+        prev.map((token) =>
+            token.resultID === previewResultID ? { ...token, resultID } : token
+        )
     );
   }
 
-  const draft: ActionRequestDraft = {
+  const draft: ActionRequestDraft & { multiattack?: MultiattackDefinition } = {
     resultID,
     actor: getCreatureCid(currentTurnCreature),
-    action: isSpellAction(action) ? action.spellname : action.name,
-    actionType: isBasicAction(action) ? `Basic` : (isSpellAction(action))
-      ? `Lvl ${action.level} Spell`
-      : isMonsterAction(action)
-        ? "MonAction"
-        : "Weapon",
+    action: normalizedMultiattack?.name ?? (isSpellAction(action) ? action.spellname : action.name),
+    actionType: normalizedMultiattack ? "Multiattack" : isBasicAction(action) ? `Basic` : (isSpellAction(action))
+        ? `Lvl ${action.level} Spell`
+        : isMonsterAction(action)
+            ? "MonAction"
+            : "Weapon",
     actionProb: prob,
     actionEDam: eDam,
     actionImpact: impact,
@@ -703,7 +763,8 @@ export async function handlePASubmission({
     final_weight : final_weight,
     candidateCount : candidateCount,
     targets: resolvedTargets,
-    movementRecc,
+    movementRecc: normalizedMovementRecc,
+    multiattack: normalizedMultiattack,
     conditions,
     statusEffects,
     outcome: {
@@ -726,41 +787,41 @@ export async function handlePASubmission({
 }
 
 export async function handleActionExecution({
-  finalDraft,
-  eid,
-  currentTurnCreature,
-  encounterData,
-  actionExecutionSession,
-  aoeTokens,
-  setEncounterData,
-  setAoeTokens,
-  setCurrentTurnCreature,
-  setActionExecutionSession,
-  setManualLock,
-  setInitiativeRefreshKey,
-}: HandleActionExecutionParams): Promise<void | string> {
+                                              finalDraft,
+                                              eid,
+                                              currentTurnCreature,
+                                              encounterData,
+                                              actionExecutionSession,
+                                              aoeTokens,
+                                              setEncounterData,
+                                              setAoeTokens,
+                                              setCurrentTurnCreature,
+                                              setActionExecutionSession,
+                                              setManualLock,
+                                              setInitiativeRefreshKey,
+                                            }: HandleActionExecutionParams): Promise<void | string> {
   if (!eid || !currentTurnCreature || !encounterData || !actionExecutionSession) {
     return "Missing action execution context.";
   }
 
   const executedAoeToken = aoeTokens.find(
-    (token) => token.resultID === finalDraft.resultID
+      (token) => token.resultID === finalDraft.resultID
   );
 
   try {
     const missingTargets =
-      finalDraft.targets.length === 0 &&
-      (actionExecutionSession.action.targetCount ?? 0) > 0;
+        finalDraft.targets.length === 0 &&
+        (actionExecutionSession.action.targetCount ?? 0) > 0;
 
     if (missingTargets) {
       setActionExecutionSession((prev) =>
-        prev ? { ...prev, error: "Targets are required." } : prev
+          prev ? { ...prev, error: "Targets are required." } : prev
       );
       return "Targets are required.";
     }
 
     setActionExecutionSession((prev) =>
-      prev ? { ...prev, error: null } : prev
+        prev ? { ...prev, error: null } : prev
     );
 
     const payload = {
@@ -772,14 +833,14 @@ export async function handleActionExecution({
       await axiosTokenInstance.post(`/encounter/${eid}/simulate/ruleset`, payload);
     } catch (error: any) {
       const message = extractActionExecutionErrorMessage(
-        error,
-        "Action execution failed."
+          error,
+          "Action execution failed."
       );
 
       console.error(message);
 
       setActionExecutionSession((prev) =>
-        prev ? { ...prev, error: message } : prev
+          prev ? { ...prev, error: message } : prev
       );
 
       return message;
@@ -788,7 +849,7 @@ export async function handleActionExecution({
     const updatedEncounter = await getEncounter(eid);
     if (!updatedEncounter) {
       setActionExecutionSession((prev) =>
-        prev ? { ...prev, error: "Action execution failed." } : prev
+          prev ? { ...prev, error: "Action execution failed." } : prev
       );
       return "Action execution failed.";
     }
@@ -797,7 +858,7 @@ export async function handleActionExecution({
 
     setAoeTokens((prev) => {
       const withoutExecuted = prev.filter(
-        (token) => token.resultID !== finalDraft.resultID
+          (token) => token.resultID !== finalDraft.resultID
       );
 
       if (executedAoeToken?.timing === "lingering") {
@@ -808,7 +869,7 @@ export async function handleActionExecution({
     });
 
     const newCurrentTurnCreature =
-      getCurrentTurnCreatureFromEncounter(updatedEncounter);
+        getCurrentTurnCreatureFromEncounter(updatedEncounter);
 
     setCurrentTurnCreature(newCurrentTurnCreature);
     setActionExecutionSession(undefined);
@@ -818,12 +879,12 @@ export async function handleActionExecution({
     console.error("Failed to execute action:", error);
 
     const message = extractActionExecutionErrorMessage(
-      error,
-      "Error with Action Execution"
+        error,
+        "Error with Action Execution"
     );
 
     setActionExecutionSession((prev) =>
-      prev ? { ...prev, error: message } : prev
+        prev ? { ...prev, error: message } : prev
     );
 
     return message;
@@ -831,19 +892,19 @@ export async function handleActionExecution({
 }
 
 export async function handlePreTurnExecution({
-  finalDraft,
-  eid,
-  currentTurnCreature,
-  encounterData,
-  preTurnQueue,
-  aoeTokens,
-  setManualLock,
-  setPreTurnQueue,
-  setActionExecutionSession,
-  setEncounterData,
-  setCurrentTurnCreature,
-  setInitiativeRefreshKey,
-}: HandlePreTurnExecutionParams): Promise<void> {
+                                               finalDraft,
+                                               eid,
+                                               currentTurnCreature,
+                                               encounterData,
+                                               preTurnQueue,
+                                               aoeTokens,
+                                               setManualLock,
+                                               setPreTurnQueue,
+                                               setActionExecutionSession,
+                                               setEncounterData,
+                                               setCurrentTurnCreature,
+                                               setInitiativeRefreshKey,
+                                             }: HandlePreTurnExecutionParams): Promise<void> {
   if (!eid || !currentTurnCreature || !encounterData) return;
 
   const activeItem = preTurnQueue[0];
@@ -867,34 +928,26 @@ export async function handlePreTurnExecution({
     };
 
     const existingAoeToken = aoeTokens.find(
-      (token) => token.resultID === cleanedDraft.resultID
+        (token) => token.resultID === cleanedDraft.resultID
     );
 
     const tokenPayload = normalizeAoeTokenForRequest(
-      existingAoeToken
-        ? {
-            ...existingAoeToken,
-            timing: "lingering",
-          }
-        : undefined
+        existingAoeToken
+            ? {
+              ...existingAoeToken,
+              timing: "lingering",
+            }
+            : undefined
     );
 
-    const response = await axiosTokenInstance.post(
-      `/encounter/${eid}/simulate/preturn`,
-      {
-        ...cleanedDraft,
-        preTurnMeta: activeItem.effectName,
-        token: tokenPayload,
-      }
+    await axiosTokenInstance.post(
+        `/encounter/${eid}/simulate/preturn`,
+        {
+          ...cleanedDraft,
+          preTurnMeta: activeItem.effectName,
+          token: tokenPayload,
+        }
     );
-
-    const savedOut = response?.data?.savedOut === true;
-
-    if (activeItem.effectName === "lingsave" && savedOut) {
-      await axiosTokenInstance.delete(
-        `/encounter/${eid}/creature/${getCreatureCid(currentTurnCreature)}/pre-effect/${cleanedDraft.resultID}`
-      );
-    }
 
     const updatedEncounter = await getEncounter(eid);
     if (!updatedEncounter) {
@@ -912,7 +965,7 @@ export async function handlePreTurnExecution({
   } catch (error) {
     console.error("Failed to execute pre-turn effect:", error);
     setActionExecutionSession((prev) =>
-      prev ? { ...prev, error: "Pre-turn execution failed." } : prev
+        prev ? { ...prev, error: "Pre-turn execution failed." } : prev
     );
   } finally {
     setManualLock(false);
@@ -921,19 +974,19 @@ export async function handlePreTurnExecution({
 
 function normalizeTokenAnchorForRequest(anchor: unknown): [number, number] | null {
   if (
-    Array.isArray(anchor) &&
-    anchor.length === 2 &&
-    typeof anchor[0] === "number" &&
-    typeof anchor[1] === "number"
+      Array.isArray(anchor) &&
+      anchor.length === 2 &&
+      typeof anchor[0] === "number" &&
+      typeof anchor[1] === "number"
   ) {
     return [anchor[0], anchor[1]];
   }
 
   if (
-    anchor &&
-    typeof anchor === "object" &&
-    typeof (anchor as { x?: unknown }).x === "number" &&
-    typeof (anchor as { y?: unknown }).y === "number"
+      anchor &&
+      typeof anchor === "object" &&
+      typeof (anchor as { x?: unknown }).x === "number" &&
+      typeof (anchor as { y?: unknown }).y === "number"
   ) {
     return [
       (anchor as { x: number }).x,
@@ -960,14 +1013,14 @@ function normalizeAoeTokenForRequest(token: AoeToken | undefined): {
   if (!anchor) return null;
 
   const positioning = Array.isArray((token as any).positioning)
-    ? (token as any).positioning.filter(
-        (coord: unknown): coord is [number, number] =>
-          Array.isArray(coord) &&
-          coord.length === 2 &&
-          typeof coord[0] === "number" &&
-          typeof coord[1] === "number"
+      ? (token as any).positioning.filter(
+          (coord: unknown): coord is [number, number] =>
+              Array.isArray(coord) &&
+              coord.length === 2 &&
+              typeof coord[0] === "number" &&
+              typeof coord[1] === "number"
       )
-    : [];
+      : [];
 
   return {
     name: String((token as any).name ?? ""),

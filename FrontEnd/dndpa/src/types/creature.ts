@@ -11,8 +11,8 @@ export type CharacterStats = {
     movementMax: number;
     characterClass: string;
     conImmunes: any[];
-    activeStatusEffects: any[];
-    activeConditions: any[];
+    activeStatusEffects: ActiveStatusEffect[];
+    activeConditions: Array<ActiveCondition | string>;
     saveProfs: {
         STR: string;
         DEX: string;
@@ -43,72 +43,89 @@ export type CharacterPayload = {
 
 export type GridCoord = [number, number];
 type StatArray = {
-  STR: number | string;
-  DEX: number | string;
-  CON: number | string;
-  INT: number | string;
-  WIS: number | string;
-  CHA: number | string;
+    STR: number | string;
+    DEX: number | string;
+    CON: number | string;
+    INT: number | string;
+    WIS: number | string;
+    CHA: number | string;
 };
 type SaveProfs = {
-  STR: number | string;
-  DEX: number | string;
-  CON: number | string;
-  INT: number | string;
-  WIS: number | string;
-  CHA: number | string;
+    STR: number | string;
+    DEX: number | string;
+    CON: number | string;
+    INT: number | string;
+    WIS: number | string;
+    CHA: number | string;
 };
 type SpellInfoDetails =
-  | {
-      name: string;
-      spellData?: SpellAction;
-      charges: string;
-    }
-  | {
-      name: string;
-      spellData?: SpellAction;
-      charges?: never;
-    };
+    | {
+    name: string;
+    spellData?: SpellAction;
+    charges: string;
+}
+    | {
+    name: string;
+    spellData?: SpellAction;
+    charges?: never;
+};
 
 export type SpellInfo =
-  | {
-      type: string;
-      DC: number;
-      attackRoll: number;
-      spells: Extract<SpellInfoDetails, { charges: string }>[];
-      spellSlots?: never;
-    }
-  | {
-      type: string;
-      DC: number;
-      attackRoll: number;
-      spells: Extract<SpellInfoDetails, { charges?: never }>[];
-      spellSlots: number[][];
-    };
+    | {
+    type: string;
+    DC: number;
+    attackRoll: number;
+    spells: Extract<SpellInfoDetails, { charges: string }>[];
+    spellSlots?: never;
+}
+    | {
+    type: string;
+    DC: number;
+    attackRoll: number;
+    spells: Extract<SpellInfoDetails, { charges?: never }>[];
+    spellSlots: number[][];
+};
 
 type MultiAttackSplit = {
-  name : string;
-  number : number;
+    name : string;
+    number : number;
 }
 export type MultiAttack = {
-  name : string;
-  total : number;
-  split : MultiAttackSplit[];
+    name : string;
+    total : number;
+    split : MultiAttackSplit[];
 }
 
-//Describes both lingEffect and lingSave
-export type PreTurnEffect = {
-    name : string;
-    effect : {
-        action : SpellAction[];
-        resultID : string[];
-    }
-}
+export type ResultID = string | number;
+
+export type ActiveStatusEffectData = {
+    resultID?: ResultID | ResultID[];
+    action?: SpellAction[];
+    attribute?: unknown;
+    [key: string]: unknown;
+};
+
+// Describes normal status effects as well as lingEffect and lingSave.
+export type ActiveStatusEffect = Record<string, unknown> & {
+    name?: string;
+    effect?: ActiveStatusEffectData;
+};
+
+export type PreTurnEffect = ActiveStatusEffect & {
+    effect: ActiveStatusEffectData & {
+        action: SpellAction[];
+        resultID: ResultID[];
+    };
+};
 
 export type ActiveCondition = {
-    cond : string;
-    resultid : string[];
-}
+    cond?: string;
+    name?: string;
+    resultID?: ResultID[];
+    // Kept for compatibility with older serialized frontend fixtures.
+    resultid?: ResultID[];
+    [key: string]: unknown;
+};
 
 export type PlayerStats = {
   statArray: StatArray;
@@ -118,7 +135,7 @@ export type PlayerStats = {
   damVulns: string[];
   conImmunes: string[];
   activeConditions: (ActiveCondition | string)[];
-  activeStatusEffects: (any | PreTurnEffect)[];
+  activeStatusEffects: ActiveStatusEffect[]
   hp: number | string;
   maxhp: number | string;
   position: GridCoord[];
@@ -133,10 +150,10 @@ export type PlayerStats = {
 };
 
 export type PlayerCreature = {
-  stats: PlayerStats;
-  spells: SpellAction[];
-  weapons: WeaponAction[];
-  [key: string]: unknown;
+    stats: PlayerStats;
+    spells: SpellAction[];
+    weapons: WeaponAction[];
+    [key: string]: unknown;
 };
 
 export type MonsterCreature = {
@@ -147,7 +164,7 @@ export type MonsterCreature = {
   damVulns: string[];
   conImmunes: string[];
   activeConditions: (ActiveCondition | string)[];
-  activeStatusEffects: any[];
+  activeStatusEffects: ActiveStatusEffect[];
   hp: number | string;
   maxhp: number | string;
   position: GridCoord[];

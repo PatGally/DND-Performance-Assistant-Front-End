@@ -18,6 +18,11 @@ import {
     getCriticalDamageBounds,
     isCriticalAttackRoll,
 } from "../../utils/ActiveSimUtils/actionHelpers.ts";
+import MultiAttackInputHandler from "./MultiAttackInputHandler.tsx";
+import type {
+    MultiattackDefinition,
+    MultiattackRecommendation,
+} from "../../types/multiattack.ts";
 
 type PerTargetInput = {
     attackRoll: string;
@@ -45,6 +50,17 @@ function getCurrentTimeString(): string {
         minute: "2-digit",
         second: "2-digit",
     });
+}
+
+function getDraftMultiattack(draft: ActionRequestDraft): MultiattackDefinition | undefined {
+    const record = draft as unknown as Record<string, unknown>;
+    const value = record.multiattack;
+    if (typeof value !== "object" || value === null) return undefined;
+
+    const definition = value as Record<string, unknown>;
+    return Array.isArray(definition.split)
+        ? value as MultiattackDefinition
+        : undefined;
 }
 
 export default function InputHandler({
@@ -407,6 +423,23 @@ export default function InputHandler({
         clearManualAoePreview();
         setActionExecutionSession(undefined);
         setManualLock(false);
+    }
+
+    const multiattack = getDraftMultiattack(actionSession.draft);
+    if (multiattack) {
+        const encounterRecord = encounter as unknown as Record<string, unknown>;
+        return (
+            <MultiAttackInputHandler
+                eid={String(encounterRecord.eid ?? "")}
+                actorCid={actionSession.draft.actor}
+                encounter={encounter}
+                definition={multiattack}
+                recommendation={actionSession.draft as unknown as MultiattackRecommendation}
+                executeAction={handleActionExecution}
+                onCancel={handleExit}
+                onComplete={handleExit}
+            />
+        );
     }
 
     return (

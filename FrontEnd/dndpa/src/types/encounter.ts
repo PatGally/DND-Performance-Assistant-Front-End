@@ -1,5 +1,5 @@
 import type {InitiativeEntry} from "./SimulationTypes";
-import type {MonsterCreature, PlayerCreature} from "./creature";
+import type {MonsterCreature, PlayerCreature, ResultID} from "./creature";
 
 interface PacketPlayer {
     name: string;
@@ -27,6 +27,19 @@ export interface EncounterDash {
     mapdata: any;
 }
 
+
+export interface EncounterResult {
+    resultID: ResultID;
+    action?: string;
+    actor?: string;
+    targets?: string[];
+    turnCount?: number;
+    turnCap?: number;
+    turnCounts?: Record<string, number>;
+    expiredCreatures?: Record<string, boolean>;
+    [key: string]: unknown;
+}
+
 export interface EncounterFull {
     eid: string;
     name: string;
@@ -36,6 +49,7 @@ export interface EncounterFull {
     initiative : InitiativeEntry[];
     players : PlayerCreature[];
     monsters: MonsterCreature[];
+    results?: EncounterResult[];
 }
 
 export interface EncounterWithPacket extends EncounterDash {

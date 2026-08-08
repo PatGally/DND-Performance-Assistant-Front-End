@@ -5,8 +5,13 @@ import type {
     WeaponAction,
     MonsterAction,
 } from "../../types/action.ts";
+import type { Creature } from "../../types/creature.ts";
+import type { MultiattackDefinition } from "../../types/multiattack.ts";
+import { hasMultiattackDefinition } from "../../types/multiattack.ts";
 import { actionsGet } from "../../api/ActionsGet.ts";
+import { getEncounter } from "../../api/EncounterGet.ts";
 import { isSpellAction, isWeaponAction, isMonsterAction } from "../../utils/ActiveSimUtils/ActionTypeChecker.ts";
+import { getCreatureCid } from "../../utils/ActiveSimUtils/CreatureHelpers.ts";
 import "../../css/ActionList.css";
 
 type ActionListProps = {
@@ -19,6 +24,213 @@ type ActionListProps = {
 function getActionName(action: CreatureAction): string {
     if (isSpellAction(action)) return action.spellname;
     return action.name;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null;
+}
+
+function expandedSplitNames(split: unknown): string[] {
+    if (!Array.isArray(split)) return [];
+
+    return split.flatMap((item) => {
+        if (!isRecord(item)) return [];
+
+        const name = String(item.name ?? "").trim();
+        const parsedCount = Number(item.number ?? 1);
+        const count = Number.isFinite(parsedCount)
+            ? Math.max(0, Math.trunc(parsedCount))
+            : 1;
+
+        return name ? Array.from({ length: count }, () => name) : [];
+    });
+}
+
+function actionNameFromUnknown(action: unknown): string {
+    if (!isRecord(action)) return "";
+    return String(action.name ?? action.spellname ?? "").trim();
+}
+
+function executableSequence(value: unknown): Array<Record<string, unknown>> {
+    if (!Array.isArray(value)) return [];
+
+    return value.filter((item): item is Record<string, unknown> => (
+        isRecord(item) &&
+        typeof item.name === "string" &&
+        item.name.trim() !== "" &&
+        isRecord(item.action)
+    ));
+}
+
+function buildLocalMultiattackAction(
+    creature: Creature | undefined,
+    availableActions: CreatureAction[]
+): CreatureAction | undefined {
+    if (!creature || !isRecord(creature)) return undefined;
+
+    const multiattack = creature.multiattack;
+    if (!isRecord(multiattack)) return undefined;
+
+    const expectedNames = expandedSplitNames(multiattack.split);
+    if (expectedNames.length === 0) return undefined;
+
+    const creatureActions = Array.isArray(creature.actions)
+        ? creature.actions.filter(isRecord)
+        : [];
+    const actionCandidates: unknown[] = [...creatureActions, ...availableActions];
+    const actionsByName = new Map<string, Record<string, unknown>>();
+
+    for (const action of actionCandidates) {
+        if (!isRecord(action)) continue;
+        const key = actionNameFromUnknown(action).toLowerCase();
+        if (key && !actionsByName.has(key)) actionsByName.set(key, action);
+    }
+
+    const resolvedSequence = expectedNames.map((expectedName, index) => {
+        const action = actionsByName.get(expectedName.toLowerCase());
+        return action
+            ? {
+                index,
+                name: actionNameFromUnknown(action) || expectedName,
+                action,
+            }
+            : undefined;
+    });
+    const sequence = resolvedSequence.every(Boolean)
+        ? resolvedSequence
+        : [];
+    const total = expectedNames.length;
+    const name = String(multiattack.name ?? "Multiattack").trim() || "Multiattack";
+    const splitDescription = Array.isArray(multiattack.split)
+        ? multiattack.split
+            .filter(isRecord)
+            .map((item) => `${Number(item.number ?? 1)} × ${String(item.name ?? "")}`)
+            .join(", ")
+        : "";
+
+    return {
+        name,
+        desc: `Use one action to perform: ${splitDescription}.`,
+        number: "0",
+        actionRange: "0",
+        shape: "",
+        rolls: {
+            rollType: "multiattack",
+            saveType: "",
+            halfSave: false,
+            saveDC: 0,
+            damage: "",
+            attackBonus: "0",
+            damageMod: "0",
+        },
+        extraDamage: [],
+        damType: [],
+        conditions: [],
+        statusEffect: [],
+        lingEffect: {},
+        extraEffect: {},
+        lingSave: {},
+        recharge: "",
+        actionCost: "action",
+        specialNotes: ["Multiattack"],
+        multiattack: {
+            ...multiattack,
+            name,
+            total,
+            split: Array.isArray(multiattack.split) ? multiattack.split : [],
+            sequence,
+        },
+    } as unknown as CreatureAction;
+}
+
+function ensureMultiattackAction(
+    actions: CreatureAction[],
+    creature?: Creature
+): CreatureAction[] {
+    const existingIndex = actions.findIndex(hasMultiattackDefinition);
+    const localMultiattack = buildLocalMultiattackAction(creature, actions);
+
+    if (existingIndex < 0) {
+        return localMultiattack ? [localMultiattack, ...actions] : actions;
+    }
+    if (!localMultiattack) return actions;
+
+    const existing = actions[existingIndex] as unknown as Record<string, unknown>;
+    const existingDefinition = isRecord(existing.multiattack)
+        ? existing.multiattack
+        : {};
+    const local = localMultiattack as unknown as Record<string, unknown>;
+    const localDefinition = isRecord(local.multiattack) ? local.multiattack : {};
+    const existingSequence = executableSequence(existingDefinition.sequence);
+    const localSequence = executableSequence(localDefinition.sequence);
+    const expectedCount = expandedSplitNames(
+        existingDefinition.split ?? localDefinition.split
+    ).length;
+
+    // A backend entry can contain the definition but no executable sequence.
+    // Hydrate that card from the encounter's concrete child actions.
+    if (
+        (expectedCount > 0 && existingSequence.length === expectedCount) ||
+        localSequence.length === 0
+    ) return actions;
+
+    const hydrated = {
+        ...existing,
+        actionCost: "action",
+        multiattack: {
+            ...localDefinition,
+            ...existingDefinition,
+            sequence: localSequence,
+        },
+    } as unknown as CreatureAction;
+
+    return actions.map((action, index) =>
+        index === existingIndex ? hydrated : action
+    );
+}
+
+function renderMultiattackDetails(multiattack: MultiattackDefinition) {
+    const split = Array.isArray(multiattack.split) ? multiattack.split : [];
+    const sequence = Array.isArray(multiattack.sequence) ? multiattack.sequence : [];
+    const executionNames = sequence.length > 0
+        ? sequence.map((item) => item.name)
+        : expandedSplitNames(split);
+
+    return (
+        <>
+            <span className="action-type-badge">Multiattack</span>
+            <DetailRow label="Action Cost" value="One Action" />
+            <DetailRow label="Total Attacks" value={multiattack.total} />
+            <DetailRow
+                label="Required Sequence"
+                value={split.length > 0
+                    ? split
+                    .map((item) => {
+                        if (!item || typeof item !== "object") return null;
+                        const entry = item as { number?: unknown; name?: unknown };
+                        const name = String(entry.name ?? "").trim();
+                        if (!name) return null;
+                        const count = Number(entry.number ?? 1);
+                        return `${Number.isFinite(count) ? count : 1} × ${name}`;
+                    })
+                    .filter((item): item is string => item !== null)
+                    .join(", ") || "Unavailable"
+                    : "Unavailable"}
+            />
+            <div className="action-description-section">
+                <span className="action-detail-label">Execution Order</span>
+                <ol className="action-description-text">
+                    {executionNames.length > 0 ? (
+                        executionNames.map((name, index) => (
+                            <li key={`${name}-${index}`}>{name}</li>
+                        ))
+                    ) : (
+                        <li>Executable sequence unavailable</li>
+                    )}
+                </ol>
+            </div>
+        </>
+    );
 }
 
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
@@ -113,7 +325,7 @@ function renderMonsterDetails(action: MonsterAction) {
             <span className="action-type-badge">Monster Action</span>
             <ExpandableDescriptionSection description={action.desc} />
             <DetailRow label="Targets" value={action.number === "-2" ? "Self-origin AOE" :
-                                            action.number === "-1" ? "AOE" : action.number === "0" ? "Self" : action.number} />
+                action.number === "-1" ? "AOE" : action.number === "0" ? "Self" : action.number} />
             <DetailRow label="Range" value={action.actionRange} />
             <DetailRow label="Shape" value={action.shape || "None"} />
             <DetailRow label="Roll Type" value={action.rolls?.rollType || "None"} />
@@ -134,11 +346,11 @@ function renderMonsterDetails(action: MonsterAction) {
 }
 
 export default function ActionList({
-    eid,
-    cid,
-    handleActionSubmission,
-    onSelectManual,
-}: ActionListProps) {
+                                       eid,
+                                       cid,
+                                       handleActionSubmission,
+                                       onSelectManual,
+                                   }: ActionListProps) {
     const [actions, setActions] = useState<CreatureAction[]>([]);
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
@@ -149,8 +361,19 @@ export default function ActionList({
             try {
                 setLoading(true);
                 setError("");
-                const data = await actionsGet(eid, cid);
-                setActions(data);
+                const [data, encounter] = await Promise.all([
+                    actionsGet(eid, cid),
+                    getEncounter(eid),
+                ]);
+                const serverActions = Array.isArray(data) ? data : [];
+                const creatures: Creature[] = encounter
+                    ? [...(encounter.players ?? []), ...(encounter.monsters ?? [])]
+                    : [];
+                const creature = creatures.find(
+                    (candidate) => getCreatureCid(candidate) === cid
+                );
+
+                setActions(ensureMultiattackAction(serverActions, creature));
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Failed to load actions.");
             } finally {
@@ -168,7 +391,9 @@ export default function ActionList({
     function renderActionDetails(action: CreatureAction) {
         let details: ReactNode = null;
 
-        if (isSpellAction(action)) details = renderSpellDetails(action);
+        if (hasMultiattackDefinition(action)) {
+            details = renderMultiattackDetails(action.multiattack);
+        } else if (isSpellAction(action)) details = renderSpellDetails(action);
         else if (isWeaponAction(action)) details = renderWeaponDetails(action);
         else if (isMonsterAction(action)) details = renderMonsterDetails(action);
 
